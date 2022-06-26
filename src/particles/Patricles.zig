@@ -78,7 +78,7 @@ fn seed(self: *Self) void {
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.particle_velocity()[0], 0);
   c.glDrawBuffers(2, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1 });
 
-  c.glViewport(0, 0, cfg.PARTICLES_TEXTURE_SIZE, cfg.PARTICLES_TEXTURE_SIZE);
+  c.glViewport(0, 0, cfg.TEXTURE_SIZE, cfg.TEXTURE_SIZE);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
@@ -97,7 +97,7 @@ fn update(self: *Self, t: f32, dt: f32) void {
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.particle_velocity()[1], 0);
   c.glDrawBuffers(2, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1 });
 
-  c.glViewport(0, 0, cfg.PARTICLES_TEXTURE_SIZE, cfg.PARTICLES_TEXTURE_SIZE);
+  c.glViewport(0, 0, cfg.TEXTURE_SIZE, cfg.TEXTURE_SIZE);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
   gl.swapTextures(self.textures.particle_position());
@@ -126,7 +126,7 @@ fn render(self: *Self, width: c_int, height: c_int) void {
 
   c.glViewport(0, 0, width, height);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
-  c.glDrawArrays(c.GL_POINTS, 0, cfg.PARTICLES);
+  c.glDrawArrays(c.GL_POINTS, 0, cfg.COUNT);
 }
 
 fn postprocess(self: *Self, width: c_int, height: c_int) void {

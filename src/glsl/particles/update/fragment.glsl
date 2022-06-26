@@ -38,10 +38,11 @@ void main() {
   vec2 vel = texture(tVelocity, vUV).xy;
   Particle p = Particle(size, pos, vel);
 
-  vec3 xyz = vec3(2e0 * p.pos, 1e2 + 5e-2 * uT);
+  const vec2 ar = vec2(16.0 / 9.0, 1.0);
+  vec3 xyz = vec3(p.pos * ar, 1e2 + 5e-2 * uT);
   vec2 noise = vec2(simplex3d(xyz), simplex3d(xyz * vec3(1, 1, -1)));
-  Particle_accelerate(p, 3e-3 * noise / p.size);
-  Particle_applyDrag(p, 0.985);
+  Particle_accelerate(p, uDT * 2e-1 * noise / ar / p.size);
+  Particle_applyDrag(p, exp(uDT * log(0.3)));
   Particle_travel(p);
   Particle_bounce(p, vec2(1.0));
 

@@ -17,5 +17,5 @@ void main() {
   velocity = vec2(0.0);
   for (int i = 10; length(velocity) < 0.1; i++)
     velocity = normal(hash23(-vec3(1e3 * vUV, i)));
-  velocity *= 1e-3;
+  velocity *= 1e-2 / size;
 }

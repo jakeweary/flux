@@ -32,7 +32,7 @@ pub fn init() !Self {
   self.render = try blk: {
     const vs = @embedFile("../glsl/particles/render/vertex.glsl");
     const fs = @embedFile("../glsl/particles/render/fragment.glsl");
-    break :blk gl.Program.init(&.{ vs }, &.{ yab, fs });
+    break :blk gl.Program.init(&.{ yab, vs }, &.{ fs });
   };
   errdefer self.render.deinit();
 

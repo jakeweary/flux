@@ -16,7 +16,7 @@ pub fn init() Self {
 
   c.glBindTexture(c.GL_TEXTURE_2D, self.particle_size());
   c.glTexImage2D(c.GL_TEXTURE_2D, 0,
-    c.GL_R32F, cfg.PARTICLES_TEXTURE_SIZE, cfg.PARTICLES_TEXTURE_SIZE, 0,
+    c.GL_R32F, cfg.TEXTURE_SIZE, cfg.TEXTURE_SIZE, 0,
     c.GL_RED, c.GL_FLOAT, null);
   gl.textureFilterNearest();
 
@@ -24,7 +24,7 @@ pub fn init() Self {
     for (ids) |id| {
       c.glBindTexture(c.GL_TEXTURE_2D, id);
       c.glTexImage2D(c.GL_TEXTURE_2D, 0,
-        c.GL_RG32F, cfg.PARTICLES_TEXTURE_SIZE, cfg.PARTICLES_TEXTURE_SIZE, 0,
+        c.GL_RG32F, cfg.TEXTURE_SIZE, cfg.TEXTURE_SIZE, 0,
         c.GL_RG, c.GL_FLOAT, null);
       gl.textureFilterNearest();
     }
