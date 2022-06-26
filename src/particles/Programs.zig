@@ -10,6 +10,7 @@ const yab = @embedFile("../glsl/lib/yab.glsl");
 seed: gl.Program,
 update: gl.Program,
 render: gl.Program,
+feedback: gl.Program,
 postprocess: gl.Program,
 
 pub fn init() !Self {
@@ -36,6 +37,13 @@ pub fn init() !Self {
   };
   errdefer self.render.deinit();
 
+  self.feedback = try blk: {
+    const vs = @embedFile("../glsl/particles/feedback/vertex.glsl");
+    const fs = @embedFile("../glsl/particles/feedback/fragment.glsl");
+    break :blk gl.Program.init(&.{ yab, vs }, &.{ fs });
+  };
+  errdefer self.feedback.deinit();
+
   self.postprocess = try blk: {
     const vs = @embedFile("../glsl/particles/postprocess/vertex.glsl");
     const fs = @embedFile("../glsl/particles/postprocess/fragment.glsl");
@@ -50,5 +58,6 @@ pub fn deinit(self: *const Self) void {
   self.seed.deinit();
   self.update.deinit();
   self.render.deinit();
+  self.feedback.deinit();
   self.postprocess.deinit();
 }
