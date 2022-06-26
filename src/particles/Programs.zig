@@ -25,7 +25,7 @@ pub fn init() !Self {
   self.update = try blk: {
     const vs = @embedFile("../glsl/particles/update/vertex.glsl");
     const fs = @embedFile("../glsl/particles/update/fragment.glsl");
-    break :blk gl.Program.init(&.{ vs }, &.{ simplex3d, fs });
+    break :blk gl.Program.init(&.{ vs }, &.{ hashes, simplex3d, fs });
   };
   errdefer self.update.deinit();
 

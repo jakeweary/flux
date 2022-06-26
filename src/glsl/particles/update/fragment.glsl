@@ -28,8 +28,15 @@ void Particle_bounce(inout Particle self, in vec2 walls) {
   vec2 abs_pos = abs(self.pos);
   vec2 reverse = self.pos / abs_pos * (walls - abs_pos);
   bvec2 in_bounds = greaterThan(abs_pos, walls);
-  self.vel = mix(self.vel, -self.vel, in_bounds);
   self.pos = mix(self.pos, self.pos + reverse + reverse, in_bounds);
+  self.vel = mix(self.vel, -self.vel, in_bounds);
+}
+
+void Particle_resetIfEscaped(inout Particle self, in vec2 walls) {
+  if (any(greaterThan(abs(self.pos), walls))) {
+    self.pos = 2.0 * hash22(1e3 * self.pos) - 1.0;
+    self.vel = vec2(0.0);
+  }
 }
 
 void main() {
@@ -41,10 +48,10 @@ void main() {
   const vec2 ar = vec2(16.0 / 9.0, 1.0);
   vec3 xyz = vec3(p.pos * ar, 1e2 + 5e-2 * uT);
   vec2 noise = vec2(simplex3d(xyz), simplex3d(xyz * vec3(1, 1, -1)));
-  Particle_accelerate(p, uDT * 2e-1 * noise / ar / p.size);
+  Particle_accelerate(p, uDT * 3e-1 * noise / ar / p.size);
   Particle_applyDrag(p, exp(uDT * log(0.3)));
   Particle_travel(p);
-  Particle_bounce(p, vec2(1.0));
+  Particle_resetIfEscaped(p, vec2(1.0));
 
   velocity = p.vel;
   position = p.pos;

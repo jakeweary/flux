@@ -31,8 +31,8 @@ pub fn init() !Self {
 
 pub fn deinit(self: *const Self) void {
   c.glBindVertexArray(0);
-  c.glDeleteFramebuffers(1, &self.fbo);
   c.glDeleteVertexArrays(1, &self.vao);
+  c.glDeleteFramebuffers(1, &self.fbo);
 
   self.programs.deinit();
   self.textures.deinit();
