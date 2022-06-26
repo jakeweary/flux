@@ -6,5 +6,10 @@ vec3 aces(vec3 color) {
   vec3 v = x * color;
   vec3 a = v * (v + 0.0245786) - 0.000090537;
   vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081;
-  return y * a / b;
+  return clamp(y * (a / b), 0.0, 1.0);
+}
+
+// https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
+float aces(float x) {
+  return (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14);
 }

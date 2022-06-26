@@ -11,20 +11,9 @@ pub const log = std.log.scoped(.gl);
 pub const major = 4;
 pub const minor = 6;
 
-// ---
-
-fn ReturnTypeOf(comptime method: @Type(.EnumLiteral)) type {
-  const T = @TypeOf(@field(c, "gl" ++ @tagName(method)));
-  return @typeInfo(T).Fn.return_type.?;
+pub fn swapTextures(textures: []c.GLuint) void {
+  std.mem.swap(c.GLuint, &textures[0], &textures[1]);
 }
-
-pub fn call(comptime method: @Type(.EnumLiteral), args: anytype) !ReturnTypeOf(method) {
-  const result = @call(.{}, @field(c, "gl" ++ @tagName(method)), args);
-  try debug.checkError();
-  return result;
-}
-
-// ---
 
 pub fn textureClampToEdges() void {
   c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE);
@@ -39,4 +28,17 @@ pub fn textureFilterNearest() void {
 pub fn textureFilterLinear() void {
   c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR);
   c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR);
+}
+
+// ---
+
+fn ReturnTypeOf(comptime method: @Type(.EnumLiteral)) type {
+  const T = @TypeOf(@field(c, "gl" ++ @tagName(method)));
+  return @typeInfo(T).Fn.return_type.?;
+}
+
+pub fn call(comptime method: @Type(.EnumLiteral), args: anytype) !ReturnTypeOf(method) {
+  const result = @call(.{}, @field(c, "gl" ++ @tagName(method)), args);
+  try debug.checkError();
+  return result;
 }
