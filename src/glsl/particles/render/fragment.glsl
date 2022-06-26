@@ -8,6 +8,6 @@ float linearstep(float a, float b, float t) {
 
 void main() {
   float dist = length(gl_PointCoord - 0.5);
-  float circle = linearstep(vRadius.x, vRadius.y, dist);
+  float circle = smoothstep(vRadius.x, vRadius.y, dist);
   color = circle * vColor;
 }
