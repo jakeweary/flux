@@ -13,6 +13,5 @@ void main() {
   vRadius = vec2(size + 1.0, size - 1.0) / 2.0 / gl_PointSize;
 
   float hue = (size - 2.0) * (1.0 / 4.0) - (1.0 / 3.0);
-  vec3 ych = vec3(0.5, 0.34, radians(360.0) * hue);
-  vColor = yab_to_rgb * ych_to_yab(ych);
+  vColor = soft_hsl(vec3(hue, 2.0, 0.5));
 }

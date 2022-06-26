@@ -3,9 +3,9 @@ const gl = @import("../gl/gl.zig");
 const Self = @This();
 
 const aces = @embedFile("../glsl/lib/aces.glsl");
+const hsl = @embedFile("../glsl/lib/hsl.glsl");
 const hashes = @embedFile("../glsl/lib/hashes.glsl");
 const simplex3d = @embedFile("../glsl/lib/simplex3d.glsl");
-const yab = @embedFile("../glsl/lib/yab.glsl");
 
 seed: gl.Program,
 update: gl.Program,
@@ -33,14 +33,14 @@ pub fn init() !Self {
   self.render = try blk: {
     const vs = @embedFile("../glsl/particles/render/vertex.glsl");
     const fs = @embedFile("../glsl/particles/render/fragment.glsl");
-    break :blk gl.Program.init(&.{ yab, vs }, &.{ fs });
+    break :blk gl.Program.init(&.{ hsl, vs }, &.{ fs });
   };
   errdefer self.render.deinit();
 
   self.feedback = try blk: {
     const vs = @embedFile("../glsl/particles/feedback/vertex.glsl");
     const fs = @embedFile("../glsl/particles/feedback/fragment.glsl");
-    break :blk gl.Program.init(&.{ yab, vs }, &.{ fs });
+    break :blk gl.Program.init(&.{ vs }, &.{ fs });
   };
   errdefer self.feedback.deinit();
 

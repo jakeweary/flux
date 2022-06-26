@@ -1,8 +1,6 @@
 const std = @import("std");
 const c = @import("../c.zig");
-const util = @import("../util.zig");
 const gl = @import("../gl/gl.zig");
-const stb = @import("../stb/stb.zig");
 const cfg = @import("config.zig");
 const Programs = @import("Programs.zig");
 const Textures = @import("Textures.zig");
@@ -49,18 +47,17 @@ pub fn run(self: *Self, window: *c.GLFWwindow) !void {
     defer c.glfwPollEvents();
     defer c.glfwSwapBuffers(window);
 
-    const frame_start = try std.time.Instant.now();
-    const time_now = frame_start;
+    const time_now = try std.time.Instant.now();
     defer time_prev = time_now;
-
-    const t = 1e-9 * @intToFloat(f32, time_now.since(time_start));
-    const dt = 1e-9 * @intToFloat(f32, time_now.since(time_prev));
 
     var width: c_int = undefined;
     var height: c_int = undefined;
     c.glfwGetWindowSize(window, &width, &height);
 
     if (width != 0 and height != 0) {
+      const t = 1e-9 * @intToFloat(f32, time_now.since(time_start));
+      const dt = 1e-9 * @intToFloat(f32, time_now.since(time_prev));
+
       self.update(t, dt);
       self.render(width, height);
       self.feedback(width, height);
@@ -139,8 +136,8 @@ fn feedback(self: *Self, width: c_int, height: c_int) void {
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
   self.programs.feedback.use();
-  self.programs.feedback.bindTexture("tFeedback", 0, self.textures.feedback()[0]);
-  self.programs.feedback.bindTexture("tRendered", 1, self.textures.rendered());
+  self.programs.feedback.bindTexture("tRendered", 0, self.textures.rendered());
+  self.programs.feedback.bindTexture("tFeedback", 1, self.textures.feedback()[0]);
 
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.feedback()[1], 0);
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, 0, 0);

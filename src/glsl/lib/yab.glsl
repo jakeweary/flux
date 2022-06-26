@@ -1,5 +1,3 @@
-// https://www.shadertoy.com/view/7tG3Rt
-
 // ScalingMatrix[{1, 1, 1}/Sqrt[3]] .
 // RotationMatrix[1/2 Pi - ArcTan[1/Sqrt[2]], {0, 0, 1}] .
 // RotationMatrix[3/4 Pi, {1, 0, 0}]
