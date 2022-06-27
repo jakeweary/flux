@@ -4,5 +4,5 @@ out vec3 fColor;
 
 void main() {
   vec3 rendered = texture(tRendered, vUV).rgb;
-  fColor = aces(0.05 * rendered);
+  fColor = aces(0.2 * rendered);
 }

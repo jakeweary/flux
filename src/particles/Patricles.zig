@@ -47,22 +47,31 @@ pub fn run(self: *Self, window: *c.GLFWwindow) !void {
     defer c.glfwPollEvents();
     defer c.glfwSwapBuffers(window);
 
-    const time_now = try std.time.Instant.now();
-    defer time_prev = time_now;
-
     var width: c_int = undefined;
     var height: c_int = undefined;
     c.glfwGetWindowSize(window, &width, &height);
 
-    if (width != 0 and height != 0) {
-      const t = 1e-9 * @intToFloat(f32, time_now.since(time_start));
-      const dt = 1e-9 * @intToFloat(f32, time_now.since(time_prev));
+    if (width == 0 or height == 0)
+      continue;
 
-      self.update(t, dt);
+    const time_now = try std.time.Instant.now();
+    defer time_prev = time_now;
+
+    const t = 1e-9 * @intToFloat(f32, time_now.since(time_start));
+    const dt = 1e-9 * @intToFloat(f32, time_now.since(time_prev));
+
+    const steps = 16;
+    var step: usize = steps;
+    while (!@subWithOverflow(usize, step, 1, &step)) {
+      const step_dt = dt / steps;
+      const step_t = t - step_dt * @intToFloat(f32, step);
+
+      self.update(step_t, step_dt);
       self.render(width, height);
       self.feedback(width, height);
-      self.postprocess(width, height);
     }
+
+    self.postprocess(width, height);
   }
 }
 
@@ -74,13 +83,15 @@ fn seed(self: *Self) void {
 
   self.programs.seed.use();
 
-  c.glDrawBuffers(3, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2 });
+  c.glDrawBuffers(4, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2, c.GL_COLOR_ATTACHMENT3 });
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.particle_size(), 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.particle_color(), 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.particle_velocity()[0], 0);
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.particle_age()[0], 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, 0, 0);
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT3, self.textures.particle_velocity()[0], 0);
+  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT3, 0, 0);
 
   c.glViewport(0, 0, cfg.TEXTURE_SIZE, cfg.TEXTURE_SIZE);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
@@ -94,18 +105,22 @@ fn update(self: *Self, t: f32, dt: f32) void {
   self.programs.update.bind("uT", t);
   self.programs.update.bind("uDT", dt);
   self.programs.update.bindTexture("tSize", 0, self.textures.particle_size());
-  self.programs.update.bindTexture("tPosition", 1, self.textures.particle_position()[0]);
-  self.programs.update.bindTexture("tVelocity", 2, self.textures.particle_velocity()[0]);
+  self.programs.update.bindTexture("tAge", 1, self.textures.particle_age()[0]);
+  self.programs.update.bindTexture("tPosition", 2, self.textures.particle_position()[0]);
+  self.programs.update.bindTexture("tVelocity", 3, self.textures.particle_velocity()[0]);
 
-  c.glDrawBuffers(2, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1 });
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.particle_position()[1], 0);
+  c.glDrawBuffers(3, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2 });
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.particle_age()[1], 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.particle_velocity()[1], 0);
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.particle_position()[1], 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, 0, 0);
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.particle_velocity()[1], 0);
+  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, 0, 0);
 
   c.glViewport(0, 0, cfg.TEXTURE_SIZE, cfg.TEXTURE_SIZE);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
+  gl.swapTextures(self.textures.particle_age());
   gl.swapTextures(self.textures.particle_position());
   gl.swapTextures(self.textures.particle_velocity());
 }
@@ -125,7 +140,8 @@ fn render(self: *Self, width: c_int, height: c_int) void {
   self.programs.render.use();
   self.programs.render.bindTexture("tSize", 0, self.textures.particle_size());
   self.programs.render.bindTexture("tColor", 1, self.textures.particle_color());
-  self.programs.render.bindTexture("tPosition", 2, self.textures.particle_position()[0]);
+  self.programs.render.bindTexture("tAge", 2, self.textures.particle_age()[0]);
+  self.programs.render.bindTexture("tPosition", 3, self.textures.particle_position()[0]);
 
   c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.rendered(), 0);

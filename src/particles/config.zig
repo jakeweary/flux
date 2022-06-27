@@ -1,2 +1,2 @@
-pub const TEXTURE_SIZE = 128;
+pub const TEXTURE_SIZE = 64;
 pub const COUNT = TEXTURE_SIZE * TEXTURE_SIZE;
