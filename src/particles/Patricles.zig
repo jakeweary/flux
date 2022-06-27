@@ -57,8 +57,8 @@ pub fn run(self: *Self, window: *c.GLFWwindow) !void {
     const time_now = try std.time.Instant.now();
     defer time_prev = time_now;
 
-    const t = 1e-9 * @intToFloat(f32, time_now.since(time_start));
     const dt = 1e-9 * @intToFloat(f32, time_now.since(time_prev));
+    const t = 1e-9 * @intToFloat(f32, time_now.since(time_start));
 
     const steps = 8;
     var step: usize = steps;

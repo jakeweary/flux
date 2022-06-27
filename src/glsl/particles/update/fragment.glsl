@@ -54,14 +54,14 @@ void main() {
   Particle p = Particle(pSize, pAge, pPos, pVel);
 
   const vec2 r = vec2(16.0 / 9.0, 1.0);
-  vec3 xyz = vec3(0.5 * p.pos * r, 100.0 + 0.02 * uT);
-  float nx = simplex3d_fractal(xyz);
-  float ny = simplex3d_fractal(xyz * vec3(1.0, 1.0, -1.0));
+  vec3 xyz = vec3(p.pos * r, 100.0 + 0.1 * uT);
+  float nx = simplex3d(xyz);
+  float ny = simplex3d(xyz * vec3(1.0, 1.0, -1.0));
 
-  Particle_accelerate(p, uDT, 100.0 / r / p.size * vec2(nx, ny));
-  Particle_applyDrag(p, uDT, 0.01);
+  Particle_accelerate(p, uDT, 25.0 / r / p.size * vec2(nx, ny));
+  Particle_applyDrag(p, uDT, 0.3);
   Particle_travel(p, uDT);
-  Particle_resetIfEscaped(p, vec2(1.0));
+  Particle_bounce(p, vec2(1.0));
 
   fAge = p.age;
   fPosition = p.pos;
