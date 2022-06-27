@@ -15,7 +15,7 @@ void main() {
     fSize = 2.0 + 0.5 * normal(hash23(vec3(1e3 * vUV, i))).x;
 
   fVelocity = vec2(0.0);
-  for (int i = 10; length(fVelocity) < 0.1; i++)
+  for (int i = 10; length(fVelocity) < 1e-3; i++)
     fVelocity = normal(hash23(-vec3(1e3 * vUV, i)));
-  fVelocity *= 1e-2 / fSize;
+  fVelocity /= fSize;
 }

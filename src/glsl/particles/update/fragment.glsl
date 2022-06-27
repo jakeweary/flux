@@ -12,16 +12,16 @@ struct Particle {
   vec2 pos, vel;
 };
 
-void Particle_applyDrag(inout Particle self, in float drag) {
-  self.vel *= drag;
+void Particle_applyDrag(inout Particle self, in float dt, in float drag) {
+  self.vel *= exp(dt * log(drag));
 }
 
-void Particle_accelerate(inout Particle self, in vec2 acc) {
-  self.vel += acc;
+void Particle_accelerate(inout Particle self, in float dt, in vec2 acc) {
+  self.vel += dt * acc;
 }
 
-void Particle_travel(inout Particle self) {
-  self.pos += self.vel;
+void Particle_travel(inout Particle self, in float dt) {
+  self.pos += dt * self.vel;
 }
 
 void Particle_reset(inout Particle self, in vec2 walls) {
@@ -43,20 +43,21 @@ void Particle_bounce(inout Particle self, in vec2 walls) {
 }
 
 void main() {
-  float ps = texture(tSize, vUV).x;
-  vec2 pp = texture(tPosition, vUV).xy;
-  vec2 pv = texture(tVelocity, vUV).xy;
-  Particle p = Particle(ps, pp, pv);
+  float p_size = texture(tSize, vUV).x;
+  vec2 p_pos = texture(tPosition, vUV).xy;
+  vec2 p_vel = texture(tVelocity, vUV).xy;
+  Particle p = Particle(p_size, p_pos, p_vel);
 
   const vec2 ar = vec2(16.0 / 9.0, 1.0);
   vec3 xyz = vec3(0.5 * p.pos * ar, 100.0 + 0.05 * uT);
   float nx = simplex3d_fractal(xyz);
   float ny = simplex3d_fractal(xyz * vec3(1.0, 1.0, -1.0));
 
-  Particle_accelerate(p, uDT * vec2(nx, ny) / ar / p.size);
-  Particle_applyDrag(p, exp(uDT * log(0.01)));
-  Particle_travel(p);
+  Particle_accelerate(p, uDT, 10.0 / ar / p.size * vec2(nx, ny));
+  Particle_applyDrag(p, uDT, 0.3);
+  Particle_travel(p, uDT);
   Particle_resetIfEscaped(p, vec2(1.0));
+  // Particle_bounce(p, vec2(1.0));
 
   fVelocity = p.vel;
   fPosition = p.pos;
