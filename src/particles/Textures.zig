@@ -3,7 +3,7 @@ const gl = @import("../gl/gl.zig");
 const cfg = @import("config.zig");
 const Self = @This();
 
-textures: [8]c.GLuint = undefined,
+textures: [9]c.GLuint = undefined,
 
 pub fn init() Self {
   var self = Self{};
@@ -13,7 +13,9 @@ pub fn init() Self {
 
   for (self.textures) |id| {
     c.glBindTexture(c.GL_TEXTURE_2D, id);
-    c.glTexImage2D(c.GL_TEXTURE_2D, 0, c.GL_RGB32F, 1, 1, 0, c.GL_RGB, c.GL_FLOAT, null);
+    c.glTexImage2D(c.GL_TEXTURE_2D, 0,
+      c.GL_RGB32F, cfg.TEXTURE_SIZE, cfg.TEXTURE_SIZE, 0,
+      c.GL_RGB, c.GL_FLOAT, null);
     gl.textureFilterNearest();
   }
 
@@ -42,18 +44,22 @@ pub fn particle_size(self: *Self) c.GLuint {
   return self.textures[0];
 }
 
+pub fn particle_color(self: *Self) c.GLuint {
+  return self.textures[1];
+}
+
 pub fn particle_position(self: *Self) []c.GLuint {
-  return self.textures[1..3];
+  return self.textures[2..4];
 }
 
 pub fn particle_velocity(self: *Self) []c.GLuint {
-  return self.textures[3..5];
+  return self.textures[4..6];
 }
 
 pub fn feedback(self: *Self) []c.GLuint {
-  return self.textures[5..7];
+  return self.textures[6..8];
 }
 
 pub fn rendered(self: *Self) c.GLuint {
-  return self.textures[7];
+  return self.textures[8];
 }

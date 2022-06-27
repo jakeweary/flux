@@ -26,7 +26,7 @@ pub fn main() !void {
   _ = c.glfwSetWindowSizeCallback(window, gl.callbacks.onWindowSize);
   _ = c.glfwSetKeyCallback(window, gl.callbacks.onKey);
   c.glfwMakeContextCurrent(window);
-  // c.glfwSwapInterval(0);
+  c.glfwSwapInterval(0);
   _ = c.gladLoadGL(c.glfwGetProcAddress);
 
   gl.debug.enableDebugMessages();

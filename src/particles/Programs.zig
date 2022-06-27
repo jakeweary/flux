@@ -19,7 +19,7 @@ pub fn init() !Self {
   self.seed = try blk: {
     const vs = @embedFile("../glsl/particles/seed/vertex.glsl");
     const fs = @embedFile("../glsl/particles/seed/fragment.glsl");
-    break :blk gl.Program.init(&.{ vs }, &.{ hashes, fs });
+    break :blk gl.Program.init(&.{ vs }, &.{ hashes, hsl, fs });
   };
   errdefer self.seed.deinit();
 
@@ -33,7 +33,7 @@ pub fn init() !Self {
   self.render = try blk: {
     const vs = @embedFile("../glsl/particles/render/vertex.glsl");
     const fs = @embedFile("../glsl/particles/render/fragment.glsl");
-    break :blk gl.Program.init(&.{ hsl, vs }, &.{ fs });
+    break :blk gl.Program.init(&.{ vs }, &.{ fs });
   };
   errdefer self.render.deinit();
 
