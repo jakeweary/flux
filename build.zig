@@ -2,9 +2,7 @@ const std = @import("std");
 
 pub fn build(b: *std.build.Builder) void {
   const mode = b.standardReleaseOptions();
-  const target = b.standardTargetOptions(.{
-    .default_target = .{ .os_tag = .windows }
-  });
+  const target = b.standardTargetOptions(.{});
 
   const exe = b.addExecutable("bin", "src/main.zig");
   exe.single_threaded = true;
@@ -13,12 +11,16 @@ pub fn build(b: *std.build.Builder) void {
   exe.addLibPath("deps/lib");
   exe.addIncludeDir("deps/include");
   exe.addCSourceFile("deps/impl.c", &.{"-std=c99"});
-  exe.linkSystemLibrary("glfw3");
+  exe.linkSystemLibraryName("glfw3");
   switch (exe.target.getOsTag()) {
     .windows => {
-      exe.linkSystemLibrary("winmm");
-      exe.linkSystemLibrary("gdi32");
-      exe.linkSystemLibrary("opengl32");
+      exe.linkSystemLibraryName("winmm");
+      exe.linkSystemLibraryName("gdi32");
+      exe.linkSystemLibraryName("opengl32");
+    },
+    .linux => {
+      exe.linkSystemLibraryName("X11");
+      exe.linkSystemLibraryName("GL");
     },
     else => @panic("Unsupported OS")
   }
