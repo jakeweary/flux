@@ -1,7 +1,6 @@
 in vec2 vUV;
 out float fSize;
 out vec3 fColor;
-out float fAge;
 out vec2 fVelocity;
 
 // https://en.wikipedia.org/wiki/Box-Muller_transform
@@ -18,8 +17,6 @@ void main() {
 
   float hue = (fSize - 3.0) / 8.0 - (1.0 / 3.0);
   fColor = soft_hsl(vec3(hue, 2.0, 0.5));
-
-  fAge = 0.0;
 
   fVelocity = vec2(0.0);
   for (int i = 10; length(fVelocity) < 1e-3; i++)

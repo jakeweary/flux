@@ -60,13 +60,12 @@ pub fn run(self: *Self, window: *c.GLFWwindow) !void {
     const dt = 1e-9 * @intToFloat(f32, time_now.since(time_prev));
     const t = 1e-9 * @intToFloat(f32, time_now.since(time_start));
 
-    const steps = 8;
-    var step: usize = steps;
+    var step: usize = cfg.STEPS;
     while (!@subWithOverflow(usize, step, 1, &step)) {
-      const step_dt = dt / steps;
-      const step_t = t - step_dt * @intToFloat(f32, step);
+      const local_dt = dt / cfg.STEPS;
+      const local_t = t - local_dt * @intToFloat(f32, step);
 
-      self.update(step_t, step_dt);
+      self.update(local_t, local_dt);
       self.render(width, height);
       self.feedback(width, height);
     }
@@ -83,15 +82,13 @@ fn seed(self: *Self) void {
 
   self.programs.seed.use();
 
-  c.glDrawBuffers(4, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2, c.GL_COLOR_ATTACHMENT3 });
+  c.glDrawBuffers(3, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2 });
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.particle_size(), 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.particle_color(), 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.particle_age()[0], 0);
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.particle_velocity()[0], 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT3, self.textures.particle_velocity()[0], 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT3, 0, 0);
 
   c.glViewport(0, 0, cfg.TEXTURE_SIZE, cfg.TEXTURE_SIZE);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
@@ -149,7 +146,7 @@ fn render(self: *Self, width: c_int, height: c_int) void {
 
   c.glViewport(0, 0, width, height);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
-  c.glDrawArrays(c.GL_POINTS, 0, cfg.COUNT);
+  c.glDrawArrays(c.GL_POINTS, 0, cfg.PARTICLE_COUNT);
 }
 
 fn feedback(self: *Self, width: c_int, height: c_int) void {
