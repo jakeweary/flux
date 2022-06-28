@@ -11,17 +11,16 @@ pub fn build(b: *std.build.Builder) void {
   exe.addLibPath("deps/lib");
   exe.addIncludeDir("deps/include");
   exe.addCSourceFile("deps/impl.c", &.{"-std=c99"});
+  exe.linkSystemLibraryName("glfw");
   switch (exe.target.getOsTag()) {
     .windows => {
       exe.linkSystemLibraryName("winmm");
       exe.linkSystemLibraryName("gdi32");
       exe.linkSystemLibraryName("opengl32");
-      exe.linkSystemLibraryName("glfw3");
     },
     .linux => {
       exe.linkSystemLibraryName("X11");
       exe.linkSystemLibraryName("GL");
-      exe.linkSystemLibraryName("glfw");
     },
     else => @panic("Unsupported OS")
   }
