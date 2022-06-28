@@ -24,32 +24,32 @@ pub fn deinit(self: *const Self) void {
 
 // ---
 
-pub fn rendered(self: *Self) c.GLuint {
+pub inline fn rendered(self: *Self) c.GLuint {
   return self.textures[0];
 }
 
-pub fn feedback(self: *Self) *[2]c.GLuint {
+pub inline fn feedback(self: *Self) *[2]c.GLuint {
   return self.textures[1..3];
 }
 
 // ---
 
-pub fn particleSize(self: *Self) c.GLuint {
+pub inline fn particleSize(self: *Self) c.GLuint {
   return self.textures[3];
 }
 
-pub fn particleColor(self: *Self) c.GLuint {
+pub inline fn particleColor(self: *Self) c.GLuint {
   return self.textures[4];
 }
 
-pub fn particleAge(self: *Self) *[2]c.GLuint {
+pub inline fn particleAge(self: *Self) *[2]c.GLuint {
   return self.textures[5..7];
 }
 
-pub fn particlePosition(self: *Self) *[2]c.GLuint {
+pub inline fn particlePosition(self: *Self) *[2]c.GLuint {
   return self.textures[7..9];
 }
 
-pub fn particleVelocity(self: *Self) *[2]c.GLuint {
+pub inline fn particleVelocity(self: *Self) *[2]c.GLuint {
   return self.textures[9..11];
 }

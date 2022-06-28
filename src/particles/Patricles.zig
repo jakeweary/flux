@@ -131,8 +131,8 @@ fn render(self: *Self) void {
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
-  c.glEnable(c.GL_BLEND);
   c.glBlendFunc(c.GL_ONE, c.GL_ONE);
+  c.glEnable(c.GL_BLEND);
   defer c.glDisable(c.GL_BLEND);
 
   self.programs.render.use();

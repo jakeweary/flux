@@ -54,7 +54,7 @@ void main() {
   Particle p = Particle(pSize, pAge, pPos, pVel);
 
   const vec2 r = vec2(16.0 / 9.0, 1.0);
-  vec3 xyz = vec3(p.pos * r, 100.0 + 0.05 * uT);
+  vec3 xyz = vec3(p.pos * r, 0.1 * uT);
   float nx = simplex3d(xyz);
   float ny = simplex3d(xyz * vec3(1.0, 1.0, -1.0));
 

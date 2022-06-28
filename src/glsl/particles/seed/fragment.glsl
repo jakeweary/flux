@@ -15,11 +15,11 @@ void main() {
   for (int i = 10; fSize < 1.0; i++)
     fSize = 3.0 + normal(hash23(vec3(1e3 * vUV, i))).x;
 
-  float hue = (fSize - 3.0) / 8.0 - (1.0 / 3.0);
-  fColor = soft_hsl(vec3(hue, 2.0, 0.5));
+  float hue = (2.0 / 3.0) + (fSize - 3.0) / 8.0;
+  fColor = Lab_to_sRGB(LCh_to_Lab(vec3(0.75, 0.125, hue * radians(360.0))));
 
   fVelocity = vec2(0.0);
   for (int i = 10; length(fVelocity) < 1e-3; i++)
     fVelocity = normal(hash23(-vec3(1e3 * vUV, i)));
-  fVelocity /= fSize;
+  fVelocity *= 5.0 / fSize;
 }

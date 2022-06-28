@@ -3,7 +3,9 @@ const gl = @import("../gl/gl.zig");
 const Self = @This();
 
 const aces = @embedFile("../glsl/lib/aces.glsl");
-const hsl = @embedFile("../glsl/lib/hsl.glsl");
+const oklab = @embedFile("../glsl/lib/oklab.glsl");
+const srgb = @embedFile("../glsl/lib/srgb.glsl");
+
 const hashes = @embedFile("../glsl/lib/hashes.glsl");
 const simplex3d = @embedFile("../glsl/lib/simplex3d.glsl");
 
@@ -19,7 +21,7 @@ pub fn init() !Self {
   self.seed = try blk: {
     const vs = @embedFile("../glsl/particles/seed/vertex.glsl");
     const fs = @embedFile("../glsl/particles/seed/fragment.glsl");
-    break :blk gl.Program.init(&.{ vs }, &.{ hashes, hsl, fs });
+    break :blk gl.Program.init(&.{ vs }, &.{ hashes, srgb, oklab, fs });
   };
   errdefer self.seed.deinit();
 
