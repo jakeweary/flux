@@ -15,7 +15,7 @@ void main() {
 
   float age = texelFetch(tAge, uv, 0).x;
   vec3 color = texelFetch(tColor, uv, 0).rgb;
-  vColor = smoothstep(0.0, 0.2, age) * color;
+  vColor = smoothstep(0.0, 0.5, age) * color;
 
   gl_Position = vec4(texelFetch(tPosition, uv, 0).xy, 0.0, 1.0);
 }

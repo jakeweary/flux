@@ -6,5 +6,5 @@ out vec3 fColor;
 void main() {
   vec3 feedback = texture(tFeedback, vUV).rgb;
   vec3 rendered = texture(tRendered, vUV).rgb;
-  fColor = 0.5 * feedback + rendered;
+  fColor = 0.99 * feedback + rendered;
 }

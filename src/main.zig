@@ -33,8 +33,8 @@ pub fn main() !void {
 
   // ---
 
-  var particles = try Patricles.init();
+  var particles = try Patricles.init(window);
   defer particles.deinit();
 
-  try particles.run(window);
+  try particles.run();
 }
