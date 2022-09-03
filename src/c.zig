@@ -5,9 +5,9 @@ pub usingnamespace @cImport({
   // @cInclude("linmath.h");
 
   @cDefine("CIMGUI_DEFINE_ENUMS_AND_STRUCTS", "");
-  @cInclude("cimgui.h");
+  @cInclude("cimgui/cimgui.h");
 
   @cDefine("CIMGUI_USE_GLFW", "");
   @cDefine("CIMGUI_USE_OPENGL3", "");
-  @cInclude("cimgui_impl.h");
+  @cInclude("cimgui/cimgui_impl.h");
 });

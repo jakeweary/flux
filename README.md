@@ -14,9 +14,9 @@ apt install libglfw3 libglfw3-dev
 ```sh
 # get/update imgui
 git clone --recurse-submodules https://github.com/cimgui/cimgui
-rm -rf deps/cimgui && mkdir -p deps/cimgui/imgui
-cp cimgui/{*.{h,cpp},generator/output/cimgui_impl.h} deps/cimgui
-cp cimgui/imgui/{*.{h,cpp},backends/imgui_impl_{glfw,opengl3}.*} deps/cimgui/imgui
+rm -rf deps/include/cimgui && mkdir -p deps/include/cimgui/imgui
+cp cimgui/{*.{h,cpp},generator/output/cimgui_impl.h} deps/include/cimgui
+cp cimgui/imgui/{*.{h,cpp},backends/imgui_impl_{glfw,opengl3}.*} deps/include/cimgui/imgui
 rm -rf cimgui
 ```
 ```

@@ -9,8 +9,6 @@ pub fn build(b: *std.build.Builder) void {
   exe.setBuildMode(mode);
   exe.addLibraryPath("deps/lib");
   exe.addIncludePath("deps/include");
-  exe.addIncludePath("deps/cimgui");
-  exe.addIncludePath("deps/cimgui/imgui");
   exe.addCSourceFile("deps/impl.c", &.{});
   exe.addCSourceFile("deps/impl.cpp", &.{});
   exe.linkSystemLibraryName("glfw");
