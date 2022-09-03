@@ -11,7 +11,6 @@ pub fn build(b: *std.build.Builder) void {
   exe.addIncludePath("deps/include");
   exe.addCSourceFile("deps/impl.c", &.{});
   exe.addCSourceFile("deps/impl.cpp", &.{});
-  exe.linkSystemLibraryName("glfw");
   switch (exe.target.getOsTag()) {
     .windows => {
       exe.linkSystemLibraryName("winmm");
@@ -24,6 +23,7 @@ pub fn build(b: *std.build.Builder) void {
     },
     else => unreachable
   }
+  exe.linkSystemLibraryName("glfw");
   exe.linkLibC();
   exe.linkLibCpp();
   exe.install();
