@@ -4,6 +4,10 @@ uniform sampler2D tPosition;
 uniform sampler2D tVelocity;
 uniform float uT;
 uniform float uDT;
+uniform float uAirDrag;
+uniform float uWindPower;
+uniform float uWindFrequency;
+uniform float uWindTurbulence;
 in vec2 vUV;
 out float fAge;
 out vec2 fPosition;
@@ -54,12 +58,12 @@ void main() {
   Particle p = Particle(pSize, pAge, pPos, pVel);
 
   const vec2 r = vec2(16.0 / 9.0, 1.0);
-  vec3 xyz = vec3(p.pos * r, 0.1 * uT);
+  vec3 xyz = vec3(uWindFrequency * p.pos * r, uWindTurbulence * uT);
   float nx = simplex3d(xyz);
   float ny = simplex3d(xyz * vec3(1.0, 1.0, -1.0));
 
-  Particle_accelerate(p, uDT, 25.0 / r / p.size * vec2(nx, ny));
-  Particle_applyDrag(p, uDT, 0.1);
+  Particle_accelerate(p, uDT, uWindPower / r / p.size * vec2(nx, ny));
+  Particle_applyDrag(p, uDT, uAirDrag);
   Particle_travel(p, uDT);
   Particle_resetIfEscaped(p, vec2(1.0));
 

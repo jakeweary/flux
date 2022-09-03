@@ -49,12 +49,12 @@ fn checkError(self: *const Self, source: []const c.GLchar) !void {
   }
 }
 
-fn joinShaderSources(allocator: std.mem.Allocator, sources: []const []const u8) ![]const u8 {
+fn joinShaderSources(allocator: std.mem.Allocator, sources: []const []const c.GLchar) ![]const c.GLchar {
   var acc = std.ArrayList(u8).init(allocator);
   defer acc.deinit();
 
   const w = acc.writer();
-  try w.print("#version {}{}0 core\n\n", .{ gl.major, gl.minor });
+  try w.print("{s}\n\n", .{ gl.version });
   for (sources) |source| try w.print("{s}\n", .{ source });
 
   return acc.toOwnedSlice();

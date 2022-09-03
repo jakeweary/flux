@@ -5,12 +5,14 @@ pub fn build(b: *std.build.Builder) void {
   const target = b.standardTargetOptions(.{});
 
   const exe = b.addExecutable("bin", "src/main.zig");
-  exe.single_threaded = true;
   exe.setTarget(target);
   exe.setBuildMode(mode);
-  exe.addLibPath("deps/lib");
-  exe.addIncludeDir("deps/include");
-  exe.addCSourceFile("deps/impl.c", &.{"-std=c99"});
+  exe.addLibraryPath("deps/lib");
+  exe.addIncludePath("deps/include");
+  exe.addIncludePath("deps/cimgui");
+  exe.addIncludePath("deps/cimgui/imgui");
+  exe.addCSourceFile("deps/impl.c", &.{});
+  exe.addCSourceFile("deps/impl.cpp", &.{});
   exe.linkSystemLibraryName("glfw");
   switch (exe.target.getOsTag()) {
     .windows => {
@@ -22,14 +24,15 @@ pub fn build(b: *std.build.Builder) void {
       exe.linkSystemLibraryName("X11");
       exe.linkSystemLibraryName("GL");
     },
-    else => @panic("Unsupported OS")
+    else => unreachable
   }
   exe.linkLibC();
+  exe.linkLibCpp();
   exe.install();
 
   const run_cmd = exe.run();
   run_cmd.step.dependOn(b.getInstallStep());
-  run_cmd.addArgs(b.args orelse &.{});
+  run_cmd.addArgs(b.args orelse &[_][]const u8{});
 
   const run_step = b.step("run", "Run the app");
   run_step.dependOn(&run_cmd.step);

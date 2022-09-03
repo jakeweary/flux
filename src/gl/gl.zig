@@ -10,6 +10,7 @@ pub const log = std.log.scoped(.gl);
 
 pub const major = 4;
 pub const minor = 6;
+pub const version = std.fmt.comptimePrint("#version {}{}0 core", .{ major, minor });
 
 pub fn swapTextures(textures: []c.GLuint) void {
   std.mem.swap(c.GLuint, &textures[0], &textures[1]);
