@@ -11,9 +11,9 @@ window: *c.GLFWwindow,
 width: c_int,
 height: c_int,
 
-gui: Gui,
 programs: Programs,
 textures: Textures,
+gui: Gui,
 
 fbo: c.GLuint = undefined,
 vao: c.GLuint = undefined,
@@ -27,9 +27,9 @@ pub fn init(window: *c.GLFWwindow) !Self {
     .window = window,
     .width = width,
     .height = height,
-    .gui = Gui.init(window),
     .programs = try Programs.init(),
     .textures = Textures.init(width, height),
+    .gui = Gui.init(window),
   };
 
   c.glGenFramebuffers(1, &self.fbo);
@@ -48,8 +48,8 @@ pub fn deinit(self: *const Self) void {
   c.glDeleteFramebuffers(1, &self.fbo);
 
   self.gui.deinit();
-  self.programs.deinit();
   self.textures.deinit();
+  self.programs.deinit();
 }
 
 pub fn run(self: *Self) !void {
