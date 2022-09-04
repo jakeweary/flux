@@ -23,9 +23,10 @@ pub fn deinit(self: *const Self) void {
   self.imgui.deinit();
 }
 
-pub fn render(self: *const Self) void {
-  const fps: f64 = self.imgui.io.Framerate;
+pub fn update(self: *const Self) void {
   self.imgui.newFrame();
+
+  const fps: f64 = self.imgui.io.Framerate;
 
   _ = c.igBegin("gui", null, c.ImGuiWindowFlags_None);
   c.igText("%.3f ms/frame (%.1f fps)", 1000.0 / fps, fps);
@@ -38,6 +39,8 @@ pub fn render(self: *const Self) void {
   c.igEnd();
 
   // c.igShowDemoWindow(null);
+}
 
+pub fn render(self: *const Self) void {
   self.imgui.render();
 }

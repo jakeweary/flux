@@ -80,6 +80,7 @@ pub fn run(self: *Self) !void {
     }
 
     self.postprocess();
+    self.gui.update();
     self.gui.render();
   }
 }
