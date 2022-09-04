@@ -16,6 +16,7 @@ pub fn build(b: *std.build.Builder) !void {
   });
 
   const exe = b.addExecutable("bin", "src/main.zig");
+  exe.setMainPkgPath("");
   exe.setTarget(target);
   exe.setBuildMode(mode);
   exe.addLibraryPath("deps/lib");

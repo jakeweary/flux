@@ -60,28 +60,28 @@ pub fn run(self: *Self) !void {
   self.seed();
 
   while (c.glfwWindowShouldClose(self.window) != c.GLFW_TRUE) : (frame += 1) {
-    defer c.glfwPollEvents();
-    defer c.glfwSwapBuffers(self.window);
+    self.gui.update();
 
     const time_now = try std.time.Instant.now();
     defer time_prev = time_now;
 
-    const dt = 1e-9 * @intToFloat(f32, time_now.since(time_prev));
     const t = 1e-9 * @intToFloat(f32, time_now.since(time_start));
+    const dt = 1e-9 * @intToFloat(f32, time_now.since(time_prev));
+    const step_dt = dt / @intToFloat(f32, self.gui.state.steps_per_frame);
 
-    var step: usize = cfg.STEPS;
-    while (!@subWithOverflow(usize, step, 1, &step)) {
-      const local_dt = dt / cfg.STEPS;
-      const local_t = t - local_dt * @intToFloat(f32, step);
-
-      self.update(local_t, local_dt);
+    var step = self.gui.state.steps_per_frame;
+    while (step != 0) : (step -= 1) {
+      const step_t = t - step_dt * @intToFloat(f32, step);
+      self.update(step_t, step_dt);
       self.render();
       self.feedback();
     }
 
     self.postprocess();
-    self.gui.update();
     self.gui.render();
+
+    c.glfwSwapBuffers(self.window);
+    c.glfwPollEvents();
   }
 }
 

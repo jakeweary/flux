@@ -5,27 +5,24 @@ const Self = @This();
 
 ctx: *c.ImGuiContext,
 io: *c.ImGuiIO,
+style: *c.ImGuiStyle,
 
 pub fn init(window: *c.GLFWwindow) Self {
   imgui.log.info("Dear ImGui v{s}", .{c.igGetVersion()});
-
-  const ctx = c.igCreateContext(null);
+  const self = Self{
+    .ctx = c.igCreateContext(null),
+    .io = c.igGetIO(),
+    .style = c.igGetStyle(),
+  };
   _ = c.ImGui_ImplGlfw_InitForOpenGL(window, true);
   _ = c.ImGui_ImplOpenGL3_Init(gl.version);
-  return .{ .ctx = ctx, .io = c.igGetIO() };
+  return self;
 }
 
 pub fn deinit(self: *const Self) void {
   c.ImGui_ImplOpenGL3_Shutdown();
   c.ImGui_ImplGlfw_Shutdown();
   c.igDestroyContext(self.ctx);
-}
-
-pub fn initFonts(self: *const Self) void {
-  var text_pixels: ?*u8 = null;
-  var text_w: c_int = undefined;
-  var text_h: c_int = undefined;
-  c.ImFontAtlas_GetTexDataAsRGBA32(self.io.Fonts, &text_pixels, &text_w, &text_h, null);
 }
 
 pub fn newFrame(_: *const Self) void {
