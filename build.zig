@@ -1,8 +1,19 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
-pub fn build(b: *std.build.Builder) void {
+fn isWSL() !bool {
+  return builtin.os.tag == .linux and blk: {
+    var buf: [1 << 10]u8 = undefined;
+    const os = try std.fs.cwd().readFile("/proc/sys/kernel/osrelease", &buf);
+    break :blk std.mem.containsAtLeast(u8, os, 1, "WSL");
+  };
+}
+
+pub fn build(b: *std.build.Builder) !void {
   const mode = b.standardReleaseOptions();
-  const target = b.standardTargetOptions(.{});
+  const target = b.standardTargetOptions(.{
+    .default_target = if (try isWSL()) .{ .os_tag = .windows } else .{}
+  });
 
   const exe = b.addExecutable("bin", "src/main.zig");
   exe.setTarget(target);
@@ -11,6 +22,9 @@ pub fn build(b: *std.build.Builder) void {
   exe.addIncludePath("deps/include");
   exe.addCSourceFile("deps/impl.c", &.{});
   exe.addCSourceFile("deps/impl.cpp", &.{});
+  exe.linkLibC();
+  exe.linkLibCpp();
+  exe.linkSystemLibraryName("glfw");
   switch (exe.target.getOsTag()) {
     .windows => {
       exe.linkSystemLibraryName("winmm");
@@ -21,11 +35,8 @@ pub fn build(b: *std.build.Builder) void {
       exe.linkSystemLibraryName("X11");
       exe.linkSystemLibraryName("GL");
     },
-    else => unreachable
+    else => @panic("unsupported os"),
   }
-  exe.linkSystemLibraryName("glfw");
-  exe.linkLibC();
-  exe.linkLibCpp();
   exe.install();
 
   const run_cmd = exe.run();
