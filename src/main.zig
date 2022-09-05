@@ -1,37 +1,29 @@
-const c = @import("c.zig");
 const std = @import("std");
+const c = @import("c.zig");
 const gl = @import("gl/gl.zig");
-const Patricles = @import("particles/Patricles.zig");
+const glfw = @import("glfw/glfw.zig");
+const Particles = @import("particles/Particles.zig");
 
 pub const log_level = std.log.Level.info;
 pub const allocator = std.heap.c_allocator;
 
 pub fn main() !void {
-  _ = c.glfwSetErrorCallback(gl.callbacks.onError);
+  std.log.info("Glad v{s}", .{ c.GLAD_GENERATOR_VERSION });
+  std.log.info("GLFW v{s}", .{ c.glfwGetVersionString() });
+  std.log.info("Dear ImGui v{s}", .{ c.igGetVersion() });
 
-  if (c.glfwInit() == c.GLFW_FALSE)
-    return error.GLFW_InitError;
-  defer c.glfwTerminate();
+  try glfw.init(&.{});
+  defer glfw.deinit();
 
-  c.glfwWindowHint(c.GLFW_CONTEXT_VERSION_MAJOR, gl.major);
-  c.glfwWindowHint(c.GLFW_CONTEXT_VERSION_MINOR, gl.minor);
-  c.glfwWindowHint(c.GLFW_OPENGL_PROFILE, c.GLFW_OPENGL_CORE_PROFILE);
-  c.glfwWindowHint(c.GLFW_OPENGL_DEBUG_CONTEXT, c.GLFW_TRUE);
-  const window = c.glfwCreateWindow(960, 540, "", null, null)
-    orelse return error.GLFW_CreateWindowError;
-  defer c.glfwDestroyWindow(window);
+  const window = try glfw.Window.init("gpu experiments", 960, 540, &.{
+    .{ c.GLFW_CONTEXT_VERSION_MAJOR, gl.major },
+    .{ c.GLFW_CONTEXT_VERSION_MINOR, gl.minor },
+    .{ c.GLFW_OPENGL_PROFILE, c.GLFW_OPENGL_CORE_PROFILE },
+    .{ c.GLFW_OPENGL_DEBUG_CONTEXT, c.GLFW_TRUE },
+  });
+  defer window.deinit();
 
-  _ = c.glfwSetWindowSizeCallback(window, gl.callbacks.onWindowSize);
-  _ = c.glfwSetKeyCallback(window, gl.callbacks.onKey);
-  c.glfwMakeContextCurrent(window);
-  c.glfwSwapInterval(1);
-  _ = c.gladLoadGL(c.glfwGetProcAddress);
-
-  gl.debug.enableDebugMessages();
-
-  // ---
-
-  var particles = try Patricles.init(window);
+  var particles = try Particles.init(&window);
   defer particles.deinit();
 
   try particles.run();

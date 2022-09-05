@@ -1,7 +1,6 @@
 const c = @import("../c.zig");
 const std = @import("std");
 
-pub const callbacks = @import("callbacks.zig");
 pub const debug = @import("debug.zig");
 pub const Shader = @import("Shader.zig");
 pub const Program = @import("Program.zig");

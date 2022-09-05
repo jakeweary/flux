@@ -1,17 +1,9 @@
 const c = @import("../c.zig");
 const ImGui = @import("../imgui/ImGui.zig");
+const Particles = @import("Particles.zig");
 const Self = @This();
 
 imgui: ImGui,
-state: struct {
-  air_drag: f32 = 0.1,
-  wind_power: f32 = 15.0,
-  wind_frequency: f32 = 0.75,
-  wind_turbulence: f32 = 0.05,
-  render_feedback: f32 = 0.9,
-  render_opacity: f32 = 0.1,
-  steps_per_frame: c_int = 4,
-} = .{},
 
 pub fn init(window: *c.GLFWwindow) Self {
   const imgui = ImGui.init(window);
@@ -41,10 +33,9 @@ pub fn deinit(self: *const Self) void {
   self.imgui.deinit();
 }
 
-pub fn update(self: *const Self) void {
+pub fn update(self: *const Self, particles: *Particles) void {
   self.imgui.newFrame();
-  self.main();
-  // c.igShowDemoWindow(null);
+  self.menu(particles);
 }
 
 pub fn render(self: *const Self) void {
@@ -53,30 +44,36 @@ pub fn render(self: *const Self) void {
 
 // ---
 
-fn main(self: *const Self) void {
+fn menu(self: *const Self, particles: *Particles) void {
   c.igSetNextWindowPos(.{ .x = 16, .y = 16 }, c.ImGuiCond_FirstUseEver, .{ .x = 0, .y = 0 });
-  _ = c.igBegin("main", null, 0
+  _ = c.igBegin("menu", null, 0
     | c.ImGuiWindowFlags_NoTitleBar
     | c.ImGuiWindowFlags_NoMove
     | c.ImGuiWindowFlags_AlwaysAutoResize);
-  c.igPushItemWidth(100);
+  c.igPushItemWidth(128);
 
   const fr: f64 = self.imgui.io.Framerate;
   c.igText("%.1f fps · %.3f ms/frame", fr, 1000.0 / fr);
 
   if (c.igCollapsingHeader_TreeNodeFlags("settings", 0)) {
     c.igText("simulation");
-    _ = c.igSliderFloat("air drag", &self.state.air_drag, 0.0, 1.0, "%.3f", 0);
-    _ = c.igSliderFloat("wind power", &self.state.wind_power, 0.0, 100.0, "%.3f", 0);
-    _ = c.igSliderFloat("wind frequency", &self.state.wind_frequency, 0.0, 5.0, "%.3f", 0);
-    _ = c.igSliderFloat("wind turbulence", &self.state.wind_turbulence, 0.0, 1.0, "%.3f", 0);
+    _ = c.igSliderFloat("air drag", &particles.cfg.air_drag, 0.0, 1.0, "%.3f", 0);
+    _ = c.igSliderFloat("wind power", &particles.cfg.wind_power, 0.0, 100.0, "%.3f", 0);
+    _ = c.igSliderFloat("wind frequency", &particles.cfg.wind_frequency, 0.0, 5.0, "%.3f", 0);
+    _ = c.igSliderFloat("wind turbulence", &particles.cfg.wind_turbulence, 0.0, 1.0, "%.3f", 0);
 
     c.igText("render");
-    _ = c.igSliderFloat("render feedback", &self.state.render_feedback, 0.0, 1.0, "%.3f", 0);
-    _ = c.igSliderFloat("render opacity", &self.state.render_opacity, 0.0, 1.0, "%.3f", 0);
+    _ = c.igSliderFloat("render feedback", &particles.cfg.render_feedback, 0.0, 1.0, "%.3f", 0);
+    _ = c.igSliderFloat("render opacity", &particles.cfg.render_opacity, 0.0, 1.0, "%.3f", 0);
 
     c.igText("performance");
-    _ = c.igSliderInt("steps per frame", &self.state.steps_per_frame, 1, 32, "%d", 0);
+    _ = c.igSliderInt("steps per frame", &particles.cfg.steps_per_frame, 1, 32, "%d", 0);
+  }
+
+  if (c.igCollapsingHeader_TreeNodeFlags("actions", 0)) {
+    if (c.igButton("toggle fullscreen", .{ .x = 0, .y = 0 })) {
+      particles.window.toggleFullscreen();
+    }
   }
 
   c.igEnd();

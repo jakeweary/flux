@@ -22,7 +22,7 @@ pub fn resize(self: *Self, width: c_int, height: c_int) void {
   c.glDeleteTextures(subset.len, subset);
   c.glCreateTextures(c.GL_TEXTURE_2D, subset.len, subset);
   for (subset) |id|
-    c.glTextureStorage2D(id, 1, c.GL_RGB32F, width, height);
+    c.glTextureStorage2D(id, 1, c.GL_RGB16F, width, height);
 }
 
 // ---

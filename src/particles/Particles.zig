@@ -1,13 +1,14 @@
 const std = @import("std");
 const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
+const glfw = @import("../glfw/glfw.zig");
 const cfg = @import("config.zig");
 const Gui = @import("Gui.zig");
 const Programs = @import("Programs.zig");
 const Textures = @import("Textures.zig");
 const Self = @This();
 
-window: *c.GLFWwindow,
+window: *const glfw.Window,
 width: c_int = 0,
 height: c_int = 0,
 
@@ -18,12 +19,22 @@ gui: Gui,
 fbo: c.GLuint = undefined,
 vao: c.GLuint = undefined,
 
-pub fn init(window: *c.GLFWwindow) !Self {
+cfg: struct {
+  air_drag: f32 = 0.1,
+  wind_power: f32 = 15.0,
+  wind_frequency: f32 = 0.75,
+  wind_turbulence: f32 = 0.05,
+  render_feedback: f32 = 0.9,
+  render_opacity: f32 = 0.1,
+  steps_per_frame: c_int = 4,
+} = .{},
+
+pub fn init(window: *const glfw.Window) !Self {
   var self = Self{
     .window = window,
     .programs = try Programs.init(),
     .textures = Textures.init(),
-    .gui = Gui.init(window),
+    .gui = Gui.init(window.ptr),
   };
 
   c.glGenFramebuffers(1, &self.fbo);
@@ -47,12 +58,12 @@ pub fn deinit(self: *const Self) void {
 }
 
 pub fn resize(self: *Self) void {
-  if (c.glfwGetWindowAttrib(self.window, c.GLFW_ICONIFIED) == c.GLFW_TRUE)
+  if (c.glfwGetWindowAttrib(self.window.ptr, c.GLFW_ICONIFIED) == c.GLFW_TRUE)
     return;
 
   var w: c_int = undefined;
   var h: c_int = undefined;
-  c.glfwGetWindowSize(self.window, &w, &h);
+  c.glfwGetWindowSize(self.window.ptr, &w, &h);
   if (self.width == w and self.height == h)
     return;
 
@@ -68,18 +79,18 @@ pub fn run(self: *Self) !void {
 
   self.seed();
 
-  while (c.glfwWindowShouldClose(self.window) == c.GLFW_FALSE) : (frame += 1) {
+  while (c.glfwWindowShouldClose(self.window.ptr) == c.GLFW_FALSE) : (frame += 1) {
     self.resize();
-    self.gui.update();
+    self.gui.update(self);
 
     const time_now = try std.time.Instant.now();
     defer time_prev = time_now;
 
     const t = 1e-9 * @intToFloat(f32, time_now.since(time_start));
     const dt = 1e-9 * @intToFloat(f32, time_now.since(time_prev));
-    const step_dt = dt / @intToFloat(f32, self.gui.state.steps_per_frame);
+    const step_dt = dt / @intToFloat(f32, self.cfg.steps_per_frame);
 
-    var step = self.gui.state.steps_per_frame;
+    var step = self.cfg.steps_per_frame;
     while (step != 0) : (step -= 1) {
       const step_t = t - step_dt * @intToFloat(f32, step);
       self.update(step_t, step_dt);
@@ -90,7 +101,7 @@ pub fn run(self: *Self) !void {
     self.postprocess();
     self.gui.render();
 
-    c.glfwSwapBuffers(self.window);
+    c.glfwSwapBuffers(self.window.ptr);
     c.glfwPollEvents();
   }
 }
@@ -122,10 +133,10 @@ fn update(self: *Self, t: f32, dt: f32) void {
   self.programs.update.use();
   self.programs.update.bind("uT", t);
   self.programs.update.bind("uDT", dt);
-  self.programs.update.bind("uAirDrag", self.gui.state.air_drag);
-  self.programs.update.bind("uWindPower", self.gui.state.wind_power);
-  self.programs.update.bind("uWindFrequency", self.gui.state.wind_frequency);
-  self.programs.update.bind("uWindTurbulence", self.gui.state.wind_turbulence);
+  self.programs.update.bind("uAirDrag", self.cfg.air_drag);
+  self.programs.update.bind("uWindPower", self.cfg.wind_power);
+  self.programs.update.bind("uWindFrequency", self.cfg.wind_frequency);
+  self.programs.update.bind("uWindTurbulence", self.cfg.wind_turbulence);
   self.programs.update.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
   self.programs.update.bindTexture("tSize", 0, self.textures.particleSize());
   self.programs.update.bindTexture("tAge", 1, self.textures.particleAge()[0]);
@@ -176,7 +187,7 @@ fn feedback(self: *Self) void {
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
   self.programs.feedback.use();
-  self.programs.feedback.bind("uFeedback", self.gui.state.render_feedback);
+  self.programs.feedback.bind("uFeedback", self.cfg.render_feedback);
   self.programs.feedback.bindTexture("tRendered", 0, self.textures.rendered());
   self.programs.feedback.bindTexture("tFeedback", 1, self.textures.feedback()[0]);
 
@@ -196,7 +207,7 @@ fn postprocess(self: *Self) void {
   defer c.glDisable(c.GL_FRAMEBUFFER_SRGB);
 
   self.programs.postprocess.use();
-  self.programs.postprocess.bind("uOpacity", self.gui.state.render_opacity);
+  self.programs.postprocess.bind("uOpacity", self.cfg.render_opacity);
   self.programs.postprocess.bindTexture("tRendered", 0, self.textures.feedback()[0]);
 
   c.glViewport(0, 0, self.width, self.height);

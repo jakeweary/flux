@@ -38,7 +38,7 @@ pub fn debugMessageCallback(
   severity: c.GLenum,
   _: c.GLsizei,
   message: [*c]const c.GLchar,
-  _: ?*const c.GLvoid
+  _: ?*const c.GLvoid,
 ) callconv(.C) void {
   const fmt = "{s} {s} 0x{x}: {s}";
   const args = .{
@@ -64,7 +64,7 @@ pub fn debugMessageCallback(
       else => unreachable
     },
     id,
-    message
+    message,
   };
 
   switch (severity) {

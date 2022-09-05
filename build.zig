@@ -21,8 +21,8 @@ pub fn build(b: *std.build.Builder) !void {
   exe.setBuildMode(mode);
   exe.addLibraryPath("deps/lib");
   exe.addIncludePath("deps/include");
-  exe.addCSourceFile("deps/impl.c", &.{});
-  exe.addCSourceFile("deps/impl.cpp", &.{});
+  exe.addCSourceFile("deps/deps.c", &.{});
+  exe.addCSourceFile("deps/deps.cpp", &.{});
   exe.linkLibC();
   exe.linkLibCpp();
   exe.linkSystemLibraryName("glfw");

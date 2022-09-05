@@ -1,6 +1,6 @@
 const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
-const imgui = @import("./imgui.zig");
+const imgui = @import("imgui.zig");
 const Self = @This();
 
 ctx: *c.ImGuiContext,
@@ -8,7 +8,6 @@ io: *c.ImGuiIO,
 style: *c.ImGuiStyle,
 
 pub fn init(window: *c.GLFWwindow) Self {
-  imgui.log.info("Dear ImGui v{s}", .{c.igGetVersion()});
   const self = Self{
     .ctx = c.igCreateContext(null),
     .io = c.igGetIO(),
