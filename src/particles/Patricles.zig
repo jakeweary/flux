@@ -8,8 +8,8 @@ const Textures = @import("Textures.zig");
 const Self = @This();
 
 window: *c.GLFWwindow,
-width: c_int,
-height: c_int,
+width: c_int = 0,
+height: c_int = 0,
 
 programs: Programs,
 textures: Textures,
@@ -19,16 +19,10 @@ fbo: c.GLuint = undefined,
 vao: c.GLuint = undefined,
 
 pub fn init(window: *c.GLFWwindow) !Self {
-  var width: c_int = undefined;
-  var height: c_int = undefined;
-  c.glfwGetWindowSize(window, &width, &height);
-
   var self = Self{
     .window = window,
-    .width = width,
-    .height = height,
     .programs = try Programs.init(),
-    .textures = Textures.init(width, height),
+    .textures = Textures.init(),
     .gui = Gui.init(window),
   };
 
@@ -52,6 +46,18 @@ pub fn deinit(self: *const Self) void {
   self.programs.deinit();
 }
 
+pub fn resize(self: *Self) void {
+  var w: c_int = undefined;
+  var h: c_int = undefined;
+  c.glfwGetWindowSize(self.window, &w, &h);
+
+  if (self.width != w or self.height != h) {
+    self.width = w;
+    self.height = h;
+    self.textures.resize(w, h);
+  }
+}
+
 pub fn run(self: *Self) !void {
   const time_start = try std.time.Instant.now();
   var time_prev = time_start;
@@ -60,6 +66,7 @@ pub fn run(self: *Self) !void {
   self.seed();
 
   while (c.glfwWindowShouldClose(self.window) != c.GLFW_TRUE) : (frame += 1) {
+    self.resize();
     self.gui.update();
 
     const time_now = try std.time.Instant.now();
@@ -116,6 +123,7 @@ fn update(self: *Self, t: f32, dt: f32) void {
   self.programs.update.bind("uWindPower", self.gui.state.wind_power);
   self.programs.update.bind("uWindFrequency", self.gui.state.wind_frequency);
   self.programs.update.bind("uWindTurbulence", self.gui.state.wind_turbulence);
+  self.programs.update.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
   self.programs.update.bindTexture("tSize", 0, self.textures.particleSize());
   self.programs.update.bindTexture("tAge", 1, self.textures.particleAge()[0]);
   self.programs.update.bindTexture("tPosition", 2, self.textures.particlePosition()[0]);

@@ -5,21 +5,24 @@ const Self = @This();
 
 textures: [11]c.GLuint = undefined,
 
-pub fn init(width: c_int, height: c_int) Self {
+pub fn init() Self {
   var self = Self{};
   c.glCreateTextures(c.GL_TEXTURE_2D, self.textures.len, &self.textures);
-
-  for (self.textures[0..3]) |id|
-    c.glTextureStorage2D(id, 1, c.GL_RGB32F, width, height);
-
   for (self.textures[3..]) |id|
     c.glTextureStorage2D(id, 1, c.GL_RGB32F, cfg.TEXTURE_SIZE, cfg.TEXTURE_SIZE);
-
   return self;
 }
 
 pub fn deinit(self: *const Self) void {
   c.glDeleteTextures(self.textures.len, &self.textures);
+}
+
+pub fn resize(self: *Self, width: c_int, height: c_int) void {
+  var subset = self.textures[0..3];
+  c.glDeleteTextures(subset.len, subset);
+  c.glCreateTextures(c.GL_TEXTURE_2D, subset.len, subset);
+  for (subset) |id|
+    c.glTextureStorage2D(id, 1, c.GL_RGB32F, width, height);
 }
 
 // ---

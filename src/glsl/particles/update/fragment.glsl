@@ -8,6 +8,7 @@ uniform float uAirDrag;
 uniform float uWindPower;
 uniform float uWindFrequency;
 uniform float uWindTurbulence;
+uniform ivec2 uViewport;
 in vec2 vUV;
 out float fAge;
 out vec2 fPosition;
@@ -57,7 +58,7 @@ void main() {
   vec2 pVel = texture(tVelocity, vUV).xy;
   Particle p = Particle(pSize, pAge, pPos, pVel);
 
-  const vec2 r = vec2(16.0 / 9.0, 1.0);
+  const vec2 r = vec2(uViewport) / float(uViewport.y);
   vec3 xyz = vec3(uWindFrequency * p.pos * r, uWindTurbulence * uT);
   float nx = simplex3d(xyz);
   float ny = simplex3d(xyz * vec3(1.0, 1.0, -1.0));
