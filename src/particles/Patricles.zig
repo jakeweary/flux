@@ -47,15 +47,18 @@ pub fn deinit(self: *const Self) void {
 }
 
 pub fn resize(self: *Self) void {
+  if (c.glfwGetWindowAttrib(self.window, c.GLFW_ICONIFIED) == c.GLFW_TRUE)
+    return;
+
   var w: c_int = undefined;
   var h: c_int = undefined;
   c.glfwGetWindowSize(self.window, &w, &h);
+  if (self.width == w and self.height == h)
+    return;
 
-  if (self.width != w or self.height != h) {
-    self.width = w;
-    self.height = h;
-    self.textures.resize(w, h);
-  }
+  self.width = w;
+  self.height = h;
+  self.textures.resize(w, h);
 }
 
 pub fn run(self: *Self) !void {
@@ -65,7 +68,7 @@ pub fn run(self: *Self) !void {
 
   self.seed();
 
-  while (c.glfwWindowShouldClose(self.window) != c.GLFW_TRUE) : (frame += 1) {
+  while (c.glfwWindowShouldClose(self.window) == c.GLFW_FALSE) : (frame += 1) {
     self.resize();
     self.gui.update();
 
