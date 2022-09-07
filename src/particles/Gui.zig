@@ -4,6 +4,7 @@ const Particles = @import("Particles.zig");
 const Self = @This();
 
 imgui: ImGui,
+debug: bool = false,
 
 pub fn init(window: *c.GLFWwindow) Self {
   const imgui = ImGui.init(window);
@@ -12,6 +13,7 @@ pub fn init(window: *c.GLFWwindow) Self {
 
   imgui.style.WindowPadding = .{ .x = 8, .y = 8 };
   imgui.style.FramePadding = .{ .x = 2, .y = 2 };
+  imgui.style.ItemSpacing = .{ .x = 4, .y = 4 };
   imgui.style.WindowBorderSize = 0;
   imgui.style.WindowRounding = 4;
   imgui.style.FrameRounding = 2;
@@ -36,6 +38,8 @@ pub fn deinit(self: *const Self) void {
 pub fn update(self: *const Self, particles: *Particles) void {
   self.imgui.newFrame();
   self.menu(particles);
+  if (self.debug)
+    c.igShowDemoWindow(&self.debug);
 }
 
 pub fn render(self: *const Self) void {
@@ -57,23 +61,28 @@ fn menu(self: *const Self, particles: *Particles) void {
 
   if (c.igCollapsingHeader_TreeNodeFlags("settings", 0)) {
     c.igText("simulation");
+    _ = c.igCheckbox("bounce from walls", &particles.cfg.bounce_from_walls);
     _ = c.igSliderFloat("air drag", &particles.cfg.air_drag, 0.0, 1.0, "%.3f", 0);
     _ = c.igSliderFloat("wind power", &particles.cfg.wind_power, 0.0, 100.0, "%.3f", 0);
     _ = c.igSliderFloat("wind frequency", &particles.cfg.wind_frequency, 0.0, 5.0, "%.3f", 0);
     _ = c.igSliderFloat("wind turbulence", &particles.cfg.wind_turbulence, 0.0, 1.0, "%.3f", 0);
 
-    c.igText("render");
-    _ = c.igSliderFloat("render feedback", &particles.cfg.render_feedback, 0.0, 1.0, "%.3f", 0);
-    _ = c.igSliderFloat("render opacity", &particles.cfg.render_opacity, 0.0, 1.0, "%.3f", 0);
+    c.igText("rendering");
+    _ = c.igSliderFloat("feedback", &particles.cfg.render_feedback, 0.0, 1.0, "%.3f", 0);
+    _ = c.igSliderFloat("opacity", &particles.cfg.render_opacity, 0.0, 1.0, "%.3f", 0);
 
     c.igText("performance");
     _ = c.igSliderInt("steps per frame", &particles.cfg.steps_per_frame, 1, 32, "%d", 0);
-  }
+    _ = c.igSliderInt2("simulation size", &particles.cfg.simulation_size, 1, 2048, "%d", 0);
 
-  if (c.igCollapsingHeader_TreeNodeFlags("actions", 0)) {
-    if (c.igButton("toggle fullscreen", .{ .x = 0, .y = 0 })) {
-      particles.window.toggleFullscreen();
-    }
+    c.igText("misc.");
+    if (c.igButton("defaults", .{ .x = 0, .y = 0 }))
+      particles.defaults();
+    c.igSameLine(0, -1);
+    if (c.igButton("fullscreen", .{ .x = 0, .y = 0 }))
+      particles.window.fullscreen();
+    c.igSameLine(0, -1);
+    _ = c.igCheckbox("debug window", &self.debug);
   }
 
   c.igEnd();

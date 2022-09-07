@@ -11,8 +11,28 @@ pub const major = 4;
 pub const minor = 6;
 pub const version = std.fmt.comptimePrint("#version {}{}0 core", .{ major, minor });
 
-pub fn swapTextures(textures: []c.GLuint) void {
+pub fn swapTextures(textures: *[2]c.GLuint) void {
   std.mem.swap(c.GLuint, &textures[0], &textures[1]);
+}
+
+pub fn resizeTextures(textures: []c.GLuint, width: c.GLint, height: c.GLint) void {
+  var f: c.GLenum = undefined;
+  c.glGetTextureLevelParameteriv(textures[0], 0, c.GL_TEXTURE_INTERNAL_FORMAT, @ptrCast(*c.GLint, &f));
+  c.glDeleteTextures(@intCast(c.GLsizei, textures.len), textures.ptr);
+  c.glCreateTextures(c.GL_TEXTURE_2D, @intCast(c.GLsizei, textures.len), textures.ptr);
+  for (textures) |id|
+    c.glTextureStorage2D(id, 1, f, width, height);
+}
+
+pub fn resizeTexturesIfNeeded(textures: []c.GLuint, width: c.GLint, height: c.GLint) bool {
+  var w: c.GLint = undefined;
+  var h: c.GLint = undefined;
+  c.glGetTextureLevelParameteriv(textures[0], 0, c.GL_TEXTURE_WIDTH, &w);
+  c.glGetTextureLevelParameteriv(textures[0], 0, c.GL_TEXTURE_HEIGHT, &h);
+  const resize = width != w or height != h;
+  if (resize)
+    resizeTextures(textures, width, height);
+  return resize;
 }
 
 pub fn textureClampToEdges() void {

@@ -2,7 +2,6 @@ const std = @import("std");
 const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const glfw = @import("../glfw/glfw.zig");
-const cfg = @import("config.zig");
 const Gui = @import("Gui.zig");
 const Programs = @import("Programs.zig");
 const Textures = @import("Textures.zig");
@@ -19,15 +18,19 @@ gui: Gui,
 fbo: c.GLuint = undefined,
 vao: c.GLuint = undefined,
 
-cfg: struct {
+cfg: @TypeOf(DEFAULTS) = DEFAULTS,
+
+const DEFAULTS: struct {
+  bounce_from_walls: bool = false,
   air_drag: f32 = 0.1,
-  wind_power: f32 = 15.0,
-  wind_frequency: f32 = 0.75,
+  wind_power: f32 = 5.0,
+  wind_frequency: f32 = 0.5,
   wind_turbulence: f32 = 0.05,
   render_feedback: f32 = 0.9,
   render_opacity: f32 = 0.1,
   steps_per_frame: c_int = 4,
-} = .{},
+  simulation_size: [2]c_int = .{ 256, 256 },
+} = .{};
 
 pub fn init(window: *const glfw.Window) !Self {
   var self = Self{
@@ -57,6 +60,10 @@ pub fn deinit(self: *const Self) void {
   self.programs.deinit();
 }
 
+pub fn defaults(self: *Self) void {
+  self.cfg = DEFAULTS;
+}
+
 pub fn resize(self: *Self) void {
   if (c.glfwGetWindowAttrib(self.window.ptr, c.GLFW_ICONIFIED) == c.GLFW_TRUE)
     return;
@@ -69,7 +76,7 @@ pub fn resize(self: *Self) void {
 
   self.width = w;
   self.height = h;
-  self.textures.resize(w, h);
+  gl.resizeTextures(self.textures.rendering(), w, h);
 }
 
 pub fn run(self: *Self) !void {
@@ -77,9 +84,11 @@ pub fn run(self: *Self) !void {
   var time_prev = time_start;
   var frame: usize = 0;
 
-  self.seed();
-
   while (c.glfwWindowShouldClose(self.window.ptr) == c.GLFW_FALSE) : (frame += 1) {
+    const ss = self.cfg.simulation_size;
+    if (gl.resizeTexturesIfNeeded(self.textures.simulation(), ss[0], ss[1]))
+      self.seed();
+
     self.resize();
     self.gui.update(self);
 
@@ -122,7 +131,7 @@ fn seed(self: *Self) void {
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.particleVelocity()[0], 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, 0, 0);
 
-  c.glViewport(0, 0, cfg.TEXTURE_SIZE, cfg.TEXTURE_SIZE);
+  c.glViewport(0, 0, self.cfg.simulation_size[0], self.cfg.simulation_size[1]);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
@@ -133,6 +142,7 @@ fn update(self: *Self, t: f32, dt: f32) void {
   self.programs.update.use();
   self.programs.update.bind("uT", t);
   self.programs.update.bind("uDT", dt);
+  self.programs.update.bind("uBounceFromWalls", self.cfg.bounce_from_walls);
   self.programs.update.bind("uAirDrag", self.cfg.air_drag);
   self.programs.update.bind("uWindPower", self.cfg.wind_power);
   self.programs.update.bind("uWindFrequency", self.cfg.wind_frequency);
@@ -151,7 +161,7 @@ fn update(self: *Self, t: f32, dt: f32) void {
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.particleVelocity()[1], 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, 0, 0);
 
-  c.glViewport(0, 0, cfg.TEXTURE_SIZE, cfg.TEXTURE_SIZE);
+  c.glViewport(0, 0, self.cfg.simulation_size[0], self.cfg.simulation_size[1]);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
   gl.swapTextures(self.textures.particleAge());
@@ -179,7 +189,7 @@ fn render(self: *Self) void {
 
   c.glViewport(0, 0, self.width, self.height);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
-  c.glDrawArrays(c.GL_POINTS, 0, cfg.PARTICLE_COUNT);
+  c.glDrawArrays(c.GL_POINTS, 0, self.cfg.simulation_size[0] * self.cfg.simulation_size[1]);
 }
 
 fn feedback(self: *Self) void {

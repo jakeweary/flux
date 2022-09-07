@@ -39,6 +39,7 @@ pub fn bind(self: *const Self, name: [*:0]const c.GLchar, value: anytype) void {
   switch (@typeInfo(@TypeOf(value))) {
     .ComptimeFloat, .Float => c.glUniform1f(loc, @floatCast(c.GLfloat, value)),
     .ComptimeInt, .Int => c.glUniform1i(loc, @intCast(c.GLint, value)),
+    .Bool => c.glUniform1i(loc, @boolToInt(value)),
     .Pointer => |ptr| {
       const T = switch (ptr.size) {
         .Slice => ptr.child,

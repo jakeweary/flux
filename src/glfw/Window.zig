@@ -33,16 +33,16 @@ pub fn deinit(self: *const Self) void {
   c.glfwTerminate();
 }
 
-pub fn toggleFullscreen(self: *const Self) void {
+pub fn fullscreen(self: *const Self) void {
   if (c.glfwGetWindowMonitor(self.ptr) != null)
     return self.restore();
   self.save();
-  self.fullscreen();
+  self.goFullscreen();
 }
 
 // ---
 
-fn fullscreen(self: *const Self) void {
+fn goFullscreen(self: *const Self) void {
   const monitor = c.glfwGetPrimaryMonitor().?;
   const mode = c.glfwGetVideoMode(monitor);
   c.glfwSetWindowMonitor(self.ptr, monitor, 0, 0, mode.*.width, mode.*.height, 0);

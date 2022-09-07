@@ -7,7 +7,7 @@ out vec3 vColor;
 
 void main() {
   ivec2 ts = textureSize(tSize, 0).xy;
-  ivec2 uv = ivec2(gl_VertexID / ts.x, gl_VertexID % ts.x);
+  ivec2 uv = ivec2(gl_VertexID % ts.x, gl_VertexID / ts.x);
 
   float age = texelFetch(tAge, uv, 0).x;
   float size = texelFetch(tSize, uv, 0).x * smoothstep(0.0, 0.5, age);

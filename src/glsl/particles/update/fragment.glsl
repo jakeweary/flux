@@ -2,6 +2,7 @@ uniform sampler2D tSize;
 uniform sampler2D tAge;
 uniform sampler2D tPosition;
 uniform sampler2D tVelocity;
+uniform bool uBounceFromWalls;
 uniform float uT;
 uniform float uDT;
 uniform float uAirDrag;
@@ -66,7 +67,10 @@ void main() {
   Particle_accelerate(p, uDT, uWindPower / r / p.size * vec2(nx, ny));
   Particle_applyDrag(p, uDT, uAirDrag);
   Particle_travel(p, uDT);
-  Particle_resetIfEscaped(p, vec2(1.0));
+  if (uBounceFromWalls)
+    Particle_bounce(p, vec2(1.0));
+  else
+    Particle_resetIfEscaped(p, vec2(1.0));
 
   fAge = p.age;
   fPosition = p.pos;
