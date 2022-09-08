@@ -14,6 +14,7 @@ pub fn init(window: *c.GLFWwindow) Self {
   imgui.style.WindowPadding = .{ .x = 8, .y = 8 };
   imgui.style.FramePadding = .{ .x = 4, .y = 2 };
   imgui.style.ItemSpacing = .{ .x = 4, .y = 4 };
+  imgui.style.IndentSpacing = 18;
   imgui.style.WindowBorderSize = 0;
   imgui.style.WindowRounding = 4;
   imgui.style.TabRounding = 2;
@@ -64,28 +65,36 @@ fn menu(self: *Self, particles: *Particles) void {
   if (c.igCollapsingHeader_TreeNodeFlags("settings", 0)) {
     c.igPushItemWidth(128);
 
-    c.igText("simulation");
-    _ = c.igSliderFloat("air resistance", &particles.cfg.air_resistance, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("wind power", &particles.cfg.wind_power, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("wind frequency", &particles.cfg.wind_frequency, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("wind turbulence", &particles.cfg.wind_turbulence, 0.0, 1.0, null, 0);
-    _ = c.igCheckbox("walls collision", &particles.cfg.walls_collision);
+    if (c.igTreeNodeEx_Str("simulation", c.ImGuiTreeNodeFlags_DefaultOpen)) {
+      _ = c.igSliderFloat("air resistance", &particles.cfg.air_resistance, 0.0, 1.0, null, 0);
+      _ = c.igSliderFloat("wind power", &particles.cfg.wind_power, 0.0, 1.0, null, 0);
+      _ = c.igSliderFloat("wind frequency", &particles.cfg.wind_frequency, 0.0, 1.0, null, 0);
+      _ = c.igSliderFloat("wind turbulence", &particles.cfg.wind_turbulence, 0.0, 1.0, null, 0);
+      _ = c.igCheckbox("walls collision", &particles.cfg.walls_collision);
+      c.igTreePop();
+    }
 
-    c.igText("rendering");
-    _ = c.igSliderFloat("opacity", &particles.cfg.render_opacity, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("feedback", &particles.cfg.render_feedback, 0.0, 1.0, null, 0);
+    if (c.igTreeNodeEx_Str("rendering", c.ImGuiTreeNodeFlags_DefaultOpen)) {
+      _ = c.igSliderFloat("opacity", &particles.cfg.render_opacity, 0.0, 1.0, null, 0);
+      _ = c.igSliderFloat("feedback", &particles.cfg.render_feedback, 0.0, 1.0, null, 0);
+      c.igTreePop();
+    }
 
-    c.igText("performance");
-    _ = c.igSliderInt("steps per frame", &particles.cfg.steps_per_frame, 1, 32, null, 0);
-    _ = c.igSliderInt2("simulation size", &particles.cfg.simulation_size, 1, 2048, null, 0);
+    if (c.igTreeNodeEx_Str("performance", c.ImGuiTreeNodeFlags_DefaultOpen)) {
+      _ = c.igSliderInt("steps per frame", &particles.cfg.steps_per_frame, 1, 32, null, 0);
+      _ = c.igSliderInt2("simulation size", &particles.cfg.simulation_size, 1, 2048, null, 0);
+      c.igTreePop();
+    }
 
-    c.igText("misc.");
-    if (c.igButton("defaults", .{ .x = 0, .y = 0 }))
-      particles.cfg = .{};
-    c.igSameLine(0, -1);
-    if (c.igButton("fullscreen", .{ .x = 0, .y = 0 }))
-      particles.window.fullscreen();
-    c.igSameLine(0, -1);
-    _ = c.igCheckbox("debug window", &self.debug);
+    if (c.igTreeNodeEx_Str("misc.", c.ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (c.igButton("defaults", .{ .x = 0, .y = 0 }))
+        particles.cfg = .{};
+      c.igSameLine(0, -1);
+      if (c.igButton("fullscreen", .{ .x = 0, .y = 0 }))
+        particles.window.fullscreen();
+      c.igSameLine(0, -1);
+      _ = c.igCheckbox("debug window", &self.debug);
+      c.igTreePop();
+    }
   }
 }
