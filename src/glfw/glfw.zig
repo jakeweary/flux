@@ -19,9 +19,3 @@ pub fn init(hints: []const [2]c_int) !void {
 pub fn deinit() void {
   c.glfwTerminate();
 }
-
-pub fn monitors() []*c.GLFWmonitor {
-  var n: c_int = undefined;
-  const ptr = @ptrCast([*]*c.GLFWmonitor, c.glfwGetMonitors(&n));
-  return ptr[0..@intCast(usize, n)];
-}

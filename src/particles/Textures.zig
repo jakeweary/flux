@@ -6,16 +6,13 @@ textures: [11]c.GLuint = undefined,
 
 pub fn init() Self {
   var self = Self{};
-  c.glCreateTextures(c.GL_TEXTURE_2D, self.textures.len, &self.textures);
-  for (self.rendering()) |id|
-    c.glTextureStorage2D(id, 1, c.GL_RGB16F, 1, 1);
-  for (self.simulation()) |id|
-    c.glTextureStorage2D(id, 1, c.GL_RGB32F, 1, 1);
+  gl.textures.init(self.rendering(), c.GL_RGB16F, 1, 1);
+  gl.textures.init(self.simulation(), c.GL_RGB32F, 1, 1);
   return self;
 }
 
 pub fn deinit(self: *const Self) void {
-  c.glDeleteTextures(self.textures.len, &self.textures);
+  gl.textures.deinit(&self.textures);
 }
 
 // ---

@@ -3,13 +3,15 @@ const c = @import("../c.zig");
 const gl = @import("gl.zig");
 const Self = @This();
 
+const NameAndId = std.meta.Tuple(&.{ [*:0]const c.GLchar, c.GLuint });
+
 id: c.GLuint,
 
 pub fn init(vert: []const []const c.GLchar, frag: []const []const c.GLchar) !Self {
-  const pb = gl.ProgramBuilder.init();
-  try pb.attach(c.GL_VERTEX_SHADER, vert);
-  try pb.attach(c.GL_FRAGMENT_SHADER, frag);
-  return pb.link();
+  const b = gl.ProgramBuilder.init();
+  try b.attach(c.GL_VERTEX_SHADER, vert);
+  try b.attach(c.GL_FRAGMENT_SHADER, frag);
+  return b.link();
 }
 
 pub fn deinit(self: *const Self) void {
@@ -28,9 +30,14 @@ pub fn use(self: *const Self) void {
   c.glUseProgram(self.id);
 }
 
-pub fn bindTexture(self: *const Self, name: [*:0]const c.GLchar, unit: c.GLuint, texture: c.GLuint) void {
-  c.glBindTextureUnit(unit, texture);
+pub fn bindTexture(self: *const Self, name: [*:0]const c.GLchar, unit: c.GLuint, id: c.GLuint) void {
+  c.glBindTextureUnit(unit, id);
   c.glUniform1i(c.glGetUniformLocation(self.id, name), @intCast(c.GLint, unit));
+}
+
+pub fn bindTextures(self: *const Self, pairs: []const NameAndId) void {
+  for (pairs) |pair, i|
+    self.bindTexture(pair[0], @intCast(c.GLuint, i), pair[1]);
 }
 
 // here goes my attempt to cover (almost) all of `glUniform{1|2|3|4}{f|i|ui}[v]`

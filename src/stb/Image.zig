@@ -18,7 +18,7 @@ pub fn fromMemory(bytes: []const u8) !Self {
     return error.STB_LoadImageError;
   };
 
-  return Self{
+  return .{
     .width = @intCast(usize, w),
     .height = @intCast(usize, h),
     .channels = @intCast(usize, n),

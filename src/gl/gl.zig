@@ -2,55 +2,15 @@ const c = @import("../c.zig");
 const std = @import("std");
 
 pub const debug = @import("debug.zig");
+pub const textures = @import("textures.zig");
 pub const Shader = @import("Shader.zig");
 pub const Program = @import("Program.zig");
 pub const ProgramBuilder = @import("ProgramBuilder.zig");
 pub const log = std.log.scoped(.gl);
 
-pub const major = 4;
-pub const minor = 6;
-pub const version = std.fmt.comptimePrint("#version {}{}0 core", .{ major, minor });
-
-pub fn swapTextures(textures: *[2]c.GLuint) void {
-  std.mem.swap(c.GLuint, &textures[0], &textures[1]);
-}
-
-pub fn resizeTextures(textures: []c.GLuint, width: c.GLint, height: c.GLint) void {
-  var f: c.GLenum = undefined;
-  c.glGetTextureLevelParameteriv(textures[0], 0, c.GL_TEXTURE_INTERNAL_FORMAT, @ptrCast(*c.GLint, &f));
-  c.glDeleteTextures(@intCast(c.GLsizei, textures.len), textures.ptr);
-  c.glCreateTextures(c.GL_TEXTURE_2D, @intCast(c.GLsizei, textures.len), textures.ptr);
-  for (textures) |id|
-    c.glTextureStorage2D(id, 1, f, width, height);
-}
-
-pub fn resizeTexturesIfNeeded(textures: []c.GLuint, width: c.GLint, height: c.GLint) bool {
-  var w: c.GLint = undefined;
-  var h: c.GLint = undefined;
-  c.glGetTextureLevelParameteriv(textures[0], 0, c.GL_TEXTURE_WIDTH, &w);
-  c.glGetTextureLevelParameteriv(textures[0], 0, c.GL_TEXTURE_HEIGHT, &h);
-  const resize = width != w or height != h;
-  if (resize)
-    resizeTextures(textures, width, height);
-  return resize;
-}
-
-pub fn textureClampToEdges() void {
-  c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE);
-  c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE);
-}
-
-pub fn textureFilterNearest() void {
-  c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MIN_FILTER, c.GL_NEAREST);
-  c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MAG_FILTER, c.GL_NEAREST);
-}
-
-pub fn textureFilterLinear() void {
-  c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR);
-  c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR);
-}
-
-// ---
+pub const MAJOR = 4;
+pub const MINOR = 6;
+pub const VERSION = std.fmt.comptimePrint("#version {}{}0 core", .{ MAJOR, MINOR });
 
 fn ReturnTypeOf(comptime method: @Type(.EnumLiteral)) type {
   const T = @TypeOf(@field(c, "gl" ++ @tagName(method)));

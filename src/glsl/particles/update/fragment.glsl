@@ -2,10 +2,10 @@ uniform sampler2D tSize;
 uniform sampler2D tAge;
 uniform sampler2D tPosition;
 uniform sampler2D tVelocity;
-uniform bool uBounceFromWalls;
+uniform bool uWallsCollision;
 uniform float uT;
 uniform float uDT;
-uniform float uAirDrag;
+uniform float uAirResistance;
 uniform float uWindPower;
 uniform float uWindFrequency;
 uniform float uWindTurbulence;
@@ -65,9 +65,9 @@ void main() {
   float ny = simplex3d(xyz * vec3(1.0, 1.0, -1.0));
 
   Particle_accelerate(p, uDT, uWindPower / r / p.size * vec2(nx, ny));
-  Particle_applyDrag(p, uDT, uAirDrag);
+  Particle_applyDrag(p, uDT, uAirResistance);
   Particle_travel(p, uDT);
-  if (uBounceFromWalls)
+  if (uWallsCollision)
     Particle_bounce(p, vec2(1.0));
   else
     Particle_resetIfEscaped(p, vec2(1.0));

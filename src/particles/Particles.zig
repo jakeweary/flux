@@ -2,37 +2,25 @@ const std = @import("std");
 const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const glfw = @import("../glfw/glfw.zig");
+const Config = @import("Config.zig");
 const Gui = @import("Gui.zig");
 const Programs = @import("Programs.zig");
 const Textures = @import("Textures.zig");
 const Self = @This();
 
-window: *const glfw.Window,
+window: *glfw.Window,
 width: c_int = 0,
 height: c_int = 0,
 
+cfg: Config = .{},
+gui: Gui,
 programs: Programs,
 textures: Textures,
-gui: Gui,
 
 fbo: c.GLuint = undefined,
 vao: c.GLuint = undefined,
 
-cfg: @TypeOf(DEFAULTS) = DEFAULTS,
-
-const DEFAULTS: struct {
-  bounce_from_walls: bool = false,
-  air_drag: f32 = 0.1,
-  wind_power: f32 = 5.0,
-  wind_frequency: f32 = 0.5,
-  wind_turbulence: f32 = 0.05,
-  render_feedback: f32 = 0.9,
-  render_opacity: f32 = 0.1,
-  steps_per_frame: c_int = 4,
-  simulation_size: [2]c_int = .{ 256, 256 },
-} = .{};
-
-pub fn init(window: *const glfw.Window) !Self {
+pub fn init(window: *glfw.Window) !Self {
   var self = Self{
     .window = window,
     .programs = try Programs.init(),
@@ -60,10 +48,6 @@ pub fn deinit(self: *const Self) void {
   self.programs.deinit();
 }
 
-pub fn defaults(self: *Self) void {
-  self.cfg = DEFAULTS;
-}
-
 pub fn resize(self: *Self) void {
   if (c.glfwGetWindowAttrib(self.window.ptr, c.GLFW_ICONIFIED) == c.GLFW_TRUE)
     return;
@@ -76,7 +60,7 @@ pub fn resize(self: *Self) void {
 
   self.width = w;
   self.height = h;
-  gl.resizeTextures(self.textures.rendering(), w, h);
+  gl.textures.resize(self.textures.rendering(), w, h);
 }
 
 pub fn run(self: *Self) !void {
@@ -86,7 +70,7 @@ pub fn run(self: *Self) !void {
 
   while (c.glfwWindowShouldClose(self.window.ptr) == c.GLFW_FALSE) : (frame += 1) {
     const ss = self.cfg.simulation_size;
-    if (gl.resizeTexturesIfNeeded(self.textures.simulation(), ss[0], ss[1]))
+    if (gl.textures.resizeIfNeeded(self.textures.simulation(), ss[0], ss[1]))
       self.seed();
 
     self.resize();
@@ -142,16 +126,18 @@ fn update(self: *Self, t: f32, dt: f32) void {
   self.programs.update.use();
   self.programs.update.bind("uT", t);
   self.programs.update.bind("uDT", dt);
-  self.programs.update.bind("uBounceFromWalls", self.cfg.bounce_from_walls);
-  self.programs.update.bind("uAirDrag", self.cfg.air_drag);
-  self.programs.update.bind("uWindPower", self.cfg.wind_power);
-  self.programs.update.bind("uWindFrequency", self.cfg.wind_frequency);
+  self.programs.update.bind("uWallsCollision", self.cfg.walls_collision);
+  self.programs.update.bind("uAirResistance", logarithmic(5, 1 - self.cfg.air_resistance));
+  self.programs.update.bind("uWindPower", self.cfg.wind_power * 100);
+  self.programs.update.bind("uWindFrequency", self.cfg.wind_frequency * 5);
   self.programs.update.bind("uWindTurbulence", self.cfg.wind_turbulence);
   self.programs.update.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
-  self.programs.update.bindTexture("tSize", 0, self.textures.particleSize());
-  self.programs.update.bindTexture("tAge", 1, self.textures.particleAge()[0]);
-  self.programs.update.bindTexture("tPosition", 2, self.textures.particlePosition()[0]);
-  self.programs.update.bindTexture("tVelocity", 3, self.textures.particleVelocity()[0]);
+  self.programs.update.bindTextures(&.{
+    .{ "tSize", self.textures.particleSize() },
+    .{ "tAge", self.textures.particleAge()[0] },
+    .{ "tPosition", self.textures.particlePosition()[0] },
+    .{ "tVelocity", self.textures.particleVelocity()[0] },
+  });
 
   c.glDrawBuffers(3, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2 });
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.particleAge()[1], 0);
@@ -164,9 +150,9 @@ fn update(self: *Self, t: f32, dt: f32) void {
   c.glViewport(0, 0, self.cfg.simulation_size[0], self.cfg.simulation_size[1]);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
-  gl.swapTextures(self.textures.particleAge());
-  gl.swapTextures(self.textures.particlePosition());
-  gl.swapTextures(self.textures.particleVelocity());
+  gl.textures.swap(self.textures.particleAge());
+  gl.textures.swap(self.textures.particlePosition());
+  gl.textures.swap(self.textures.particleVelocity());
 }
 
 fn render(self: *Self) void {
@@ -178,10 +164,12 @@ fn render(self: *Self) void {
   defer c.glDisable(c.GL_BLEND);
 
   self.programs.render.use();
-  self.programs.render.bindTexture("tSize", 0, self.textures.particleSize());
-  self.programs.render.bindTexture("tColor", 1, self.textures.particleColor());
-  self.programs.render.bindTexture("tAge", 2, self.textures.particleAge()[0]);
-  self.programs.render.bindTexture("tPosition", 3, self.textures.particlePosition()[0]);
+  self.programs.render.bindTextures(&.{
+    .{ "tSize", self.textures.particleSize() },
+    .{ "tColor", self.textures.particleColor() },
+    .{ "tAge", self.textures.particleAge()[0] },
+    .{ "tPosition", self.textures.particlePosition()[0] },
+  });
 
   c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.rendered(), 0);
@@ -197,9 +185,11 @@ fn feedback(self: *Self) void {
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
   self.programs.feedback.use();
-  self.programs.feedback.bind("uFeedback", self.cfg.render_feedback);
-  self.programs.feedback.bindTexture("tRendered", 0, self.textures.rendered());
-  self.programs.feedback.bindTexture("tFeedback", 1, self.textures.feedback()[0]);
+  self.programs.feedback.bind("uFeedback", 1 - logarithmic(5, 1 - self.cfg.render_feedback));
+  self.programs.feedback.bindTextures(&.{
+    .{ "tRendered", self.textures.rendered() },
+    .{ "tFeedback", self.textures.feedback()[0] },
+  });
 
   c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.feedback()[1], 0);
@@ -209,7 +199,7 @@ fn feedback(self: *Self) void {
   c.glClear(c.GL_COLOR_BUFFER_BIT);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
-  gl.swapTextures(self.textures.feedback());
+  gl.textures.swap(self.textures.feedback());
 }
 
 fn postprocess(self: *Self) void {
@@ -218,9 +208,17 @@ fn postprocess(self: *Self) void {
 
   self.programs.postprocess.use();
   self.programs.postprocess.bind("uOpacity", self.cfg.render_opacity);
-  self.programs.postprocess.bindTexture("tRendered", 0, self.textures.feedback()[0]);
+  self.programs.postprocess.bindTextures(&.{
+    .{ "tRendered", self.textures.feedback()[0] },
+  });
 
   c.glViewport(0, 0, self.width, self.height);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
+}
+
+// ---
+
+inline fn logarithmic(amp: f32, t: f32) f32 {
+  return (@exp(t * amp) - 1) / (@exp(amp) - 1);
 }

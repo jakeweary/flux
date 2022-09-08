@@ -37,19 +37,19 @@ pub fn fullscreen(self: *Self) void {
     return c.glfwSetWindowMonitor(self.ptr, null, self.r.x, self.r.y, self.r.w, self.r.h, 0);
 
   self.r = Rect.ofWindow(self.ptr);
-  const monitor = self.findMonitorWithMaxOverlap();
+  const monitor = self.getMonitorWithMaxOverlap();
   const mode: *c.GLFWvidmode = c.glfwGetVideoMode(monitor);
   c.glfwSetWindowMonitor(self.ptr, monitor, 0, 0, mode.width, mode.height, 0);
 }
 
-fn findMonitorWithMaxOverlap(self: *const Self) *c.GLFWmonitor {
+fn getMonitorWithMaxOverlap(self: *const Self) *c.GLFWmonitor {
   var best: struct {
     overlap: c_int = 0,
     monitor: ?*c.GLFWmonitor = null
   } = .{};
 
   const wr = Rect.ofWindow(self.ptr);
-  for (glfw.monitors()) |m| {
+  for (getMonitors()) |m| {
     const mr = Rect.ofMonitor(m);
     const o = mr.overlap(&wr);
     if (o > best.overlap)
@@ -57,4 +57,10 @@ fn findMonitorWithMaxOverlap(self: *const Self) *c.GLFWmonitor {
   }
 
   return best.monitor.?;
+}
+
+fn getMonitors() []*c.GLFWmonitor {
+  var n: c_int = undefined;
+  const ptr = @ptrCast([*]*c.GLFWmonitor, c.glfwGetMonitors(&n));
+  return ptr[0..@intCast(usize, n)];
 }

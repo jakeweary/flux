@@ -14,7 +14,7 @@ pub fn init(window: *c.GLFWwindow) Self {
     .style = c.igGetStyle(),
   };
   _ = c.ImGui_ImplGlfw_InitForOpenGL(window, true);
-  _ = c.ImGui_ImplOpenGL3_Init(gl.version);
+  _ = c.ImGui_ImplOpenGL3_Init(gl.VERSION);
   return self;
 }
 

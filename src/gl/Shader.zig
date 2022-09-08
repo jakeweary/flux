@@ -2,7 +2,6 @@ const c = @import("../c.zig");
 const gl = @import("gl.zig");
 const root = @import("root");
 const std = @import("std");
-const util = @import("../util.zig");
 const Self = @This();
 
 id: c.GLuint,
@@ -26,13 +25,24 @@ pub fn deinit(self: *const Self) void {
   c.glDeleteShader(self.id);
 }
 
+fn joinShaderSources(allocator: std.mem.Allocator, sources: []const []const c.GLchar) ![]const c.GLchar {
+  var acc = std.ArrayList(u8).init(allocator);
+  defer acc.deinit();
+
+  const w = acc.writer();
+  try w.print("{s}\n\n", .{ gl.VERSION });
+  for (sources) |source| try w.print("{s}\n", .{ source });
+
+  return acc.toOwnedSlice();
+}
+
 fn checkError(self: *const Self, source: []const c.GLchar) !void {
   var status: c.GLint = undefined;
   c.glGetShaderiv(self.id, c.GL_COMPILE_STATUS, &status);
 
   if (status == c.GL_FALSE) {
     var line_n: usize = 1;
-    var lines = util.splitLines(source);
+    var lines = splitLines(source);
     while (lines.next()) |line| : (line_n += 1)
       gl.log.debug("{:0>4}: {s}", .{ line_n, line });
 
@@ -49,13 +59,10 @@ fn checkError(self: *const Self, source: []const c.GLchar) !void {
   }
 }
 
-fn joinShaderSources(allocator: std.mem.Allocator, sources: []const []const c.GLchar) ![]const c.GLchar {
-  var acc = std.ArrayList(u8).init(allocator);
-  defer acc.deinit();
-
-  const w = acc.writer();
-  try w.print("{s}\n\n", .{ gl.version });
-  for (sources) |source| try w.print("{s}\n", .{ source });
-
-  return acc.toOwnedSlice();
+fn splitLines(input: []const u8) std.mem.SplitIterator(u8) {
+  const len = switch (input[input.len - 1]) {
+    '\n' => input.len - 1,
+    else => input.len
+  };
+  return std.mem.split(u8, input[0..len], "\n");
 }

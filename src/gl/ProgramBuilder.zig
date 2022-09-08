@@ -7,7 +7,7 @@ const Self = @This();
 id: c.GLuint,
 
 pub fn init() Self {
-  return Self{ .id = c.glCreateProgram() };
+  return .{ .id = c.glCreateProgram() };
 }
 
 pub fn attach(self: *const Self, kind: c.GLenum, sources: []const []const c.GLchar) !void {
