@@ -1,15 +1,14 @@
 const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const glfw = @import("glfw.zig");
+const fns = @import("fns.zig");
+const Rect = @import("Rect.zig");
 const Self = @This();
 
 ptr: *c.GLFWwindow,
-x: c_int = undefined,
-y: c_int = undefined,
-w: c_int = undefined,
-h: c_int = undefined,
+r: Rect = undefined,
 
-pub fn init(title: [*:0]const u8, w: c_int, h: c_int, hints: []const [2]c_int) !Self {
+pub fn init(w: c_int, h: c_int, title: [*:0]const u8, hints: []const [2]c_int) !Self {
   for (hints) |*hint|
     c.glfwWindowHint(hint[0], hint[1]);
 
@@ -23,7 +22,7 @@ pub fn init(title: [*:0]const u8, w: c_int, h: c_int, hints: []const [2]c_int) !
 
   gl.debug.enableDebugMessages();
 
-  _ = c.glfwSetKeyCallback(ptr, glfw.onKey);
+  _ = c.glfwSetKeyCallback(ptr, fns.onKey);
 
   return .{ .ptr = ptr };
 }
@@ -33,26 +32,29 @@ pub fn deinit(self: *const Self) void {
   c.glfwTerminate();
 }
 
-pub fn fullscreen(self: *const Self) void {
+pub fn fullscreen(self: *Self) void {
   if (c.glfwGetWindowMonitor(self.ptr) != null)
-    return self.restore();
-  self.save();
-  self.goFullscreen();
+    return c.glfwSetWindowMonitor(self.ptr, null, self.r.x, self.r.y, self.r.w, self.r.h, 0);
+
+  self.r = Rect.ofWindow(self.ptr);
+  const monitor = self.findMonitorWithMaxOverlap();
+  const mode: *c.GLFWvidmode = c.glfwGetVideoMode(monitor);
+  c.glfwSetWindowMonitor(self.ptr, monitor, 0, 0, mode.width, mode.height, 0);
 }
 
-// ---
+fn findMonitorWithMaxOverlap(self: *const Self) *c.GLFWmonitor {
+  var best: struct {
+    overlap: c_int = 0,
+    monitor: ?*c.GLFWmonitor = null
+  } = .{};
 
-fn goFullscreen(self: *const Self) void {
-  const monitor = c.glfwGetPrimaryMonitor().?;
-  const mode = c.glfwGetVideoMode(monitor);
-  c.glfwSetWindowMonitor(self.ptr, monitor, 0, 0, mode.*.width, mode.*.height, 0);
-}
+  const wr = Rect.ofWindow(self.ptr);
+  for (glfw.monitors()) |m| {
+    const mr = Rect.ofMonitor(m);
+    const o = mr.overlap(&wr);
+    if (o > best.overlap)
+      best = .{ .overlap = o, .monitor = m };
+  }
 
-fn save(self: *const Self) void {
-  c.glfwGetWindowPos(self.ptr, &self.x, &self.y);
-  c.glfwGetWindowSize(self.ptr, &self.w, &self.h);
-}
-
-fn restore(self: *const Self) void {
-  c.glfwSetWindowMonitor(self.ptr, null, self.x, self.y, self.w, self.h, 0);
+  return best.monitor.?;
 }

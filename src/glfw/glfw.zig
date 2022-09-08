@@ -1,13 +1,13 @@
 const c = @import("../c.zig");
 const std = @import("std");
+const fns = @import("fns.zig");
 
+pub const Rect = @import("Rect.zig");
 pub const Window = @import("Window.zig");
 pub const log = std.log.scoped(.glfw);
 
-// ---
-
 pub fn init(hints: []const [2]c_int) !void {
-  _ = c.glfwSetErrorCallback(onError);
+  _ = c.glfwSetErrorCallback(fns.onError);
 
   for (hints) |*hint|
     c.glfwInitHint(hint[0], hint[1]);
@@ -20,13 +20,8 @@ pub fn deinit() void {
   c.glfwTerminate();
 }
 
-// ---
-
-pub fn onError(code: c_int, desc: [*c]const u8) callconv(.C) void {
-  log.err("{s} ({})", .{ desc, code });
-}
-
-pub fn onKey(window: ?*c.GLFWwindow, key: c_int, _: c_int, action: c_int, _: c_int) callconv(.C) void {
-  if (action == c.GLFW_PRESS and key == c.GLFW_KEY_ESCAPE)
-    c.glfwSetWindowShouldClose(window, c.GLFW_TRUE);
+pub fn monitors() []*c.GLFWmonitor {
+  var n: c_int = undefined;
+  const ptr = @ptrCast([*]*c.GLFWmonitor, c.glfwGetMonitors(&n));
+  return ptr[0..@intCast(usize, n)];
 }
