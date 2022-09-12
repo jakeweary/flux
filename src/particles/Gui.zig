@@ -1,4 +1,5 @@
 const c = @import("../c.zig");
+const std = @import("std");
 const ImGui = @import("../imgui/ImGui.zig");
 const Particles = @import("Particles.zig");
 const Self = @This();
@@ -22,13 +23,7 @@ pub fn init(window: *c.GLFWwindow) Self {
   imgui.style.GrabRounding = 1;
   imgui.style.GrabMinSize = 4;
 
-  const cfg = c.ImFontConfig_ImFontConfig();
-  defer c.ImFontConfig_destroy(cfg);
-  cfg.*.FontDataOwnedByAtlas = false;
-
-  const ttf = @embedFile("../../deps/assets/fonts/ProggyTiny.ttf");
-  _ = c.ImFontAtlas_AddFontFromMemoryTTF(imgui.io.Fonts, ttf, ttf.len, 10, cfg, null);
-  _ = c.ImFontAtlas_Build(imgui.io.Fonts);
+  imgui.loadCustomPixelFont();
 
   return .{ .imgui = imgui };
 }
@@ -44,6 +39,7 @@ pub fn render(self: *const Self) void {
 pub fn update(self: *Self, particles: *Particles) void {
   self.imgui.newFrame();
   self.menu(particles);
+
   if (self.debug)
     c.igShowDemoWindow(&self.debug);
 }
@@ -51,21 +47,27 @@ pub fn update(self: *Self, particles: *Particles) void {
 // ---
 
 fn menu(self: *Self, particles: *Particles) void {
-  c.igSetNextWindowPos(.{ .x = 16, .y = 16 }, c.ImGuiCond_FirstUseEver, .{ .x = 0, .y = 0 });
-
-  _ = c.igBegin("menu", null, 0
+  const window_flags = 0
     | c.ImGuiWindowFlags_AlwaysAutoResize
     | c.ImGuiWindowFlags_NoDecoration
-    | c.ImGuiWindowFlags_NoMove);
+    | c.ImGuiWindowFlags_NoMove;
+
+  const tree_node_flags = 0
+    | c.ImGuiTreeNodeFlags_DefaultOpen
+    | c.ImGuiTreeNodeFlags_SpanAvailWidth;
+
+  c.igSetNextWindowPos(.{ .x = 16, .y = 16 }, c.ImGuiCond_FirstUseEver, .{ .x = 0, .y = 0 });
+  _ = c.igBegin("menu", null, window_flags);
   defer c.igEnd();
 
   const fr: f64 = self.imgui.io.Framerate;
-  c.igText("%.1f fps · %.3f ms/frame", fr, 1000.0 / fr);
+  c.igText("%.1f fps - %.3f ms/frame", fr, 1000.0 / fr);
 
   if (c.igCollapsingHeader_TreeNodeFlags("settings", 0)) {
     c.igPushItemWidth(128);
+    defer c.igPopItemWidth();
 
-    if (c.igTreeNodeEx_Str("simulation", c.ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (c.igTreeNodeEx_Str("simulation", tree_node_flags)) {
       _ = c.igSliderFloat("air resistance", &particles.cfg.air_resistance, 0.0, 1.0, null, 0);
       _ = c.igSliderFloat("wind power", &particles.cfg.wind_power, 0.0, 1.0, null, 0);
       _ = c.igSliderFloat("wind frequency", &particles.cfg.wind_frequency, 0.0, 1.0, null, 0);
@@ -74,19 +76,19 @@ fn menu(self: *Self, particles: *Particles) void {
       c.igTreePop();
     }
 
-    if (c.igTreeNodeEx_Str("rendering", c.ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (c.igTreeNodeEx_Str("rendering", tree_node_flags)) {
       _ = c.igSliderFloat("opacity", &particles.cfg.render_opacity, 0.0, 1.0, null, 0);
       _ = c.igSliderFloat("feedback", &particles.cfg.render_feedback, 0.0, 1.0, null, 0);
       c.igTreePop();
     }
 
-    if (c.igTreeNodeEx_Str("performance", c.ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (c.igTreeNodeEx_Str("performance", tree_node_flags)) {
       _ = c.igSliderInt("steps per frame", &particles.cfg.steps_per_frame, 1, 32, null, 0);
       _ = c.igSliderInt2("simulation size", &particles.cfg.simulation_size, 1, 2048, null, 0);
       c.igTreePop();
     }
 
-    if (c.igTreeNodeEx_Str("misc.", c.ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (c.igTreeNodeEx_Str("misc.", tree_node_flags)) {
       if (c.igButton("defaults", .{ .x = 0, .y = 0 }))
         particles.cfg = .{};
       c.igSameLine(0, -1);
