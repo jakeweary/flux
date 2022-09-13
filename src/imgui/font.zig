@@ -1,39 +1,36 @@
 const std = @import("std");
 
+pub const Mask = std.meta.Int(.unsigned, WIDTH * HEIGHT);
+pub const Char = packed struct { mask: Mask = 0, code: u16 };
+
 pub const WIDTH = 5;
 pub const HEIGHT = 9;
-
-// each char is stored in a single u64 as:
-// 000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbcccccccccccccccc
-// b - 45 bit bitmask
-// c - 16 bit charcode
-pub const CHARS = blk: {
+pub const CHARS = parse: {
   @setEvalBranchQuota(1_000_000);
 
-  var chars: [0x100]u64 = undefined;
+  var chars: [0x100]Char = undefined;
   var chars_idx: usize = 0;
 
   var cursor: usize = 0;
   while (std.mem.indexOfScalarPos(u8, CHARMAP, cursor, 'u')) |i| : (cursor = i + 1) {
     const hex = CHARMAP[i..][1..5];
     const code = std.fmt.parseUnsigned(u16, hex, 16) catch unreachable;
-    var mask: u64 = 0;
+    var char = Char{ .code = code };
 
-    var y: u6 = 1;
-    while (y <= HEIGHT) : (y += 1) {
+    var y: u6 = 0;
+    while (y < HEIGHT) : (y += 1) {
       var x: u6 = 0;
       while (x < WIDTH) : (x += 1) {
-        if (CHARMAP[i + x + y * CHARMAP_WIDTH] != ' ')
-          mask |= 1 << WIDTH * HEIGHT;
-        mask >>= 1;
+        if (CHARMAP[CHARMAP_WIDTH * (y + 1) + x + i] != ' ')
+          char.mask |= 1 << WIDTH * y + x;
       }
     }
 
-    chars[chars_idx] = mask << 16 | code;
+    chars[chars_idx] = char;
     chars_idx += 1;
   }
 
-  break :blk chars[0..chars_idx].*;
+  break :parse chars[0..chars_idx].*;
 };
 
 const CHARMAP_WIDTH = 1 + std.mem.indexOfScalar(u8, CHARMAP, '\n').?;

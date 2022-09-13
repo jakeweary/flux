@@ -57,15 +57,15 @@ pub fn loadCustomPixelFont(self: *const Self) void {
   const font_ptr = c.ImFontAtlas_AddFontDefault(self.io.Fonts, cfg);
 
   var ids: [font.CHARS.len]c_int = undefined;
-  for (font.CHARS) |mask, i|
+  for (font.CHARS) |char, i|
     ids[i] = c.ImFontAtlas_AddCustomRectFontGlyph(self.io.Fonts, font_ptr,
-      @truncate(u16, mask), font.WIDTH, font.HEIGHT, font.WIDTH + 1, .{ .x = 0, .y = 2 });
+      char.code, font.WIDTH, font.HEIGHT, font.WIDTH + 1, .{ .x = 0, .y = 2 });
 
   var pixels: [*c]u8 = undefined;
   var pixels_width: c_int = undefined;
   c.ImFontAtlas_GetTexDataAsAlpha8(self.io.Fonts, &pixels, &pixels_width, null, null);
 
-  for (font.CHARS) |mask, i| {
+  for (font.CHARS) |char, i| {
     const rect: *c.ImFontAtlasCustomRect = c
       .ImFontAtlas_GetCustomRectByIndex(self.io.Fonts, ids[i]);
 
@@ -77,8 +77,8 @@ pub fn loadCustomPixelFont(self: *const Self) void {
     while (y < rect.Height) : (y += 1) {
       var x: u6 = 0;
       while (x < rect.Width) : (x += 1) {
-        const shift = font.WIDTH * y + x + 16;
-        row[x] = if (mask >> shift & 1 != 0) 0xff else 0;
+        const shift = font.WIDTH * y + x;
+        row[x] = if (char.mask >> shift & 1 != 0) 0xff else 0;
       }
       row += next_row;
     }
