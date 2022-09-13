@@ -1,26 +1,131 @@
-pub const FONT = [_]u64{
-  0x150441104415_00, 0x000000000000_20, 0x042108401000_21, 0x0a5000000000_22, //   !"
-  0x0a57d5f52800_23, 0x0ead1c5ab800_24, 0x11888888c400_25, 0x0c9411593400_26, // #$%&
-  0x042000000000_27, 0x064210842106_28, 0x0c108421084c_29, 0x04abaa400000_2a, // '()*
-  0x000109f21000_2b, 0x000000021100_2c, 0x000001f00000_2d, 0x000000021000_2e, // +,-.
-  0x021088422108_2f, 0x000108021000_3a, 0x000108021100_3b, 0x000088820800_3c, // /:;<
-  0x00003e0f8000_3d, 0x000208222000_3e, 0x0e8844401000_3f, 0x0e8deb5ade0e_40, // =>?@
-  0x0e421084210e_5b, 0x084208420842_5c, 0x0e108421084e_5d, 0x045440000000_5e, // [\]^
-  0x00000000001f_5f, 0x082000000000_60, 0x064211042106_7b, 0x042108421084_7c, // _`{|
-  0x0c108411084c_7d, 0x08a880000000_7e, 0x0e8ceb98b800_30, 0x1c2108427c00_31, // }~01
-  0x0e885d087c00_32, 0x0e884c18b800_33, 0x118c7e108400_34, 0x1f843c10f800_35, // 2345
-  0x0e843d18b800_36, 0x1f0888421000_37, 0x0e8c5d18b800_38, 0x0e8c5e10b800_39, // 6789
-  0x0e8c7f18c400_41, 0x000382f8bc00_61, 0x1e8c7d18f800_42, 0x1087a318f800_62, // AaBb
-  0x0e8c2108b800_43, 0x0003e1083c00_63, 0x1e8c6318f800_44, 0x010be318bc00_64, // CcDd
-  0x1f843d087c00_45, 0x0003a3f83c00_65, 0x1f843d084000_46, 0x074790842000_66, // EeFf
-  0x0e8c2718b800_47, 0x0003e318bc2e_67, 0x118c7f18c400_48, 0x1087a318c400_68, // GgHh
-  0x1f2108427c00_49, 0x040708427c00_69, 0x07084218b800_4a, 0x0101c210862e_6a, // IiJj
-  0x118cb928c400_4b, 0x108463e8c400_6b, 0x108421087c00_4c, 0x182108427c00_6c, // KkLl
-  0x11dd6318c400_4d, 0x0007ab5ad400_6d, 0x11cd6718c400_4e, 0x0007a318c400_6e, // MmNn
-  0x0e8c6318b800_4f, 0x0003a318b800_6f, 0x1e8c7d084000_50, 0x0007a318fa10_70, // OoPp
-  0x0e8c63193400_51, 0x0003e318bc21_71, 0x1e8c7d18c400_52, 0x0007a3084000_72, // QqRr
-  0x0e8c1c18b800_53, 0x0003e0e0f800_73, 0x1f2108421000_54, 0x084790841c00_74, // SsTt
-  0x118c6318b800_55, 0x00046318bc00_75, 0x118c63151000_56, 0x000463151000_76, // UuVv
-  0x118c635dc400_57, 0x00056b5abc00_77, 0x118a88a8c400_58, 0x000462e8c400_78, // WwXx
-  0x118a88421000_59, 0x00046318bc2e_79, 0x1f0888887c00_5a, 0x0007c4447c00_7a, // YyZz
+const std = @import("std");
+
+pub const WIDTH = 5;
+pub const HEIGHT = 9;
+
+// each char is stored in a single u64 as:
+// 000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbcccccccccccccccc
+// b - 45 bit bitmask
+// c - 16 bit charcode
+pub const CHARS = blk: {
+  @setEvalBranchQuota(1_000_000);
+
+  var chars: [0x100]u64 = undefined;
+  var chars_idx: usize = 0;
+
+  var cursor: usize = 0;
+  while (std.mem.indexOfScalarPos(u8, CHARMAP, cursor, 'u')) |i| : (cursor = i + 1) {
+    const hex = CHARMAP[i..][1..5];
+    const code = std.fmt.parseUnsigned(u16, hex, 16) catch unreachable;
+    var mask: u64 = 0;
+
+    var y: u6 = 1;
+    while (y <= HEIGHT) : (y += 1) {
+      var x: u6 = 0;
+      while (x < WIDTH) : (x += 1) {
+        if (CHARMAP[i + x + y * CHARMAP_WIDTH] != ' ')
+          mask |= 1 << WIDTH * HEIGHT;
+        mask >>= 1;
+      }
+    }
+
+    chars[chars_idx] = mask << 16 | code;
+    chars_idx += 1;
+  }
+
+  break :blk chars[0..chars_idx].*;
 };
+
+const CHARMAP_WIDTH = 1 + std.mem.indexOfScalar(u8, CHARMAP, '\n').?;
+const CHARMAP =
+  \\| ufffd u0020 u0021 u0022 u0023 u0024 u0025 u0026 u0027 u0028 u0029 u002a |
+  \\| o o o         o    o o   o o   ooo  o   o  oo     o     oo   oo     o   |
+  \\|               o    o o   o o  o o o o   o o  o    o    o       o  o o o |
+  \\| o   o         o         ooooo o o      o  o            o       o   ooo  |
+  \\|               o          o o   ooo    o    o           o       o  o o o |
+  \\| o   o         o         ooooo   o o  o    o o o        o       o    o   |
+  \\|                          o o  o o o o   o o  o         o       o        |
+  \\| o   o         o          o o   ooo  o   o  oo o        o       o        |
+  \\|                                                        o       o        |
+  \\| o o o                                                   oo   oo         |
+  \\| u002b u002c u002d u002e u002f u0030 u0031 u0032 u0033 u0034 u0035 u0036 |
+  \\|                            o   ooo    o    ooo   ooo     o  ooooo  ooo  |
+  \\|                            o  o   o  oo   o   o o   o   oo  o     o     |
+  \\|   o                        o  o  oo o o       o     o  o o  o     o     |
+  \\|   o                       o   o o o   o      o    oo  o  o  oooo  oooo  |
+  \\| ooooo       ooooo         o   oo  o   o     o       o ooooo     o o   o |
+  \\|   o     o           o     o   o   o   o    o    o   o    o      o o   o |
+  \\|   o     o           o    o     ooo  ooooo ooooo  ooo     o  oooo   ooo  |
+  \\|        o                 o                                              |
+  \\|                          o                                              |
+  \\| u0037 u0038 u0039 u003a u003b u003c u003d u003e u003f u0040 u0041 u0042 |
+  \\| ooooo  ooo   ooo                                 ooo   ooo   ooo  oooo  |
+  \\|     o o   o o   o                               o   o o   o o   o o   o |
+  \\|    o  o   o o   o   o     o      o         o        o o ooo o   o o   o |
+  \\|   o    ooo   oooo   o     o     o   ooooo   o      o  o o o ooooo oooo  |
+  \\|   o   o   o     o              o             o    o   o o o o   o o   o |
+  \\|   o   o   o     o   o     o     o   ooooo   o         o o o o   o o   o |
+  \\|   o    ooo   ooo    o     o      o         o      o   o ooo o   o oooo  |
+  \\|                          o                            o                 |
+  \\|                                                        ooo              |
+  \\| u0043 u0044 u0045 u0046 u0047 u0048 u0049 u004a u004b u004c u004d u004e |
+  \\|  ooo  oooo  ooooo ooooo  ooo  o   o ooooo   ooo o   o o     o   o o   o |
+  \\| o   o o   o o     o     o   o o   o   o       o o   o o     oo oo oo  o |
+  \\| o     o   o o     o     o     o   o   o       o o  o  o     o o o o o o |
+  \\| o     o   o oooo  oooo  o  oo ooooo   o       o ooo   o     o   o o  oo |
+  \\| o     o   o o     o     o   o o   o   o       o o  o  o     o   o o   o |
+  \\| o   o o   o o     o     o   o o   o   o   o   o o   o o     o   o o   o |
+  \\|  ooo  oooo  ooooo o      ooo  o   o ooooo  ooo  o   o ooooo o   o o   o |
+  \\|                                                                         |
+  \\|                                                                         |
+  \\| u004f u0050 u0051 u0052 u0053 u0054 u0055 u0056 u0057 u0058 u0059 u005a |
+  \\|  ooo  oooo   ooo  oooo   ooo  ooooo o   o o   o o   o o   o o   o ooooo |
+  \\| o   o o   o o   o o   o o   o   o   o   o o   o o   o o   o o   o     o |
+  \\| o   o o   o o   o o   o o       o   o   o o   o o   o  o o   o o     o  |
+  \\| o   o oooo  o   o oooo   ooo    o   o   o o   o o   o   o     o     o   |
+  \\| o   o o     o   o o   o     o   o   o   o o   o o o o  o o    o    o    |
+  \\| o   o o     o  o  o   o o   o   o   o   o  o o  oo oo o   o   o   o     |
+  \\|  ooo  o      oo o o   o  ooo    o    ooo    o   o   o o   o   o   ooooo |
+  \\|                                                                         |
+  \\|                                                                         |
+  \\| u005b u005c u005d u005e u005f u0060 u0061 u0062 u0063 u0064 u0065 u0066 |
+  \\|  ooo   o     ooo    o          o          o               o         ooo |
+  \\|  o     o       o   o o          o         o               o        o    |
+  \\|  o     o       o  o   o              ooo  oooo   oooo  oooo  ooo  oooo  |
+  \\|  o      o      o                        o o   o o     o   o o   o  o    |
+  \\|  o      o      o                     oooo o   o o     o   o ooooo  o    |
+  \\|  o      o      o                    o   o o   o o     o   o o      o    |
+  \\|  o       o     o                     oooo oooo   oooo  oooo  oooo  o    |
+  \\|  o       o     o                                                        |
+  \\|  ooo     o   ooo        ooooo                                           |
+  \\| u0067 u0068 u0069 u006a u006b u006c u006d u006e u006f u0070 u0071 u0072 |
+  \\|       o       o       o o     oo                                        |
+  \\|       o                 o       o                                       |
+  \\|  oooo oooo  ooo     ooo o   o   o   oooo  oooo   ooo  oooo   oooo o oo  |
+  \\| o   o o   o   o       o o   o   o   o o o o   o o   o o   o o   o oo  o |
+  \\| o   o o   o   o       o oooo    o   o o o o   o o   o o   o o   o o     |
+  \\| o   o o   o   o       o o   o   o   o o o o   o o   o o   o o   o o     |
+  \\|  oooo o   o ooooo     o o   o ooooo o o o o   o  ooo  oooo   oooo o     |
+  \\|     o             o   o                               o         o       |
+  \\|  ooo               ooo                                o         o       |
+  \\| u0073 u0074 u0075 u0076 u0077 u0078 u0079 u007a u007b u007c u007d u007e |
+  \\|        o                                          oo    o    oo    o    |
+  \\|        o                                         o      o      o  o o o |
+  \\|  oooo oooo  o   o o   o o o o o   o o   o ooooo  o      o      o     o  |
+  \\| o      o    o   o o   o o o o o   o o   o    o   o      o      o        |
+  \\|  ooo   o    o   o o   o o o o  ooo  o   o   o   o       o       o       |
+  \\|     o  o    o   o  o o  o o o o   o o   o  o     o      o      o        |
+  \\| oooo    ooo  oooo   o    oooo o   o  oooo ooooo  o      o      o        |
+  \\|                                         o        o      o      o        |
+  \\|                                      ooo          oo    o    oo         |
+  \\| u0085 u00b7 u2022                                                       |
+  \\|                                                                         |
+  \\|                                                                         |
+  \\|                                                                         |
+  \\|              ooo                                                        |
+  \\|         o    ooo                                                        |
+  \\| o o o        ooo                                                        |
+  \\| o o o                                                                   |
+  \\|                                                                         |
+  \\|                                                                         |
+;

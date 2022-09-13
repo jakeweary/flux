@@ -1,7 +1,7 @@
 const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const imgui = @import("imgui.zig");
-const FONT = @import("font.zig").FONT;
+const font = @import("font.zig");
 const Self = @This();
 
 ctx: *c.ImGuiContext,
@@ -37,25 +37,22 @@ pub fn render(_: *const Self) void {
 }
 
 pub fn loadCustomPixelFont(self: *const Self) void {
-  const size = .{ .x = 5, .y = 9 };
-  const offset = .{ .x = 0, .y = 1 };
-
   const cfg: *c.ImFontConfig = c.ImFontConfig_ImFontConfig();
   defer c.ImFontConfig_destroy(cfg);
-  cfg.SizePixels = 2 * offset.y + size.y;
+  cfg.SizePixels = 2 + font.HEIGHT;
 
-  const font = c.ImFontAtlas_AddFontDefault(self.io.Fonts, cfg);
+  const font_ptr = c.ImFontAtlas_AddFontDefault(self.io.Fonts, cfg);
 
-  var ids: [FONT.len]c_int = undefined;
-  for (FONT) |bits, i|
-    ids[i] = c.ImFontAtlas_AddCustomRectFontGlyph(self.io.Fonts,
-      font, @truncate(u8, bits), size.x, size.y, size.x + 1, offset);
+  var ids: [font.CHARS.len]c_int = undefined;
+  for (font.CHARS) |mask, i|
+    ids[i] = c.ImFontAtlas_AddCustomRectFontGlyph(self.io.Fonts, font_ptr,
+      @truncate(u16, mask), font.WIDTH, font.HEIGHT, font.WIDTH + 1, .{ .x = 0, .y = 2 });
 
   var pixels: [*c]u8 = undefined;
   var pixels_width: c_int = undefined;
   c.ImFontAtlas_GetTexDataAsAlpha8(self.io.Fonts, &pixels, &pixels_width, null, null);
 
-  for (FONT) |bits, i| {
+  for (font.CHARS) |mask, i| {
     const rect: *c.ImFontAtlasCustomRect = c
       .ImFontAtlas_GetCustomRectByIndex(self.io.Fonts, ids[i]);
 
@@ -67,8 +64,8 @@ pub fn loadCustomPixelFont(self: *const Self) void {
     while (y < rect.Height) : (y += 1) {
       var x: u6 = 0;
       while (x < rect.Width) : (x += 1) {
-        const shift = 7 + size.x * size.y - size.x * y - x;
-        row[x] = if (bits >> shift & 1 != 0) 0xff else 0;
+        const shift = font.WIDTH * y + x + 16;
+        row[x] = if (mask >> shift & 1 != 0) 0xff else 0;
       }
       row += next_row;
     }

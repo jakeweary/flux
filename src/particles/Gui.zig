@@ -61,7 +61,7 @@ fn menu(self: *Self, particles: *Particles) void {
   defer c.igEnd();
 
   const fr: f64 = self.imgui.io.Framerate;
-  c.igText("%.1f fps - %.3f ms/frame", fr, 1000.0 / fr);
+  c.igText("%.1f fps · %.3f ms/frame", fr, 1000.0 / fr);
 
   if (c.igCollapsingHeader_TreeNodeFlags("settings", 0)) {
     c.igPushItemWidth(128);
