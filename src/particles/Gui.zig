@@ -65,6 +65,7 @@ fn menu(self: *Self, particles: *Particles) void {
     if (c.igTreeNodeEx_Str("rendering", tree_node_flags)) {
       _ = c.igSliderFloat("feedback ratio", &particles.cfg.feedback_ratio, 0.0, 1.0, null, 0);
       _ = c.igSliderFloat("brightness", &particles.cfg.brightness, 0.0, 2.0, null, 0);
+      _ = c.igCheckbox("aces tonemapping", &particles.cfg.aces_tonemapping);
       c.igTreePop();
     }
 

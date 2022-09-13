@@ -208,6 +208,7 @@ fn postprocess(self: *Self) void {
 
   self.programs.postprocess.use();
   self.programs.postprocess.bind("uBrightness", self.cfg.brightness);
+  self.programs.postprocess.bind("uAcesTonemapping", self.cfg.aces_tonemapping);
   self.programs.postprocess.bindTextures(&.{
     .{ "tRendered", self.textures.feedback()[0] },
   });
