@@ -36,6 +36,19 @@ pub fn render(_: *const Self) void {
   c.ImGui_ImplOpenGL3_RenderDrawData(c.igGetDrawData());
 }
 
+pub fn loadCustomStyle(self: *const Self) void {
+  self.style.WindowPadding = .{ .x = 8, .y = 8 };
+  self.style.FramePadding = .{ .x = 4, .y = 2 };
+  self.style.ItemSpacing = .{ .x = 4, .y = 4 };
+  self.style.IndentSpacing = 18;
+  self.style.WindowBorderSize = 0;
+  self.style.WindowRounding = 4;
+  self.style.TabRounding = 2;
+  self.style.FrameRounding = 2;
+  self.style.GrabRounding = 1;
+  self.style.GrabMinSize = 4;
+}
+
 pub fn loadCustomPixelFont(self: *const Self) void {
   const cfg: *c.ImFontConfig = c.ImFontConfig_ImFontConfig();
   defer c.ImFontConfig_destroy(cfg);

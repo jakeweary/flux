@@ -9,22 +9,9 @@ debug: bool = false,
 
 pub fn init(window: *c.GLFWwindow) Self {
   const imgui = ImGui.init(window);
-
   imgui.io.IniFilename = null;
-
-  imgui.style.WindowPadding = .{ .x = 8, .y = 8 };
-  imgui.style.FramePadding = .{ .x = 4, .y = 2 };
-  imgui.style.ItemSpacing = .{ .x = 4, .y = 4 };
-  imgui.style.IndentSpacing = 18;
-  imgui.style.WindowBorderSize = 0;
-  imgui.style.WindowRounding = 4;
-  imgui.style.TabRounding = 2;
-  imgui.style.FrameRounding = 2;
-  imgui.style.GrabRounding = 1;
-  imgui.style.GrabMinSize = 4;
-
+  imgui.loadCustomStyle();
   imgui.loadCustomPixelFont();
-
   return .{ .imgui = imgui };
 }
 
@@ -65,7 +52,6 @@ fn menu(self: *Self, particles: *Particles) void {
 
   if (c.igCollapsingHeader_TreeNodeFlags("settings", 0)) {
     c.igPushItemWidth(128);
-    defer c.igPopItemWidth();
 
     if (c.igTreeNodeEx_Str("simulation", tree_node_flags)) {
       _ = c.igSliderFloat("air resistance", &particles.cfg.air_resistance, 0.0, 1.0, null, 0);
@@ -77,14 +63,26 @@ fn menu(self: *Self, particles: *Particles) void {
     }
 
     if (c.igTreeNodeEx_Str("rendering", tree_node_flags)) {
-      _ = c.igSliderFloat("opacity", &particles.cfg.render_opacity, 0.0, 1.0, null, 0);
-      _ = c.igSliderFloat("feedback", &particles.cfg.render_feedback, 0.0, 1.0, null, 0);
+      _ = c.igSliderFloat("feedback ratio", &particles.cfg.feedback_ratio, 0.0, 1.0, null, 0);
+      _ = c.igSliderFloat("brightness", &particles.cfg.brightness, 0.0, 2.0, null, 0);
       c.igTreePop();
     }
 
     if (c.igTreeNodeEx_Str("performance", tree_node_flags)) {
       _ = c.igSliderInt("steps per frame", &particles.cfg.steps_per_frame, 1, 32, null, 0);
       _ = c.igSliderInt2("simulation size", &particles.cfg.simulation_size, 1, 2048, null, 0);
+      if (c.igBeginTable("table", 3, c.ImGuiTableFlags_SizingStretchSame, .{ .x = 0, .y = 0 }, 0)) {
+        const per_step = particles.cfg.simulation_size[0] * particles.cfg.simulation_size[1];
+        const per_frame = per_step * particles.cfg.steps_per_frame;
+        const per_second = @intToFloat(f64, per_frame) * fr;
+        _ = c.igTableNextColumn(); c.igText("upd/step");
+        _ = c.igTableNextColumn(); c.igText("upd/frame");
+        _ = c.igTableNextColumn(); c.igText("upd/second");
+        _ = c.igTableNextColumn(); c.igText("%d", per_step);
+        _ = c.igTableNextColumn(); c.igText("%d", per_frame);
+        _ = c.igTableNextColumn(); c.igText("%.0f", per_second);
+        c.igEndTable();
+      }
       c.igTreePop();
     }
 

@@ -185,7 +185,7 @@ fn feedback(self: *Self) void {
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
   self.programs.feedback.use();
-  self.programs.feedback.bind("uFeedback", 1 - logarithmic(5, 1 - self.cfg.render_feedback));
+  self.programs.feedback.bind("uRatio", 1 - logarithmic(5, 1 - self.cfg.feedback_ratio));
   self.programs.feedback.bindTextures(&.{
     .{ "tRendered", self.textures.rendered() },
     .{ "tFeedback", self.textures.feedback()[0] },
@@ -207,7 +207,7 @@ fn postprocess(self: *Self) void {
   defer c.glDisable(c.GL_FRAMEBUFFER_SRGB);
 
   self.programs.postprocess.use();
-  self.programs.postprocess.bind("uOpacity", self.cfg.render_opacity);
+  self.programs.postprocess.bind("uBrightness", self.cfg.brightness);
   self.programs.postprocess.bindTextures(&.{
     .{ "tRendered", self.textures.feedback()[0] },
   });

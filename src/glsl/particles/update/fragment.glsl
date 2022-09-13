@@ -60,7 +60,7 @@ void main() {
   Particle p = Particle(pSize, pAge, pPos, pVel);
 
   const vec2 r = vec2(uViewport) / float(uViewport.y);
-  vec3 xyz = vec3(uWindFrequency * p.pos * r, uWindTurbulence * uT);
+  vec3 xyz = vec3(uWindFrequency * p.pos * r, uWindTurbulence * uT + 5.0);
   float nx = simplex3d(xyz);
   float ny = simplex3d(xyz * vec3(1.0, 1.0, -1.0));
 
