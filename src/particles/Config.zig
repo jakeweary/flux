@@ -1,6 +1,7 @@
+time_scale: f32 = 1.0,
+space_scale: f32 = 0.5,
 air_resistance: f32 = 0.65,
 wind_power: f32 = 0.25,
-wind_frequency: f32 = 0.25,
 wind_turbulence: f32 = 0.05,
 walls_collision: bool = false,
 

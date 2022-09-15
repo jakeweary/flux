@@ -5,6 +5,7 @@ uniform sampler2D tVelocity;
 uniform bool uWallsCollision;
 uniform float uT;
 uniform float uDT;
+uniform float uSpaceScale;
 uniform float uAirResistance;
 uniform float uWindPower;
 uniform float uWindFrequency;
@@ -60,11 +61,11 @@ void main() {
   Particle p = Particle(pSize, pAge, pPos, pVel);
 
   const vec2 r = vec2(uViewport) / float(uViewport.y);
-  vec3 xyz = vec3(uWindFrequency * p.pos * r, uWindTurbulence * uT + 5.0);
+  vec3 xyz = vec3(1.0 / uSpaceScale * p.pos * r, uWindTurbulence * uT + 5.0);
   float nx = simplex3d(xyz);
   float ny = simplex3d(xyz * vec3(1.0, 1.0, -1.0));
 
-  Particle_accelerate(p, uDT, uWindPower / r / p.size * vec2(nx, ny));
+  Particle_accelerate(p, uDT, uSpaceScale * uWindPower / r / p.size * vec2(nx, ny));
   Particle_applyDrag(p, uDT, uAirResistance);
   Particle_travel(p, uDT);
   if (uWallsCollision)

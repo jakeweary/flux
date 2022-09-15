@@ -64,11 +64,10 @@ pub fn resize(self: *Self) void {
 }
 
 pub fn run(self: *Self) !void {
-  const time_start = try std.time.Instant.now();
-  var time_prev = time_start;
-  var frame: usize = 0;
+  var timer = try std.time.Timer.start();
+  var t: f32 = 0;
 
-  while (c.glfwWindowShouldClose(self.window.ptr) == c.GLFW_FALSE) : (frame += 1) {
+  while (c.glfwWindowShouldClose(self.window.ptr) == c.GLFW_FALSE) {
     const ss = self.cfg.simulation_size;
     if (gl.textures.resizeIfNeeded(self.textures.simulation(), ss[0], ss[1]))
       self.seed();
@@ -76,12 +75,9 @@ pub fn run(self: *Self) !void {
     self.resize();
     self.gui.update(self);
 
-    const time_now = try std.time.Instant.now();
-    defer time_prev = time_now;
-
-    const t = 1e-9 * @intToFloat(f32, time_now.since(time_start));
-    const dt = 1e-9 * @intToFloat(f32, time_now.since(time_prev));
+    const dt = 1e-9 * self.cfg.time_scale * @intToFloat(f32, timer.lap());
     const step_dt = dt / @intToFloat(f32, self.cfg.steps_per_frame);
+    t += dt;
 
     var step = self.cfg.steps_per_frame;
     while (step != 0) : (step -= 1) {
@@ -126,11 +122,11 @@ fn update(self: *Self, t: f32, dt: f32) void {
   self.programs.update.use();
   self.programs.update.bind("uT", t);
   self.programs.update.bind("uDT", dt);
-  self.programs.update.bind("uWallsCollision", self.cfg.walls_collision);
+  self.programs.update.bind("uSpaceScale", self.cfg.space_scale * 2);
   self.programs.update.bind("uAirResistance", logarithmic(5, 1 - self.cfg.air_resistance));
   self.programs.update.bind("uWindPower", self.cfg.wind_power * 100);
-  self.programs.update.bind("uWindFrequency", self.cfg.wind_frequency * 5);
   self.programs.update.bind("uWindTurbulence", self.cfg.wind_turbulence);
+  self.programs.update.bind("uWallsCollision", self.cfg.walls_collision);
   self.programs.update.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
   self.programs.update.bindTextures(&.{
     .{ "tSize", self.textures.particleSize() },
