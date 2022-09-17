@@ -62,8 +62,14 @@ fn menu(self: *Self, particles: *Particles) void {
   }
 
   if (c.igTreeNodeEx_Str("Rendering", tree_node_flags)) {
-    _ = c.igSliderFloat("Feedback ratio", &particles.cfg.feedback_ratio, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("Brightness", &particles.cfg.brightness, 0.0, 2.0, null, 0);
+    _ = c.igSliderFloat("Feedback loop", &particles.cfg.feedback_loop, 0.0, 1.0, null, 0);
+    _ = c.igCheckbox("Render as lines", &particles.cfg.render_as_lines);
+    _ = c.igCheckbox("Dynamic line brightness", &particles.cfg.dynamic_line_brightness);
+    c.igTreePop();
+  }
+
+  if (c.igTreeNodeEx_Str("Post-processing", tree_node_flags)) {
+    _ = c.igSliderFloat("Brightness", &particles.cfg.brightness, 0.0, 5.0, null, 0);
     _ = c.igCheckbox("ACES filmic tone mapping", &particles.cfg.aces_tonemapping);
     c.igTreePop();
   }

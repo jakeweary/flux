@@ -82,8 +82,8 @@ pub fn run(self: *Self) !void {
     var step = self.cfg.steps_per_frame;
     while (step != 0) : (step -= 1) {
       const step_t = t - step_dt * @intToFloat(f32, step);
-      self.update(step_t, step_dt);
-      self.render();
+      self.update(step_dt, step_t);
+      self.render(step_dt);
       self.feedback();
     }
 
@@ -115,7 +115,7 @@ fn seed(self: *Self) void {
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
-fn update(self: *Self, t: f32, dt: f32) void {
+fn update(self: *Self, dt: f32, t: f32) void {
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
@@ -151,7 +151,7 @@ fn update(self: *Self, t: f32, dt: f32) void {
   gl.textures.swap(self.textures.particleVelocity());
 }
 
-fn render(self: *Self) void {
+fn render(self: *Self, dt: f32) void {
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
@@ -160,11 +160,16 @@ fn render(self: *Self) void {
   defer c.glDisable(c.GL_BLEND);
 
   self.programs.render.use();
+  self.programs.render.bind("uDT", dt);
+  self.programs.render.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
+  self.programs.render.bind("uRenderAsLines", self.cfg.render_as_lines);
+  self.programs.render.bind("uDynamicLineBrightness", self.cfg.dynamic_line_brightness);
   self.programs.render.bindTextures(&.{
     .{ "tSize", self.textures.particleSize() },
     .{ "tColor", self.textures.particleColor() },
     .{ "tAge", self.textures.particleAge()[0] },
     .{ "tPosition", self.textures.particlePosition()[0] },
+    .{ "tVelocity", self.textures.particleVelocity()[0] },
   });
 
   c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
@@ -173,7 +178,10 @@ fn render(self: *Self) void {
 
   c.glViewport(0, 0, self.width, self.height);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
-  c.glDrawArrays(c.GL_POINTS, 0, self.cfg.simulation_size[0] * self.cfg.simulation_size[1]);
+  if (self.cfg.render_as_lines)
+    c.glDrawArrays(c.GL_LINES, 0, self.cfg.simulation_size[0] * self.cfg.simulation_size[1] * 2)
+  else
+    c.glDrawArrays(c.GL_POINTS, 0, self.cfg.simulation_size[0] * self.cfg.simulation_size[1]);
 }
 
 fn feedback(self: *Self) void {
@@ -181,7 +189,7 @@ fn feedback(self: *Self) void {
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
   self.programs.feedback.use();
-  self.programs.feedback.bind("uRatio", 1 - logarithmic(5, 1 - self.cfg.feedback_ratio));
+  self.programs.feedback.bind("uRatio", 1 - logarithmic(5, 1 - self.cfg.feedback_loop));
   self.programs.feedback.bindTextures(&.{
     .{ "tRendered", self.textures.rendered() },
     .{ "tFeedback", self.textures.feedback()[0] },

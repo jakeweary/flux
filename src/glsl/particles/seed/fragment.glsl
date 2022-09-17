@@ -11,15 +11,15 @@ vec2 normal(vec2 random) {
 }
 
 void main() {
-  fSize = 0.0;
-  for (int i = 10; fSize < 1.0; i++)
-    fSize = 2.0 + 0.5 * normal(hash23(vec3(1e3 * vUV, i))).x;
+  fSize = 1.0;
 
-  float hue = (2.0 / 3.0) + (fSize - 2.0) / 4.0;
-  fColor = Lab_to_sRGB(LCh_to_Lab(vec3(0.75, 0.125, hue * radians(360.0))));
+  // the hashing has to be exactly the same
+  // as in `Particle_reset` from the `update` shader
+  float hue = hash22(1e3 * vUV).x * radians(360.0);
+  fColor = Lab_to_sRGB(LCh_to_Lab(vec3(0.75, 0.125, hue)));
 
   fVelocity = vec2(0.0);
   for (int i = 10; length(fVelocity) < 1e-3; i++)
     fVelocity = normal(hash23(-vec3(1e3 * vUV, i)));
-  fVelocity *= 3.0 / fSize;
+  fVelocity /= fSize;
 }
