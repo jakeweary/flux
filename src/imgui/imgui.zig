@@ -2,8 +2,8 @@ const c = @import("../c.zig");
 const pixelfont = @import("../pixelfont.zig");
 const std = @import("std");
 
-pub const Context = @import("Context.zig");
 pub const log = std.log.scoped(.imgui);
+pub const Context = @import("Context.zig");
 
 // ---
 

@@ -1,12 +1,14 @@
 const c = @import("../c.zig");
 const std = @import("std");
 
+pub const log = std.log.scoped(.gl);
 pub const debug = @import("debug.zig");
 pub const textures = @import("textures.zig");
 pub const Shader = @import("Shader.zig");
-pub const Program = @import("Program.zig");
 pub const ProgramBuilder = @import("ProgramBuilder.zig");
-pub const log = std.log.scoped(.gl);
+pub usingnamespace @import("Program.zig");
+
+pub const String = std.ArrayList(c.GLchar);
 
 pub const MAJOR = 4;
 pub const MINOR = 6;

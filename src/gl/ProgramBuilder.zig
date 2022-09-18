@@ -10,7 +10,7 @@ pub fn init() Self {
   return .{ .id = c.glCreateProgram() };
 }
 
-pub fn attach(self: *const Self, kind: c.GLenum, sources: []const []const c.GLchar) !void {
+pub fn attach(self: *const Self, kind: c.GLenum, sources: []const [*:0]const c.GLchar) !void {
   errdefer c.glDeleteProgram(self.id);
 
   const shader = try gl.Shader.init(kind, sources);
@@ -19,60 +19,66 @@ pub fn attach(self: *const Self, kind: c.GLenum, sources: []const []const c.GLch
   c.glAttachShader(self.id, shader.id);
 }
 
-pub fn link(self: *const Self) !gl.Program {
+pub fn link(self: *const Self) !c.GLuint {
   errdefer c.glDeleteProgram(self.id);
+
+  var str = gl.String.init(root.allocator);
+  defer str.deinit();
 
   gl.log.debug("linking program: {}", .{ self.id });
   c.glLinkProgram(self.id);
-  try self.checkError();
-  try self.logActiveResources();
+  try self.checkError(&str);
 
-  return gl.Program{ .id = self.id };
+  try self.logActiveResources(&str, c.GL_UNIFORM, "uniform");
+  try self.logActiveResources(&str, c.GL_PROGRAM_INPUT, "in");
+  try self.logActiveResources(&str, c.GL_PROGRAM_OUTPUT, "out");
+
+  return self.id;
 }
 
-fn checkError(self: *const Self) !void {
+fn checkError(self: *const Self, str: *gl.String) !void {
   var status: c.GLint = undefined;
   c.glGetProgramiv(self.id, c.GL_LINK_STATUS, &status);
 
   if (status == c.GL_FALSE) {
-    var info_len: c.GLint = undefined;
-    c.glGetProgramiv(self.id, c.GL_INFO_LOG_LENGTH, &info_len);
-
-    var info = try root.allocator.alloc(c.GLchar, @intCast(usize, info_len));
-    defer root.allocator.free(info);
-
-    c.glGetProgramInfoLog(self.id, info_len, null, info.ptr);
-    gl.log.err("{s}", .{ @ptrCast([*:0]c.GLchar, info) });
-
+    try self.logError(str);
     return error.GL_LinkProgramError;
   }
 }
 
-fn logActiveResources(self: *const Self) !void {
-  var name = std.ArrayList(u8).init(root.allocator);
-  defer name.deinit();
+fn logError(self: *const Self, str: *gl.String) !void {
+  var len: c.GLint = undefined;
+  c.glGetProgramiv(self.id, c.GL_INFO_LOG_LENGTH, &len);
 
-  var keys = [_]c.GLenum{ c.GL_NAME_LENGTH, c.GL_LOCATION };
-  var values: [keys.len]c.GLint = undefined;
+  if (len > 0) {
+    try str.resize(@intCast(usize, len - 1));
+    c.glGetProgramInfoLog(self.id, len, null, str.items.ptr);
 
-  const resources = .{
-    .{ .kind = "in", .GLenum = c.GL_PROGRAM_INPUT },
-    .{ .kind = "out", .GLenum = c.GL_PROGRAM_OUTPUT },
-    .{ .kind = "uniform", .GLenum = c.GL_UNIFORM },
-  };
+    const trimmed = std.mem.trimRight(c.GLchar, str.items, &std.ascii.spaces);
+    var lines = std.mem.split(c.GLchar, trimmed, "\n");
+    while (lines.next()) |line|
+      gl.log.err("{s}", .{ line });
+  }
+}
 
-  inline for (resources) |r| {
-    var i: c.GLuint = 0;
-    var n: c.GLint = 0;
-    c.glGetProgramInterfaceiv(self.id, r.GLenum, c.GL_ACTIVE_RESOURCES, &n);
+fn logActiveResources(self: *const Self, str: *gl.String, kind: c.GLenum, kind_str: []const u8) !void {
+  var name_len: c.GLint = undefined;
+  c.glGetProgramInterfaceiv(self.id, kind, c.GL_MAX_NAME_LENGTH, &name_len);
+  try str.resize(@intCast(usize, name_len));
 
-    while (i < n) : (i += 1) {
-      c.glGetProgramResourceiv(self.id, r.GLenum, i, keys.len, &keys, values.len, null, &values);
+  var resources: c.GLint = undefined;
+  c.glGetProgramInterfaceiv(self.id, kind, c.GL_ACTIVE_RESOURCES, &resources);
 
-      try name.resize(@intCast(usize, values[0]));
-      c.glGetProgramResourceName(self.id, r.GLenum, i, values[0], null, name.items.ptr);
+  var r: c.GLuint = 0;
+  while (r < resources) : (r += 1) {
+    const name = @ptrCast([*:0]c.GLchar, str.items.ptr);
+    const keys = [_]c.GLenum{ c.GL_LOCATION, c.GL_TYPE, c.GL_ARRAY_SIZE };
+    var values: [keys.len]c.GLint = undefined;
+    c.glGetProgramResourceiv(self.id, kind, r, keys.len, &keys, values.len, null, &values);
+    c.glGetProgramResourceName(self.id, kind, r, name_len, null, name);
 
-      gl.log.debug("layout(location = {}) {s} {s}", .{ values[1], r.kind, name.items });
-    }
+    gl.log.debug("layout(location = {}) {s} {s}[{}] {s}", .{
+      values[0], kind_str, gl.debug.typeToStr(values[1]), values[2], name,
+    });
   }
 }

@@ -2,9 +2,9 @@ const c = @import("../c.zig");
 const std = @import("std");
 const fns = @import("fns.zig");
 
+pub const log = std.log.scoped(.glfw);
 pub const Rect = @import("Rect.zig");
 pub const Window = @import("Window.zig");
-pub const log = std.log.scoped(.glfw);
 
 pub fn init(hints: []const [2]c_int) !void {
   _ = c.glfwSetErrorCallback(fns.onError);
