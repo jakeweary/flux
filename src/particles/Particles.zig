@@ -90,6 +90,7 @@ pub fn run(self: *Self) !void {
     self.postprocess();
     self.gui.render();
 
+    c.glfwSwapInterval(@boolToInt(self.cfg.vsync));
     c.glfwSwapBuffers(self.window.ptr);
     c.glfwPollEvents();
   }

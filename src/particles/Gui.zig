@@ -77,6 +77,7 @@ fn menu(self: *Self, particles: *Particles) void {
   if (c.igTreeNodeEx_Str("Performance", tree_node_flags)) {
     _ = c.igSliderInt("Steps per frame", &particles.cfg.steps_per_frame, 1, 32, null, 0);
     _ = c.igSliderInt2("Simulation size", &particles.cfg.simulation_size, 1, 2048, null, 0);
+    _ = c.igCheckbox("Vertical synchronization", &particles.cfg.vsync);
     c.igTreePop();
   }
 
