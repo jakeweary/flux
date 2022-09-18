@@ -97,24 +97,36 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
     }
 
     fn build(vert: [:0]const c.GLchar, frag: [:0]const c.GLchar, defs: Defs) !c.GLuint {
-      var header = gl.String.init(root.allocator);
-      const header_w = header.writer();
-      defer header.deinit();
+      var str = gl.String.init(root.allocator);
+      defer str.deinit();
 
-      try header.appendSlice(gl.VERSION ++ "\n");
+      const header = try writeHeader(&str, defs);
+      const builder = gl.ProgramBuilder.init();
+      try builder.attach(c.GL_VERTEX_SHADER, &.{ header, vert });
+      try builder.attach(c.GL_FRAGMENT_SHADER, &.{ header, frag });
+      return builder.link();
+    }
+
+    fn writeHeader(str: *gl.String, defs: Defs) ![:0]c.GLchar {
+      const str_w = str.writer();
+
+      try str.appendSlice(gl.VERSION ++ "\n");
       inline for (fields) |f| {
-        const fmt = switch (f.field_type) { []const c.GLchar => "{s}", else => "{}" };
-        const kv = .{ f.name, @field(defs, f.name) };
-        try header_w.print("#define {s} " ++ fmt ++ "\n", kv);
+        const k = f.name;
+        const v = @field(defs, f.name);
+        const kv = switch (f.field_type) {
+          bool => .{ k, @boolToInt(v) },
+          else => .{ k, v },
+        };
+        const fmt = switch (f.field_type) {
+          []const c.GLchar => "{s}",
+          else => "{}",
+        };
+        try str_w.print("#define {s} " ++ fmt ++ "\n", kv);
       }
-      try header.appendSlice("\n\x00");
+      try str.appendSlice("\n\x00");
 
-      const header_z = header.items[0 .. header.items.len - 1 :0];
-
-      const b = gl.ProgramBuilder.init();
-      try b.attach(c.GL_VERTEX_SHADER, &.{ header_z, vert });
-      try b.attach(c.GL_FRAGMENT_SHADER, &.{ header_z, frag });
-      return b.link();
+      return str.items[0 .. str.items.len - 1 :0];
     }
   };
 }

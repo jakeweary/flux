@@ -73,7 +73,7 @@ pub fn run(self: *Self) !void {
       self.seed();
 
     self.resize();
-    self.gui.update(self);
+    try self.gui.update(self);
 
     const dt = 1e-9 * self.cfg.time_scale * @intToFloat(f32, timer.lap());
     const step_dt = dt / @intToFloat(f32, self.cfg.steps_per_frame);
@@ -179,7 +179,7 @@ fn render(self: *Self, dt: f32) void {
 
   c.glViewport(0, 0, self.width, self.height);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
-  if (self.cfg.render_as_lines)
+  if (self.programs.render.defs.RENDER_AS_LINES)
     c.glDrawArrays(c.GL_LINES, 0, self.cfg.simulation_size[0] * self.cfg.simulation_size[1] * 2)
   else
     c.glDrawArrays(c.GL_POINTS, 0, self.cfg.simulation_size[0] * self.cfg.simulation_size[1]);

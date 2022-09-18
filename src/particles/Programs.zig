@@ -11,45 +11,48 @@ const simplex3d = @embedFile("../glsl/lib/simplex3d.glsl");
 
 seed: gl.Program,
 update: gl.Program,
-render: gl.Program,
+render: gl.ProgramWithDefs(struct {
+  RENDER_AS_LINES: bool = true,
+  DYNAMIC_LINE_BRIGHTNESS: bool = true,
+}),
 feedback: gl.Program,
 postprocess: gl.Program,
 
 pub fn init() !Self {
   var self: Self = undefined;
 
-  self.seed = try blk: {
+  self.seed = blk: {
     const vs = @embedFile("../glsl/particles/seed/vertex.glsl");
     const fs = @embedFile("../glsl/particles/seed/fragment.glsl");
-    break :blk gl.Program.init(&.{ vs }, &.{ hashes, srgb, oklab, fs });
+    break :blk try @TypeOf(self.seed).init(&.{ vs }, &.{ hashes, srgb, oklab, fs });
   };
   errdefer self.seed.deinit();
 
-  self.update = try blk: {
+  self.update = blk: {
     const vs = @embedFile("../glsl/particles/update/vertex.glsl");
     const fs = @embedFile("../glsl/particles/update/fragment.glsl");
-    break :blk gl.Program.init(&.{ vs }, &.{ hashes, simplex3d, fs });
+    break :blk try @TypeOf(self.update).init(&.{ vs }, &.{ hashes, simplex3d, fs });
   };
   errdefer self.update.deinit();
 
-  self.render = try blk: {
+  self.render = blk: {
     const vs = @embedFile("../glsl/particles/render/vertex.glsl");
     const fs = @embedFile("../glsl/particles/render/fragment.glsl");
-    break :blk gl.Program.init(&.{ vs }, &.{ fs });
+    break :blk try @TypeOf(self.render).init(&.{ vs }, &.{ fs });
   };
   errdefer self.render.deinit();
 
-  self.feedback = try blk: {
+  self.feedback = blk: {
     const vs = @embedFile("../glsl/particles/feedback/vertex.glsl");
     const fs = @embedFile("../glsl/particles/feedback/fragment.glsl");
-    break :blk gl.Program.init(&.{ vs }, &.{ fs });
+    break :blk try @TypeOf(self.feedback).init(&.{ vs }, &.{ fs });
   };
   errdefer self.feedback.deinit();
 
-  self.postprocess = try blk: {
+  self.postprocess = blk: {
     const vs = @embedFile("../glsl/particles/postprocess/vertex.glsl");
     const fs = @embedFile("../glsl/particles/postprocess/fragment.glsl");
-    break :blk gl.Program.init(&.{ vs }, &.{ aces, fs });
+    break :blk try @TypeOf(self.postprocess).init(&.{ vs }, &.{ aces, fs });
   };
   errdefer self.postprocess.deinit();
 

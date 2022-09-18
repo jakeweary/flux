@@ -25,9 +25,9 @@ pub fn render(_: *const Self) void {
   imgui.render();
 }
 
-pub fn update(self: *Self, particles: *Particles) void {
+pub fn update(self: *Self, particles: *Particles) !void {
   imgui.newFrame();
-  self.menu(particles);
+  try self.menu(particles);
 
   if (self.debug)
     c.igShowDemoWindow(&self.debug);
@@ -35,7 +35,7 @@ pub fn update(self: *Self, particles: *Particles) void {
 
 // ---
 
-fn menu(self: *Self, particles: *Particles) void {
+fn menu(self: *Self, particles: *Particles) !void {
   const window_flags = c.ImGuiWindowFlags_AlwaysAutoResize | c.ImGuiWindowFlags_NoMove;
   const tree_node_flags = c.ImGuiTreeNodeFlags_DefaultOpen | c.ImGuiTreeNodeFlags_SpanAvailWidth;
 
@@ -63,8 +63,10 @@ fn menu(self: *Self, particles: *Particles) void {
 
   if (c.igTreeNodeEx_Str("Rendering", tree_node_flags)) {
     _ = c.igSliderFloat("Feedback loop", &particles.cfg.feedback_loop, 0.0, 1.0, null, 0);
-    _ = c.igCheckbox("Render as lines", &particles.cfg.render_as_lines);
-    _ = c.igCheckbox("Dynamic line brightness", &particles.cfg.dynamic_line_brightness);
+    if (c.igCheckbox("Render as lines", &particles.programs.render.defs.RENDER_AS_LINES))
+      try particles.programs.render.reinit();
+    if (c.igCheckbox("Dynamic line brightness", &particles.programs.render.defs.DYNAMIC_LINE_BRIGHTNESS))
+      try particles.programs.render.reinit();
     c.igTreePop();
   }
 
