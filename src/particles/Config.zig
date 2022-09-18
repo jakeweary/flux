@@ -5,9 +5,10 @@ wind_power: f32 = 0.25,
 wind_turbulence: f32 = 0.05,
 walls_collision: bool = false,
 
-feedback_loop: f32 = 0.3,
 render_as_lines: bool = true,
 dynamic_line_brightness: bool = true,
+point_scale: f32 = 1.0,
+feedback_loop: f32 = 0.3,
 
 brightness: f32 = 4.0,
 aces_tonemapping: bool = true,

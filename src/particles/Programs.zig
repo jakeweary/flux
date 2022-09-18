@@ -14,6 +14,7 @@ update: gl.Program,
 render: gl.ProgramWithDefs(struct {
   RENDER_AS_LINES: bool = true,
   DYNAMIC_LINE_BRIGHTNESS: bool = true,
+  FANCY_POINT_RENDERING: bool = true,
 }),
 feedback: gl.Program,
 postprocess: gl.Program,
@@ -65,4 +66,12 @@ pub fn deinit(self: *const Self) void {
   self.render.deinit();
   self.feedback.deinit();
   self.postprocess.deinit();
+}
+
+pub fn reinit(self: *Self) !void {
+  try self.render.reinit();
+}
+
+pub fn defaults(self: *Self) void {
+  self.render.defs = .{};
 }

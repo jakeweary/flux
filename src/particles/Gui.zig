@@ -25,9 +25,9 @@ pub fn render(_: *const Self) void {
   imgui.render();
 }
 
-pub fn update(self: *Self, particles: *Particles) !void {
+pub fn update(self: *Self, particles: *Particles) void {
   imgui.newFrame();
-  try self.menu(particles);
+  self.menu(particles);
 
   if (self.debug)
     c.igShowDemoWindow(&self.debug);
@@ -35,7 +35,8 @@ pub fn update(self: *Self, particles: *Particles) !void {
 
 // ---
 
-fn menu(self: *Self, particles: *Particles) !void {
+fn menu(self: *Self, particles: *Particles) void {
+  const cfg = &particles.cfg;
   const window_flags = c.ImGuiWindowFlags_AlwaysAutoResize | c.ImGuiWindowFlags_NoMove;
   const tree_node_flags = c.ImGuiTreeNodeFlags_DefaultOpen | c.ImGuiTreeNodeFlags_SpanAvailWidth;
 
@@ -48,38 +49,44 @@ fn menu(self: *Self, particles: *Particles) !void {
   defer c.igPopItemWidth();
 
   if (c.igTreeNodeEx_Str("Scaling", tree_node_flags)) {
-    _ = c.igSliderFloat("Time scale", &particles.cfg.time_scale, 0.001, 1.0, null, 0);
-    _ = c.igSliderFloat("Space scale", &particles.cfg.space_scale, 0.001, 1.0, null, 0);
+    _ = c.igSliderFloat("Time scale", &cfg.time_scale, 0.001, 1.0, null, 0);
+    _ = c.igSliderFloat("Space scale", &cfg.space_scale, 0.001, 1.0, null, 0);
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Simulation", tree_node_flags)) {
-    _ = c.igSliderFloat("Air resistance", &particles.cfg.air_resistance, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("Wind power", &particles.cfg.wind_power, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("Wind turbulence", &particles.cfg.wind_turbulence, 0.0, 1.0, null, 0);
-    _ = c.igCheckbox("Walls collision", &particles.cfg.walls_collision);
+    _ = c.igSliderFloat("Air resistance", &cfg.air_resistance, 0.0, 1.0, null, 0);
+    _ = c.igSliderFloat("Wind power", &cfg.wind_power, 0.0, 1.0, null, 0);
+    _ = c.igSliderFloat("Wind turbulence", &cfg.wind_turbulence, 0.0, 1.0, null, 0);
+    _ = c.igCheckbox("Walls collision", &cfg.walls_collision);
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Rendering", tree_node_flags)) {
-    _ = c.igSliderFloat("Feedback loop", &particles.cfg.feedback_loop, 0.0, 1.0, null, 0);
-    if (c.igCheckbox("Render as lines", &particles.programs.render.defs.RENDER_AS_LINES))
-      try particles.programs.render.reinit();
-    if (c.igCheckbox("Dynamic line brightness", &particles.programs.render.defs.DYNAMIC_LINE_BRIGHTNESS))
-      try particles.programs.render.reinit();
+    const defs = &particles.programs.render.defs;
+    _ = c.igCheckbox("Render as lines", &defs.RENDER_AS_LINES);
+    if (defs.RENDER_AS_LINES) {
+      _ = c.igCheckbox("Dynamic line brightness", &defs.DYNAMIC_LINE_BRIGHTNESS);
+    }
+    else {
+      _ = c.igCheckbox("Fancy point rendering", &defs.FANCY_POINT_RENDERING);
+      if (defs.FANCY_POINT_RENDERING)
+        _ = c.igSliderFloat("Point scale", &cfg.point_scale, 1.0, 10.0, null, 0);
+    }
+    _ = c.igSliderFloat("Feedback loop", &cfg.feedback_loop, 0.0, 1.0, null, 0);
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Post-processing", tree_node_flags)) {
-    _ = c.igSliderFloat("Brightness", &particles.cfg.brightness, 0.0, 5.0, null, 0);
-    _ = c.igCheckbox("ACES filmic tone mapping", &particles.cfg.aces_tonemapping);
+    _ = c.igSliderFloat("Brightness", &cfg.brightness, 0.0, 5.0, null, 0);
+    _ = c.igCheckbox("ACES filmic tone mapping", &cfg.aces_tonemapping);
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Performance", tree_node_flags)) {
-    _ = c.igSliderInt("Steps per frame", &particles.cfg.steps_per_frame, 1, 32, null, 0);
-    _ = c.igSliderInt2("Simulation size", &particles.cfg.simulation_size, 1, 2048, null, 0);
-    _ = c.igCheckbox("Vertical synchronization", &particles.cfg.vsync);
+    _ = c.igSliderInt("Steps per frame", &cfg.steps_per_frame, 1, 32, null, 0);
+    _ = c.igSliderInt2("Simulation size", &cfg.simulation_size, 1, 2048, null, 0);
+    _ = c.igCheckbox("Vertical synchronization", &cfg.vsync);
     c.igTreePop();
   }
 
@@ -87,8 +94,8 @@ fn menu(self: *Self, particles: *Particles) !void {
     plot("%.1f fps", imgui.io().Framerate, &self.fps);
     plot("%.1f ms/frame", 1e3 * imgui.io().DeltaTime, &self.dt);
     if (c.igBeginTable("table", 3, c.ImGuiTableFlags_SizingStretchSame, .{ .x = 0, .y = 0 }, 0)) {
-      const per_step = particles.cfg.simulation_size[0] * particles.cfg.simulation_size[1];
-      const per_frame = per_step * particles.cfg.steps_per_frame;
+      const per_step = cfg.simulation_size[0] * cfg.simulation_size[1];
+      const per_frame = per_step * cfg.steps_per_frame;
       const per_second = @intToFloat(f64, per_frame) * imgui.io().Framerate;
       _ = c.igTableNextColumn(); c.igText("ops/step"); imgui.hint("particle updates per step");
       _ = c.igTableNextColumn(); c.igText("ops/frame"); imgui.hint("particle updates per frame");
@@ -103,7 +110,7 @@ fn menu(self: *Self, particles: *Particles) !void {
 
   if (c.igTreeNodeEx_Str("Misc.", tree_node_flags)) {
     if (c.igButton("Defaults", .{ .x = 0, .y = 0 }))
-      particles.cfg = .{};
+      particles.defaults();
     c.igSameLine(0, -1);
     if (c.igButton("Fullscreen", .{ .x = 0, .y = 0 }))
       particles.window.fullscreen();

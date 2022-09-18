@@ -17,6 +17,7 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
 
     id: c.GLuint,
     defs: Defs = .{},
+    prev: Defs = .{},
     vert: [:0]const c.GLchar,
     frag: [:0]const c.GLchar,
 
@@ -27,20 +28,22 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
       const frag_z = try std.mem.joinZ(root.allocator, "\n", frag);
       errdefer root.allocator.free(frag_z);
 
-      const defs = Defs{};
-      const id = try build(vert_z, frag_z, defs);
-      return .{ .id = id, .defs = defs, .vert = vert_z, .frag = frag_z };
-    }
-
-    pub fn reinit(self: *Self) !void {
-      c.glDeleteProgram(self.id);
-      self.id = try build(self.vert, self.frag, self.defs);
+      const id = try build(vert_z, frag_z, .{});
+      return .{ .id = id, .vert = vert_z, .frag = frag_z };
     }
 
     pub fn deinit(self: *const Self) void {
       root.allocator.free(self.frag);
       root.allocator.free(self.vert);
       c.glDeleteProgram(self.id);
+    }
+
+    pub fn reinit(self: *Self) !void {
+      if (!std.meta.eql(self.defs, self.prev)) {
+        c.glDeleteProgram(self.id);
+        self.id = try build(self.vert, self.frag, self.defs);
+        self.prev = self.defs;
+      }
     }
 
     pub fn attribute(self: *const Self, name: [*:0]const c.GLchar) c.GLuint {

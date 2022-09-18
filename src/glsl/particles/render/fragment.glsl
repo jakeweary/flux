@@ -3,7 +3,7 @@ in vec3 vColor;
 out vec3 fColor;
 
 void main() {
-  #if RENDER_AS_LINES
+  #if RENDER_AS_LINES || !FANCY_POINT_RENDERING
     fColor = vColor;
   #else
     float dist = length(gl_PointCoord - 0.5);

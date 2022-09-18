@@ -4,6 +4,7 @@ uniform sampler2D tAge;
 uniform sampler2D tPosition;
 uniform sampler2D tVelocity;
 uniform float uDT;
+uniform float uPointScale;
 uniform ivec2 uViewport;
 out vec2 vRadius;
 out vec3 vColor;
@@ -31,12 +32,15 @@ void main() {
     ivec2 ts = textureSize(tPosition, 0).xy;
     ivec2 uv = ivec2(gl_VertexID % ts.x, gl_VertexID / ts.x);
 
-    float age = texelFetch(tAge, uv, 0).x;
-    float size = texelFetch(tSize, uv, 0).x;
-    gl_PointSize = floor(size + 1.0);
-    vRadius = vec2(size + 1.0, size - 1.0) / 2.0 / gl_PointSize;
-    vColor = texelFetch(tColor, uv, 0).rgb;
+    #if FANCY_POINT_RENDERING
+      float size = uPointScale * texelFetch(tSize, uv, 0).x;
+      gl_PointSize = floor(size + 1.0);
+      vRadius = vec2(size + 1.0, size - 1.0) / 2.0 / gl_PointSize;
+    #else
+      gl_PointSize = 1.0;
+    #endif
 
+    vColor = texelFetch(tColor, uv, 0).rgb;
     gl_Position = vec4(texelFetch(tPosition, uv, 0).xy, 0.0, 1.0);
   #endif
 }

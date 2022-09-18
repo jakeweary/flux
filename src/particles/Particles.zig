@@ -48,6 +48,11 @@ pub fn deinit(self: *const Self) void {
   self.programs.deinit();
 }
 
+pub fn defaults(self: *Self) void {
+  self.cfg = .{};
+  self.programs.defaults();
+}
+
 pub fn resize(self: *Self) void {
   if (c.glfwGetWindowAttrib(self.window.ptr, c.GLFW_ICONIFIED) == c.GLFW_TRUE)
     return;
@@ -73,7 +78,9 @@ pub fn run(self: *Self) !void {
       self.seed();
 
     self.resize();
-    try self.gui.update(self);
+    self.gui.update(self);
+
+    try self.programs.reinit();
 
     const dt = 1e-9 * self.cfg.time_scale * @intToFloat(f32, timer.lap());
     const step_dt = dt / @intToFloat(f32, self.cfg.steps_per_frame);
@@ -162,6 +169,7 @@ fn render(self: *Self, dt: f32) void {
 
   self.programs.render.use();
   self.programs.render.bind("uDT", dt);
+  self.programs.render.bind("uPointScale", self.cfg.point_scale);
   self.programs.render.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
   self.programs.render.bind("uRenderAsLines", self.cfg.render_as_lines);
   self.programs.render.bind("uDynamicLineBrightness", self.cfg.dynamic_line_brightness);
