@@ -2,13 +2,11 @@ uniform sampler2D tSize;
 uniform sampler2D tAge;
 uniform sampler2D tPosition;
 uniform sampler2D tVelocity;
-uniform bool uWallsCollision;
 uniform float uT;
 uniform float uDT;
 uniform float uSpaceScale;
 uniform float uAirResistance;
 uniform float uWindPower;
-uniform float uWindFrequency;
 uniform float uWindTurbulence;
 uniform ivec2 uViewport;
 in vec2 vUV;
@@ -68,10 +66,12 @@ void main() {
   Particle_accelerate(p, uDT, uSpaceScale * uWindPower / r / p.size * vec2(nx, ny));
   Particle_applyDrag(p, uDT, uAirResistance);
   Particle_travel(p, uDT);
-  if (uWallsCollision)
+
+  #if WALLS_COLLISION
     Particle_bounce(p, vec2(1.0));
-  else
+  #else
     Particle_resetIfEscaped(p, vec2(1.0));
+  #endif
 
   fAge = p.age;
   fPosition = p.pos;

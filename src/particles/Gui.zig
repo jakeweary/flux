@@ -55,10 +55,11 @@ fn menu(self: *Self, particles: *Particles) void {
   }
 
   if (c.igTreeNodeEx_Str("Simulation", tree_node_flags)) {
+    const defs = &particles.programs.update.defs;
     _ = c.igSliderFloat("Air resistance", &cfg.air_resistance, 0.0, 1.0, null, 0);
     _ = c.igSliderFloat("Wind power", &cfg.wind_power, 0.0, 1.0, null, 0);
     _ = c.igSliderFloat("Wind turbulence", &cfg.wind_turbulence, 0.0, 1.0, null, 0);
-    _ = c.igCheckbox("Walls collision", &cfg.walls_collision);
+    _ = c.igCheckbox("Walls collision", &defs.WALLS_COLLISION);
     c.igTreePop();
   }
 
@@ -78,8 +79,9 @@ fn menu(self: *Self, particles: *Particles) void {
   }
 
   if (c.igTreeNodeEx_Str("Post-processing", tree_node_flags)) {
+    const defs = &particles.programs.postprocess.defs;
     _ = c.igSliderFloat("Brightness", &cfg.brightness, 0.0, 5.0, null, 0);
-    _ = c.igCheckbox("ACES filmic tone mapping", &cfg.aces_tonemapping);
+    _ = c.igCheckbox("ACES filmic tone mapping", &defs.ACES_TONEMAPPING);
     c.igTreePop();
   }
 

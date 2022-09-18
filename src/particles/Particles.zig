@@ -134,7 +134,6 @@ fn update(self: *Self, dt: f32, t: f32) void {
   self.programs.update.bind("uAirResistance", logarithmic(5, 1 - self.cfg.air_resistance));
   self.programs.update.bind("uWindPower", self.cfg.wind_power * 100);
   self.programs.update.bind("uWindTurbulence", self.cfg.wind_turbulence);
-  self.programs.update.bind("uWallsCollision", self.cfg.walls_collision);
   self.programs.update.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
   self.programs.update.bindTextures(&.{
     .{ "tSize", self.textures.particleSize() },
@@ -171,8 +170,6 @@ fn render(self: *Self, dt: f32) void {
   self.programs.render.bind("uDT", dt);
   self.programs.render.bind("uPointScale", self.cfg.point_scale);
   self.programs.render.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
-  self.programs.render.bind("uRenderAsLines", self.cfg.render_as_lines);
-  self.programs.render.bind("uDynamicLineBrightness", self.cfg.dynamic_line_brightness);
   self.programs.render.bindTextures(&.{
     .{ "tSize", self.textures.particleSize() },
     .{ "tColor", self.textures.particleColor() },
@@ -221,7 +218,6 @@ fn postprocess(self: *Self) void {
 
   self.programs.postprocess.use();
   self.programs.postprocess.bind("uBrightness", self.cfg.brightness);
-  self.programs.postprocess.bind("uAcesTonemapping", self.cfg.aces_tonemapping);
   self.programs.postprocess.bindTextures(&.{
     .{ "tRendered", self.textures.feedback()[0] },
   });

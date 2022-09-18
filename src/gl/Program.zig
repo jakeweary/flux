@@ -38,12 +38,14 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
       c.glDeleteProgram(self.id);
     }
 
-    pub fn reinit(self: *Self) !void {
-      if (!std.meta.eql(self.defs, self.prev)) {
+    pub fn reinit(self: *Self) !bool {
+      const changed = !std.meta.eql(self.defs, self.prev);
+      if (changed) {
         c.glDeleteProgram(self.id);
         self.id = try build(self.vert, self.frag, self.defs);
         self.prev = self.defs;
       }
+      return changed;
     }
 
     pub fn attribute(self: *const Self, name: [*:0]const c.GLchar) c.GLuint {

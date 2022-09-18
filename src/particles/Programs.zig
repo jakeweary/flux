@@ -10,14 +10,18 @@ const hashes = @embedFile("../glsl/lib/hashes.glsl");
 const simplex3d = @embedFile("../glsl/lib/simplex3d.glsl");
 
 seed: gl.Program,
-update: gl.Program,
+update: gl.ProgramWithDefs(struct {
+  WALLS_COLLISION: bool = false,
+}),
 render: gl.ProgramWithDefs(struct {
   RENDER_AS_LINES: bool = true,
   DYNAMIC_LINE_BRIGHTNESS: bool = true,
   FANCY_POINT_RENDERING: bool = true,
 }),
 feedback: gl.Program,
-postprocess: gl.Program,
+postprocess: gl.ProgramWithDefs(struct {
+  ACES_TONEMAPPING: bool = true,
+}),
 
 pub fn init() !Self {
   var self: Self = undefined;
@@ -69,9 +73,17 @@ pub fn deinit(self: *const Self) void {
 }
 
 pub fn reinit(self: *Self) !void {
-  try self.render.reinit();
+  _ = try self.seed.reinit();
+  _ = try self.update.reinit();
+  _ = try self.render.reinit();
+  _ = try self.feedback.reinit();
+  _ = try self.postprocess.reinit();
 }
 
 pub fn defaults(self: *Self) void {
+  self.seed.defs = .{};
+  self.update.defs = .{};
   self.render.defs = .{};
+  self.feedback.defs = .{};
+  self.postprocess.defs = .{};
 }
