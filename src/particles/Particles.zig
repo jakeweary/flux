@@ -109,7 +109,8 @@ fn seed(self: *Self) void {
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
-  self.programs.seed.use();
+  const program = self.programs.seed.inner;
+  program.use();
 
   c.glDrawBuffers(3, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2 });
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.particleSize(), 0);
@@ -127,15 +128,16 @@ fn update(self: *Self, dt: f32, t: f32) void {
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
-  self.programs.update.use();
-  self.programs.update.bind("uT", t);
-  self.programs.update.bind("uDT", dt);
-  self.programs.update.bind("uSpaceScale", self.cfg.space_scale * 2);
-  self.programs.update.bind("uAirResistance", logarithmic(5, 1 - self.cfg.air_resistance));
-  self.programs.update.bind("uWindPower", self.cfg.wind_power * 100);
-  self.programs.update.bind("uWindTurbulence", self.cfg.wind_turbulence);
-  self.programs.update.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
-  self.programs.update.bindTextures(&.{
+  const program = self.programs.update.inner;
+  program.use();
+  program.bind("uT", t);
+  program.bind("uDT", dt);
+  program.bind("uSpaceScale", self.cfg.space_scale * 2);
+  program.bind("uAirResistance", logarithmic(5, 1 - self.cfg.air_resistance));
+  program.bind("uWindPower", self.cfg.wind_power * 100);
+  program.bind("uWindTurbulence", self.cfg.wind_turbulence);
+  program.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
+  program.bindTextures(&.{
     .{ "tSize", self.textures.particleSize() },
     .{ "tAge", self.textures.particleAge()[0] },
     .{ "tPosition", self.textures.particlePosition()[0] },
@@ -166,11 +168,12 @@ fn render(self: *Self, dt: f32) void {
   c.glEnable(c.GL_BLEND);
   defer c.glDisable(c.GL_BLEND);
 
-  self.programs.render.use();
-  self.programs.render.bind("uDT", dt);
-  self.programs.render.bind("uPointScale", self.cfg.point_scale);
-  self.programs.render.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
-  self.programs.render.bindTextures(&.{
+  const program = self.programs.render.inner;
+  program.use();
+  program.bind("uDT", dt);
+  program.bind("uPointScale", self.cfg.point_scale);
+  program.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
+  program.bindTextures(&.{
     .{ "tSize", self.textures.particleSize() },
     .{ "tColor", self.textures.particleColor() },
     .{ "tAge", self.textures.particleAge()[0] },
@@ -194,9 +197,10 @@ fn feedback(self: *Self) void {
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
-  self.programs.feedback.use();
-  self.programs.feedback.bind("uRatio", 1 - logarithmic(5, 1 - self.cfg.feedback_loop));
-  self.programs.feedback.bindTextures(&.{
+  const program = self.programs.feedback.inner;
+  program.use();
+  program.bind("uRatio", 1 - logarithmic(5, 1 - self.cfg.feedback_loop));
+  program.bindTextures(&.{
     .{ "tRendered", self.textures.rendered() },
     .{ "tFeedback", self.textures.feedback()[0] },
   });
@@ -216,9 +220,10 @@ fn postprocess(self: *Self) void {
   c.glEnable(c.GL_FRAMEBUFFER_SRGB);
   defer c.glDisable(c.GL_FRAMEBUFFER_SRGB);
 
-  self.programs.postprocess.use();
-  self.programs.postprocess.bind("uBrightness", self.cfg.brightness);
-  self.programs.postprocess.bindTextures(&.{
+  const program = self.programs.postprocess.inner;
+  program.use();
+  program.bind("uBrightness", self.cfg.brightness);
+  program.bindTextures(&.{
     .{ "tRendered", self.textures.feedback()[0] },
   });
 

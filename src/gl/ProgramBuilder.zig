@@ -19,7 +19,7 @@ pub fn attach(self: *const Self, kind: c.GLenum, sources: []const [*:0]const c.G
   c.glAttachShader(self.id, shader.id);
 }
 
-pub fn link(self: *const Self) !c.GLuint {
+pub fn link(self: *const Self) !gl.ProgramInner {
   errdefer c.glDeleteProgram(self.id);
 
   var str = gl.String.init(root.allocator);
@@ -33,7 +33,7 @@ pub fn link(self: *const Self) !c.GLuint {
   try self.logActiveResources(&str, c.GL_PROGRAM_INPUT, "in");
   try self.logActiveResources(&str, c.GL_PROGRAM_OUTPUT, "out");
 
-  return self.id;
+  return .{ .id = self.id };
 }
 
 fn checkError(self: *const Self, str: *gl.String) !void {
