@@ -1,7 +1,8 @@
-const c = @import("../c.zig");
-const gl = @import("gl.zig");
+const c = @import("../../c.zig");
+const gl = @import("../gl.zig");
 const root = @import("root");
 const std = @import("std");
+const Inner = @import("Inner.zig");
 
 pub const Program = ProgramWithDefs(struct {});
 
@@ -9,7 +10,7 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
   return struct {
     const Self = @This();
 
-    inner: gl.ProgramInner,
+    inner: Inner,
     defs: Defs = .{},
     prev: Defs = .{},
     vert: [:0]const c.GLchar,
@@ -43,19 +44,19 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
       return changed;
     }
 
-    fn initInner(vert: [:0]const c.GLchar, frag: [:0]const c.GLchar, defs: Defs) !gl.ProgramInner {
+    fn initInner(vert: [:0]const c.GLchar, frag: [:0]const c.GLchar, defs: Defs) !Inner {
       var str = gl.String.init(root.allocator);
       defer str.deinit();
 
       const header = try writeHeader(&str, defs);
-      return gl.ProgramInner.init(&.{ header, vert }, &.{ header, frag });
+      return Inner.init(&.{ header, vert }, &.{ header, frag });
     }
 
     fn writeHeader(str: *gl.String, defs: Defs) ![:0]c.GLchar {
       const str_w = str.writer();
       const fields = switch (@typeInfo(Defs)) {
         .Struct => |s| s.fields,
-        else => unreachable,
+        else => @compileError("unimplemented"),
       };
 
       try str.appendSlice(gl.VERSION ++ "\n");

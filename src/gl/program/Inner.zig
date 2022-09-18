@@ -1,6 +1,7 @@
-const c = @import("../c.zig");
-const gl = @import("gl.zig");
+const c = @import("../../c.zig");
+const gl = @import("../gl.zig");
 const std = @import("std");
+const Builder = @import("Builder.zig");
 const Self = @This();
 
 const NameAndId = std.meta.Tuple(&.{ [*:0]const c.GLchar, c.GLuint });
@@ -8,10 +9,10 @@ const NameAndId = std.meta.Tuple(&.{ [*:0]const c.GLchar, c.GLuint });
 id: c.GLuint,
 
 pub fn init(vert: []const [*:0]const c.GLchar, frag: []const [*:0]const c.GLchar) !Self {
-  const b = gl.ProgramBuilder.init();
+  const b = Builder.init();
   try b.attach(c.GL_VERTEX_SHADER, vert);
   try b.attach(c.GL_FRAGMENT_SHADER, frag);
-  return b.link();
+  return .{ .id = try b.link() };
 }
 
 pub fn deinit(self: *const Self) void {

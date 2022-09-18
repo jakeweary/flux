@@ -5,9 +5,7 @@ pub const log = std.log.scoped(.gl);
 pub const debug = @import("debug.zig");
 pub const textures = @import("textures.zig");
 pub const Shader = @import("Shader.zig");
-pub const ProgramBuilder = @import("ProgramBuilder.zig");
-pub const ProgramInner = @import("ProgramInner.zig");
-pub usingnamespace @import("Program.zig");
+pub usingnamespace @import("program/Program.zig");
 
 pub const String = std.ArrayList(c.GLchar);
 

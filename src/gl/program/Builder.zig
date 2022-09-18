@@ -1,5 +1,5 @@
-const c = @import("../c.zig");
-const gl = @import("gl.zig");
+const c = @import("../../c.zig");
+const gl = @import("../gl.zig");
 const root = @import("root");
 const std = @import("std");
 const Self = @This();
@@ -19,7 +19,7 @@ pub fn attach(self: *const Self, kind: c.GLenum, sources: []const [*:0]const c.G
   c.glAttachShader(self.id, shader.id);
 }
 
-pub fn link(self: *const Self) !gl.ProgramInner {
+pub fn link(self: *const Self) !c.GLuint {
   errdefer c.glDeleteProgram(self.id);
 
   var str = gl.String.init(root.allocator);
@@ -33,7 +33,7 @@ pub fn link(self: *const Self) !gl.ProgramInner {
   try self.logActiveResources(&str, c.GL_PROGRAM_INPUT, "in");
   try self.logActiveResources(&str, c.GL_PROGRAM_OUTPUT, "out");
 
-  return .{ .id = self.id };
+  return self.id;
 }
 
 fn checkError(self: *const Self, str: *gl.String) !void {
@@ -77,8 +77,8 @@ fn logActiveResources(self: *const Self, str: *gl.String, kind: c.GLenum, kind_s
     c.glGetProgramResourceiv(self.id, kind, r, keys.len, &keys, values.len, null, &values);
     c.glGetProgramResourceName(self.id, kind, r, name_len, null, name);
 
-    gl.log.debug("layout(location = {}) {s} {s}[{}] {s}", .{
-      values[0], kind_str, gl.debug.typeToStr(values[1]), values[2], name,
-    });
+    const fmt = "layout(location = {}) {s} {s}[{}] {s}";
+    const args = .{ values[0], kind_str, gl.debug.typeToStr(values[1]), values[2], name };
+    gl.log.debug(fmt, args);
   }
 }
