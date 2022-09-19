@@ -12,7 +12,7 @@ point_scale: f32 = 1.0,
 feedback_loop: f32 = 0.3,
 
 // post-processing
-brightness: f32 = 4.0,
+brightness: f32 = 2.0,
 
 // performance
 steps_per_frame: c_int = 1,

@@ -12,6 +12,7 @@ dt: [60]f32 = .{ 0 } ** 60,
 pub fn init(window: *c.GLFWwindow) Self {
   const self = Self{ .ctx = imgui.Context.init(window) };
   imgui.io().IniFilename = null;
+  imgui.io().ConfigWindowsMoveFromTitleBarOnly = true;
   imgui.loadCustomStyle();
   imgui.loadCustomPixelFont();
   return self;
@@ -37,8 +38,8 @@ pub fn update(self: *Self, particles: *Particles) void {
 
 fn menu(self: *Self, particles: *Particles) void {
   const cfg = &particles.cfg;
-  const window_flags = c.ImGuiWindowFlags_AlwaysAutoResize | c.ImGuiWindowFlags_NoMove;
-  const tree_node_flags = c.ImGuiTreeNodeFlags_DefaultOpen | c.ImGuiTreeNodeFlags_SpanAvailWidth;
+  const window_flags = c.ImGuiWindowFlags_AlwaysAutoResize;
+  const tree_node_flags = c.ImGuiTreeNodeFlags_SpanAvailWidth;
 
   // c.igSetNextWindowCollapsed(true, c.ImGuiCond_FirstUseEver);
   c.igSetNextWindowPos(.{ .x = 16, .y = 16 }, c.ImGuiCond_FirstUseEver, .{ .x = 0, .y = 0 });

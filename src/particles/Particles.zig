@@ -8,6 +8,8 @@ const Programs = @import("Programs.zig");
 const Textures = @import("Textures.zig");
 const Self = @This();
 
+const log = std.log.scoped(.Particles);
+
 window: *glfw.Window,
 width: c_int = 0,
 height: c_int = 0,
@@ -73,13 +75,13 @@ pub fn run(self: *Self) !void {
   var t: f32 = 0;
 
   while (c.glfwWindowShouldClose(self.window.ptr) == c.GLFW_FALSE) {
+    log.debug("--- new frame ---", .{});
+
     const ss = self.cfg.simulation_size;
     if (gl.textures.resizeIfNeeded(&self.textures.simulation, ss[0], ss[1]))
       self.seed();
-
     self.resize();
     self.gui.update(self);
-
     try self.programs.reinit();
 
     const dt = 1e-9 * self.cfg.time_scale * @intToFloat(f32, timer.lap());
@@ -94,6 +96,7 @@ pub fn run(self: *Self) !void {
       self.feedback();
     }
 
+    self.bloom();
     self.postprocess();
     self.gui.render();
 
@@ -106,6 +109,8 @@ pub fn run(self: *Self) !void {
 // ---
 
 fn seed(self: *Self) void {
+  log.debug("step: seed", .{});
+
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
@@ -125,6 +130,8 @@ fn seed(self: *Self) void {
 }
 
 fn update(self: *Self, dt: f32, t: f32) void {
+  log.debug("step: update", .{});
+
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
@@ -161,6 +168,8 @@ fn update(self: *Self, dt: f32, t: f32) void {
 }
 
 fn render(self: *Self, dt: f32) void {
+  log.debug("step: render", .{});
+
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
@@ -194,6 +203,8 @@ fn render(self: *Self, dt: f32) void {
 }
 
 fn feedback(self: *Self) void {
+  log.debug("step: feedback", .{});
+
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
@@ -217,6 +228,8 @@ fn feedback(self: *Self) void {
 }
 
 fn postprocess(self: *Self) void {
+  log.debug("step: postprocess", .{});
+
   c.glEnable(c.GL_FRAMEBUFFER_SRGB);
   defer c.glDisable(c.GL_FRAMEBUFFER_SRGB);
 
@@ -225,11 +238,103 @@ fn postprocess(self: *Self) void {
   program.bind("uBrightness", self.cfg.brightness);
   program.bindTextures(&.{
     .{ "tRendered", self.textures.feedback()[0] },
+    .{ "tBloom", self.textures.bloom[0][0] },
   });
 
   c.glViewport(0, 0, self.width, self.height);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
+}
+
+fn bloom(self: *Self) void {
+  log.debug("step: bloom", .{});
+
+  c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
+  defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
+
+  log.debug("bloom: down", .{});
+  const down = self.programs.bloom_down.inner;
+  down.use();
+
+  var textures = self.textures.bloom;
+  for (&textures) |tx, i| {
+    const sh = @truncate(u5, i);
+    const w = self.width >> sh;
+    const h = self.height >> sh;
+    log.debug("{} {}x{} {any}", .{ i, w, h, tx });
+
+    if (gl.textures.resizeIfNeeded(&tx, w, h)) {
+      gl.textures.params(&tx, &.{
+        .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
+        .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
+      });
+    }
+
+    const src = switch (i) {
+      0 => self.textures.feedback()[0],
+      else => textures[i - 1][0],
+    };
+
+    down.bind("uMultipleSamples", i != 0);
+    down.bindTextures(&.{
+      .{ "tSrc", src },
+    });
+
+    c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
+    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, tx[0], 0);
+    defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+
+    c.glViewport(0, 0, w, h);
+    c.glClear(c.GL_COLOR_BUFFER_BIT);
+    c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
+  }
+
+  log.debug("bloom: up", .{});
+  const up = self.programs.bloom_up.inner;
+  up.use();
+
+  std.mem.reverse([2]c.GLuint, &textures);
+  for (&textures) |tx, i| {
+    const sh = @truncate(u5, textures.len - i - 1);
+    const w = self.width >> sh;
+    const h = self.height >> sh;
+    log.debug("{} {}x{} {any}", .{ i, w, h, tx });
+
+    // horizontal pass
+
+    up.bind("uDirection", &[_][2]f32{ .{ 1, 0 } });
+    up.bindTextures(&.{
+      .{ "tSrc", tx[0] },
+      .{ "tAdd", self.textures.empty[0] },
+    });
+
+    c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
+    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, tx[1], 0);
+    defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+
+    c.glViewport(0, 0, w, h);
+    c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
+
+    // vertical pass + add
+
+    const add = switch (i) {
+      0 => self.textures.empty[0],
+      else => textures[i - 1][0],
+    };
+
+    up.bind("uDirection", &[_][2]f32{ .{ 0, 1 } });
+    up.bindTextures(&.{
+      .{ "tSrc", tx[1] },
+      .{ "tAdd", add },
+    });
+
+    c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
+    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, tx[0], 0);
+    defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+
+    c.glViewport(0, 0, w, h);
+    c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
+  }
 }
 
 // ---
