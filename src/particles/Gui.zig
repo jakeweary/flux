@@ -39,7 +39,7 @@ pub fn update(self: *Self, particles: *Particles) void {
 fn menu(self: *Self, particles: *Particles) void {
   const cfg = &particles.cfg;
   const window_flags = c.ImGuiWindowFlags_AlwaysAutoResize;
-  const tree_node_flags = c.ImGuiTreeNodeFlags_SpanAvailWidth;
+  const tree_node_flags = c.ImGuiTreeNodeFlags_SpanAvailWidth | c.ImGuiTreeNodeFlags_DefaultOpen;
 
   // c.igSetNextWindowCollapsed(true, c.ImGuiCond_FirstUseEver);
   c.igSetNextWindowPos(.{ .x = 16, .y = 16 }, c.ImGuiCond_FirstUseEver, .{ .x = 0, .y = 0 });
@@ -75,19 +75,23 @@ fn menu(self: *Self, particles: *Particles) void {
       if (defs.FANCY_POINT_RENDERING)
         _ = c.igSliderFloat("Point scale", &cfg.point_scale, 1.0, 10.0, null, 0);
     }
-    _ = c.igSliderFloat("Feedback loop", &cfg.feedback_loop, 0.0, 1.0, null, 0);
+    _ = c.igSliderFloat("Smooth spawn", &cfg.smooth_spawn, 0.0, 1.0, "%.2fs", 0);
+    _ = c.igSliderFloat("Feedback mix", &cfg.feedback, 0.0, 1.0, null, 0);
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Post-processing", tree_node_flags)) {
-    const defs = &particles.programs.postprocess.defs;
+    const blur = &particles.programs.bloom_blur;
+    const post = &particles.programs.postprocess;
     _ = c.igSliderFloat("Brightness", &cfg.brightness, 0.0, 5.0, null, 0);
-    _ = c.igCheckbox("ACES filmic tone mapping", &defs.ACES_TONEMAPPING);
+    _ = c.igSliderFloat("Bloom mix", &cfg.bloom, 0.0, 1.0, null, 0);
+    _ = c.igSliderFloat("Bloom radius", &blur.defs.SIGMA, 1.0, 5.0, null, 0);
+    _ = c.igCheckbox("ACES filmic tone mapping", &post.defs.ACES_TONEMAPPING);
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Performance", tree_node_flags)) {
-    _ = c.igSliderInt("Steps per frame", &cfg.steps_per_frame, 1, 32, null, 0);
+    _ = c.igSliderInt("Steps per frame", &cfg.steps_per_frame, 1, 8, null, 0);
     _ = c.igSliderInt2("Simulation size", &cfg.simulation_size, 1, 2048, null, 0);
     _ = c.igCheckbox("Vertical synchronization", &cfg.vsync);
     c.igTreePop();
@@ -111,6 +115,12 @@ fn menu(self: *Self, particles: *Particles) void {
     c.igTreePop();
   }
 
+  if (c.igTreeNodeEx_Str("Debug", tree_node_flags)) {
+    _ = c.igSliderInt("Bloom layer", &cfg.bloom_layer, 1, 8, null, 0);
+    _ = c.igSliderInt("Bloom sublayer", &cfg.bloom_sublayer, 1, 2, null, 0);
+    c.igTreePop();
+  }
+
   if (c.igTreeNodeEx_Str("Misc.", tree_node_flags)) {
     if (c.igButton("Defaults", .{ .x = 0, .y = 0 }))
       particles.defaults();
@@ -118,7 +128,7 @@ fn menu(self: *Self, particles: *Particles) void {
     if (c.igButton("Fullscreen", .{ .x = 0, .y = 0 }))
       particles.window.fullscreen();
     c.igSameLine(0, -1);
-    _ = c.igCheckbox("Debug window", &self.debug);
+    _ = c.igCheckbox("Demo window", &self.debug);
     c.igTreePop();
   }
 }

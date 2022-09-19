@@ -4,7 +4,7 @@ const std = @import("std");
 const Builder = @import("Builder.zig");
 const Self = @This();
 
-const NameAndId = std.meta.Tuple(&.{ [*:0]const c.GLchar, c.GLuint });
+const Texture = std.meta.Tuple(&.{ [*:0]const c.GLchar, c.GLuint });
 
 id: c.GLuint,
 
@@ -36,9 +36,9 @@ pub fn bindTexture(self: *const Self, name: [*:0]const c.GLchar, unit: c.GLuint,
   c.glUniform1i(c.glGetUniformLocation(self.id, name), @intCast(c.GLint, unit));
 }
 
-pub fn bindTextures(self: *const Self, pairs: []const NameAndId) void {
-  for (pairs) |pair, i|
-    self.bindTexture(pair[0], @intCast(c.GLuint, i), pair[1]);
+pub fn bindTextures(self: *const Self, textures: []const Texture) void {
+  for (textures) |t, i|
+    self.bindTexture(t[0], @intCast(c.GLuint, i), t[1]);
 }
 
 // here goes my attempt to cover (almost) all of `glUniform{1|2|3|4}{f|i|ui}[v]`

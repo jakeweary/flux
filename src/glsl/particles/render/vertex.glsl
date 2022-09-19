@@ -5,6 +5,7 @@ uniform sampler2D tPosition;
 uniform sampler2D tVelocity;
 uniform float uDT;
 uniform float uPointScale;
+uniform float uSmoothSpawn;
 uniform ivec2 uViewport;
 out vec2 vRadius;
 out vec3 vColor;
@@ -16,6 +17,7 @@ void main() {
     ivec2 uv = ivec2(id.y % ts.x, id.y / ts.x);
 
     float age = texelFetch(tAge, uv, 0).x;
+    float spawn = smoothstep(0.0, uSmoothSpawn, age);
     vec2 pos = texelFetch(tPosition, uv, 0).xy;
     vec2 vel = texelFetch(tVelocity, uv, 0).xy * uDT;
     vec2 travel = mix(vec2(0.0), vel, age != 0.0 && id.x != 0);
@@ -27,10 +29,15 @@ void main() {
       float len = 1.0;
     #endif
 
-    vColor = texelFetch(tColor, uv, 0).rgb / len;
+    vColor = texelFetch(tColor, uv, 0).rgb * spawn / len;
   #else
     ivec2 ts = textureSize(tPosition, 0).xy;
     ivec2 uv = ivec2(gl_VertexID % ts.x, gl_VertexID / ts.x);
+
+    float age = texelFetch(tAge, uv, 0).x;
+    float spawn = smoothstep(0.0, uSmoothSpawn, age);
+    vec2 pos = texelFetch(tPosition, uv, 0).xy;
+    gl_Position = vec4(pos, 0.0, 1.0);
 
     #if FANCY_POINT_RENDERING
       float size = uPointScale * texelFetch(tSize, uv, 0).x;
@@ -40,7 +47,6 @@ void main() {
       gl_PointSize = 1.0;
     #endif
 
-    vColor = texelFetch(tColor, uv, 0).rgb;
-    gl_Position = vec4(texelFetch(tPosition, uv, 0).xy, 0.0, 1.0);
+    vColor = texelFetch(tColor, uv, 0).rgb * spawn;
   #endif
 }

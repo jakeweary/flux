@@ -67,11 +67,12 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
           bool => .{ k, @boolToInt(v) },
           else => .{ k, v },
         };
-        const fmt = switch (f.field_type) {
+        const fmt = "#define {s} " ++ switch (f.field_type) {
           []const c.GLchar => "{s}",
           else => "{}",
         };
-        try str_w.print("#define {s} " ++ fmt ++ "\n", kv);
+        try str_w.print(fmt ++ "\n", kv);
+        gl.log.debug(fmt, kv);
       }
       try str.appendSlice("\n\x00");
 

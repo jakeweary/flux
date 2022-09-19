@@ -15,7 +15,7 @@ pub fn main() !void {
   try glfw.init(&.{});
   defer glfw.deinit();
 
-  var window = try glfw.Window.init(1200, 675, "gpu experiments", &.{
+  var window = try glfw.Window.init(1024, 768, "gpu experiments", &.{
     .{ c.GLFW_CONTEXT_VERSION_MAJOR, gl.MAJOR },
     .{ c.GLFW_CONTEXT_VERSION_MINOR, gl.MINOR },
     .{ c.GLFW_OPENGL_PROFILE, c.GLFW_OPENGL_CORE_PROFILE },

@@ -67,7 +67,10 @@ pub fn resize(self: *Self) void {
 
   self.width = w;
   self.height = h;
-  gl.textures.resize(&self.textures.rendering, w, h);
+  gl.textures.resize(&self.textures.rendering, w, h, &.{
+    .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
+    .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
+  });
 }
 
 pub fn run(self: *Self) !void {
@@ -78,7 +81,7 @@ pub fn run(self: *Self) !void {
     log.debug("--- new frame ---", .{});
 
     const ss = self.cfg.simulation_size;
-    if (gl.textures.resizeIfNeeded(&self.textures.simulation, ss[0], ss[1]))
+    if (gl.textures.resizeIfNeeded(&self.textures.simulation, ss[0], ss[1], &.{}))
       self.seed();
     self.resize();
     self.gui.update(self);
@@ -162,9 +165,9 @@ fn update(self: *Self, dt: f32, t: f32) void {
   c.glViewport(0, 0, self.cfg.simulation_size[0], self.cfg.simulation_size[1]);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
-  gl.textures.swap(self.textures.particleAge());
-  gl.textures.swap(self.textures.particlePosition());
-  gl.textures.swap(self.textures.particleVelocity());
+  std.mem.reverse(c.GLuint, self.textures.particleAge());
+  std.mem.reverse(c.GLuint, self.textures.particlePosition());
+  std.mem.reverse(c.GLuint, self.textures.particleVelocity());
 }
 
 fn render(self: *Self, dt: f32) void {
@@ -181,6 +184,7 @@ fn render(self: *Self, dt: f32) void {
   program.use();
   program.bind("uDT", dt);
   program.bind("uPointScale", self.cfg.point_scale);
+  program.bind("uSmoothSpawn", self.cfg.smooth_spawn);
   program.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
   program.bindTextures(&.{
     .{ "tSize", self.textures.particleSize() },
@@ -210,7 +214,7 @@ fn feedback(self: *Self) void {
 
   const program = self.programs.feedback.inner;
   program.use();
-  program.bind("uRatio", 1 - logarithmic(5, 1 - self.cfg.feedback_loop));
+  program.bind("uMix", 1 - logarithmic(5, 1 - self.cfg.feedback));
   program.bindTextures(&.{
     .{ "tRendered", self.textures.rendered() },
     .{ "tFeedback", self.textures.feedback()[0] },
@@ -224,7 +228,7 @@ fn feedback(self: *Self) void {
   c.glClear(c.GL_COLOR_BUFFER_BIT);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
-  gl.textures.swap(self.textures.feedback());
+  std.mem.reverse(c.GLuint, self.textures.feedback());
 }
 
 fn postprocess(self: *Self) void {
@@ -233,12 +237,16 @@ fn postprocess(self: *Self) void {
   c.glEnable(c.GL_FRAMEBUFFER_SRGB);
   defer c.glDisable(c.GL_FRAMEBUFFER_SRGB);
 
+  const bi = @intCast(usize, self.cfg.bloom_layer - 1);
+  const bj = @intCast(usize, self.cfg.bloom_sublayer - 1);
+
   const program = self.programs.postprocess.inner;
   program.use();
   program.bind("uBrightness", self.cfg.brightness);
+  program.bind("uBloomMix", self.cfg.bloom);
   program.bindTextures(&.{
     .{ "tRendered", self.textures.feedback()[0] },
-    .{ "tBloom", self.textures.bloom[0][0] },
+    .{ "tBloom", self.textures.bloom[bi][bj] },
   });
 
   c.glViewport(0, 0, self.width, self.height);
@@ -249,34 +257,54 @@ fn postprocess(self: *Self) void {
 fn bloom(self: *Self) void {
   log.debug("step: bloom", .{});
 
+  const blur = self.programs.bloom_blur.inner;
+  const down = self.programs.bloom_down.inner;
+  const up = self.programs.bloom_up.inner;
+
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
-  log.debug("bloom: down", .{});
-  const down = self.programs.bloom_down.inner;
-  down.use();
+  log.debug("substep: downscale", .{});
 
   var textures = self.textures.bloom;
-  for (&textures) |tx, i| {
+  for (textures[0..]) |*tx, i| {
     const sh = @truncate(u5, i);
     const w = self.width >> sh;
     const h = self.height >> sh;
-    log.debug("{} {}x{} {any}", .{ i, w, h, tx });
+    log.debug("{}x{}", .{ w, h });
 
-    if (gl.textures.resizeIfNeeded(&tx, w, h)) {
-      gl.textures.params(&tx, &.{
-        .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
-        .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
-      });
-    }
+    _ = gl.textures.resizeIfNeeded(tx, w, h, &.{
+      .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
+      .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
+    });
+
+    // downscale (or no-op)
 
     const src = switch (i) {
       0 => self.textures.feedback()[0],
-      else => textures[i - 1][0],
+      else => downscale: {
+        down.use();
+        down.bindTextures(&.{
+          .{ "tSrc", textures[i - 1][1] },
+        });
+
+        c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
+        c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, tx[1], 0);
+        defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+
+        c.glViewport(0, 0, w, h);
+        c.glClear(c.GL_COLOR_BUFFER_BIT);
+        c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
+
+        break :downscale tx[1];
+      },
     };
 
-    down.bind("uMultipleSamples", i != 0);
-    down.bindTextures(&.{
+    // blur: horizontal pass
+
+    blur.use();
+    blur.bind("uDirection", &[_][2]f32{ .{ 1, 0 } });
+    blur.bindTextures(&.{
       .{ "tSrc", src },
     });
 
@@ -285,27 +313,14 @@ fn bloom(self: *Self) void {
     defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
 
     c.glViewport(0, 0, w, h);
-    c.glClear(c.GL_COLOR_BUFFER_BIT);
     c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
-  }
 
-  log.debug("bloom: up", .{});
-  const up = self.programs.bloom_up.inner;
-  up.use();
+    // blur: vertical pass
 
-  std.mem.reverse([2]c.GLuint, &textures);
-  for (&textures) |tx, i| {
-    const sh = @truncate(u5, textures.len - i - 1);
-    const w = self.width >> sh;
-    const h = self.height >> sh;
-    log.debug("{} {}x{} {any}", .{ i, w, h, tx });
-
-    // horizontal pass
-
-    up.bind("uDirection", &[_][2]f32{ .{ 1, 0 } });
-    up.bindTextures(&.{
+    blur.use();
+    blur.bind("uDirection", &[_][2]f32{ .{ 0, 1 } });
+    blur.bindTextures(&.{
       .{ "tSrc", tx[0] },
-      .{ "tAdd", self.textures.empty[0] },
     });
 
     c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
@@ -314,18 +329,24 @@ fn bloom(self: *Self) void {
 
     c.glViewport(0, 0, w, h);
     c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
+  }
 
-    // vertical pass + add
+  log.debug("substep: upscale", .{});
 
-    const add = switch (i) {
-      0 => self.textures.empty[0],
-      else => textures[i - 1][0],
-    };
+  std.mem.reverse([2]c.GLuint, &textures);
+  std.mem.reverse(c.GLuint, &textures[0]);
+  for (textures[1..]) |*tx, i| {
+    const sh = @truncate(u5, textures.len - i - 2);
+    const w = self.width >> sh;
+    const h = self.height >> sh;
+    log.debug("{}x{}", .{ w, h });
 
-    up.bind("uDirection", &[_][2]f32{ .{ 0, 1 } });
+    // upscale + merge
+
+    up.use();
     up.bindTextures(&.{
-      .{ "tSrc", tx[1] },
-      .{ "tAdd", add },
+      .{ "tA", tx[1] },
+      .{ "tB", textures[i][0] },
     });
 
     c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
@@ -333,6 +354,7 @@ fn bloom(self: *Self) void {
     defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
 
     c.glViewport(0, 0, w, h);
+    c.glClear(c.GL_COLOR_BUFFER_BIT);
     c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
   }
 }

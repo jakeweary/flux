@@ -16,11 +16,14 @@ update: gl.ProgramWithDefs(struct {
 render: gl.ProgramWithDefs(struct {
   RENDER_AS_LINES: bool = true,
   DYNAMIC_LINE_BRIGHTNESS: bool = true,
-  FANCY_POINT_RENDERING: bool = true,
+  FANCY_POINT_RENDERING: bool = false,
 }),
 feedback: gl.Program,
 postprocess: gl.ProgramWithDefs(struct {
   ACES_TONEMAPPING: bool = true,
+}),
+bloom_blur: gl.ProgramWithDefs(struct {
+  SIGMA: f32 = 1.5,
 }),
 bloom_down: gl.Program,
 bloom_up: gl.Program,
@@ -63,16 +66,23 @@ pub fn init() !Self {
   };
   errdefer self.postprocess.deinit();
 
+  self.bloom_blur = blk: {
+    const vs = @embedFile("../glsl/particles/bloom/vertex.glsl");
+    const fs = @embedFile("../glsl/particles/bloom/fragment_blur.glsl");
+    break :blk try @TypeOf(self.bloom_blur).init(&.{ vs }, &.{ fs });
+  };
+  errdefer self.bloom_blur.deinit();
+
   self.bloom_down = blk: {
-    const vs = @embedFile("../glsl/particles/bloom/down/vertex.glsl");
-    const fs = @embedFile("../glsl/particles/bloom/down/fragment.glsl");
+    const vs = @embedFile("../glsl/particles/bloom/vertex.glsl");
+    const fs = @embedFile("../glsl/particles/bloom/fragment_down.glsl");
     break :blk try @TypeOf(self.bloom_down).init(&.{ vs }, &.{ fs });
   };
   errdefer self.bloom_down.deinit();
 
   self.bloom_up = blk: {
-    const vs = @embedFile("../glsl/particles/bloom/up/vertex.glsl");
-    const fs = @embedFile("../glsl/particles/bloom/up/fragment.glsl");
+    const vs = @embedFile("../glsl/particles/bloom/vertex.glsl");
+    const fs = @embedFile("../glsl/particles/bloom/fragment_up.glsl");
     break :blk try @TypeOf(self.bloom_up).init(&.{ vs }, &.{ fs });
   };
   errdefer self.bloom_up.deinit();
@@ -86,6 +96,7 @@ pub fn deinit(self: *const Self) void {
   self.render.deinit();
   self.feedback.deinit();
   self.postprocess.deinit();
+  self.bloom_blur.deinit();
   self.bloom_down.deinit();
   self.bloom_up.deinit();
 }
@@ -96,6 +107,7 @@ pub fn reinit(self: *Self) !void {
   _ = try self.render.reinit();
   _ = try self.feedback.reinit();
   _ = try self.postprocess.reinit();
+  _ = try self.bloom_blur.reinit();
   _ = try self.bloom_down.reinit();
   _ = try self.bloom_up.reinit();
 }
@@ -106,6 +118,7 @@ pub fn defaults(self: *Self) void {
   self.render.defs = .{};
   self.feedback.defs = .{};
   self.postprocess.defs = .{};
+  self.bloom_blur.defs = .{};
   self.bloom_down.defs = .{};
   self.bloom_up.defs = .{};
 }
