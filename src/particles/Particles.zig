@@ -65,7 +65,7 @@ pub fn resize(self: *Self) void {
 
   self.width = w;
   self.height = h;
-  gl.textures.resize(self.textures.rendering(), w, h);
+  gl.textures.resize(&self.textures.rendering, w, h);
 }
 
 pub fn run(self: *Self) !void {
@@ -74,7 +74,7 @@ pub fn run(self: *Self) !void {
 
   while (c.glfwWindowShouldClose(self.window.ptr) == c.GLFW_FALSE) {
     const ss = self.cfg.simulation_size;
-    if (gl.textures.resizeIfNeeded(self.textures.simulation(), ss[0], ss[1]))
+    if (gl.textures.resizeIfNeeded(&self.textures.simulation, ss[0], ss[1]))
       self.seed();
 
     self.resize();
