@@ -2,7 +2,7 @@ const std = @import("std");
 const c = @import("c.zig");
 const gl = @import("gl/gl.zig");
 const glfw = @import("glfw/glfw.zig");
-const Particles = @import("particles/Particles.zig");
+const Flux = @import("flux/Flux.zig");
 
 pub const log_level = std.log.Level.info;
 pub const allocator = std.heap.c_allocator;
@@ -15,7 +15,7 @@ pub fn main() !void {
   try glfw.init(&.{});
   defer glfw.deinit();
 
-  var window = try glfw.Window.init(1024, 768, "gpu experiments", &.{
+  var window = try glfw.Window.init(1024, 768, "Flux", &.{
     .{ c.GLFW_CONTEXT_VERSION_MAJOR, gl.MAJOR },
     .{ c.GLFW_CONTEXT_VERSION_MINOR, gl.MINOR },
     .{ c.GLFW_OPENGL_PROFILE, c.GLFW_OPENGL_CORE_PROFILE },
@@ -23,8 +23,8 @@ pub fn main() !void {
   });
   defer window.deinit();
 
-  var particles = try Particles.init(&window);
-  defer particles.deinit();
+  var flux = try Flux.init(&window);
+  defer flux.deinit();
 
-  try particles.run();
+  try flux.run();
 }

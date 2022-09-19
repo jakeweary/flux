@@ -1,7 +1,7 @@
 const c = @import("../c.zig");
 const std = @import("std");
 const imgui = @import("../imgui/imgui.zig");
-const Particles = @import("Particles.zig");
+const Flux = @import("Flux.zig");
 const Self = @This();
 
 ctx: imgui.Context,
@@ -26,9 +26,9 @@ pub fn render(_: *const Self) void {
   imgui.render();
 }
 
-pub fn update(self: *Self, particles: *Particles) void {
+pub fn update(self: *Self, flux: *Flux) void {
   imgui.newFrame();
-  self.menu(particles);
+  self.menu(flux);
 
   if (self.debug)
     c.igShowDemoWindow(&self.debug);
@@ -36,8 +36,8 @@ pub fn update(self: *Self, particles: *Particles) void {
 
 // ---
 
-fn menu(self: *Self, particles: *Particles) void {
-  const cfg = &particles.cfg;
+fn menu(self: *Self, flux: *Flux) void {
+  const cfg = &flux.cfg;
   const window_flags = c.ImGuiWindowFlags_AlwaysAutoResize;
   const tree_node_flags = c.ImGuiTreeNodeFlags_SpanAvailWidth | c.ImGuiTreeNodeFlags_DefaultOpen;
 
@@ -56,16 +56,16 @@ fn menu(self: *Self, particles: *Particles) void {
   }
 
   if (c.igTreeNodeEx_Str("Simulation", tree_node_flags)) {
-    const defs = &particles.programs.update.defs;
+    const defs = &flux.programs.update.defs;
     _ = c.igSliderFloat("Air resistance", &cfg.air_resistance, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("Wind power", &cfg.wind_power, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("Wind turbulence", &cfg.wind_turbulence, 0.0, 1.0, null, 0);
+    _ = c.igSliderFloat("Flux power", &cfg.flux_power, 0.0, 1.0, null, 0);
+    _ = c.igSliderFloat("Flux turbulence", &cfg.flux_turbulence, 0.0, 1.0, null, 0);
     _ = c.igCheckbox("Walls collision", &defs.WALLS_COLLISION);
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Rendering", tree_node_flags)) {
-    const defs = &particles.programs.render.defs;
+    const defs = &flux.programs.render.defs;
     _ = c.igCheckbox("Render as lines", &defs.RENDER_AS_LINES);
     if (defs.RENDER_AS_LINES) {
       _ = c.igCheckbox("Dynamic line brightness", &defs.DYNAMIC_LINE_BRIGHTNESS);
@@ -81,8 +81,8 @@ fn menu(self: *Self, particles: *Particles) void {
   }
 
   if (c.igTreeNodeEx_Str("Post-processing", tree_node_flags)) {
-    const blur = &particles.programs.bloom_blur;
-    const post = &particles.programs.postprocess;
+    const blur = &flux.programs.bloom_blur;
+    const post = &flux.programs.postprocess;
     _ = c.igSliderFloat("Brightness", &cfg.brightness, 0.0, 5.0, null, 0);
     _ = c.igSliderFloat("Bloom mix", &cfg.bloom, 0.0, 1.0, null, 0);
     _ = c.igSliderFloat("Bloom radius", &blur.defs.SIGMA, 1.0, 5.0, null, 0);
@@ -123,10 +123,10 @@ fn menu(self: *Self, particles: *Particles) void {
 
   if (c.igTreeNodeEx_Str("Misc.", tree_node_flags)) {
     if (c.igButton("Defaults", .{ .x = 0, .y = 0 }))
-      particles.defaults();
+      flux.defaults();
     c.igSameLine(0, -1);
     if (c.igButton("Fullscreen", .{ .x = 0, .y = 0 }))
-      particles.window.fullscreen();
+      flux.window.fullscreen();
     c.igSameLine(0, -1);
     _ = c.igCheckbox("Demo window", &self.debug);
     c.igTreePop();

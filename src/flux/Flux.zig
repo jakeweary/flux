@@ -8,7 +8,7 @@ const Programs = @import("Programs.zig");
 const Textures = @import("Textures.zig");
 const Self = @This();
 
-const log = std.log.scoped(.Particles);
+const log = std.log.scoped(.Flux);
 
 window: *glfw.Window,
 width: c_int = 0,
@@ -121,11 +121,11 @@ fn seed(self: *Self) void {
   program.use();
 
   c.glDrawBuffers(3, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2 });
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.particleSize(), 0);
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.size(), 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.particleColor(), 0);
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.color(), 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.particleVelocity()[0], 0);
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.velocity()[0], 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, 0, 0);
 
   c.glViewport(0, 0, self.cfg.simulation_size[0], self.cfg.simulation_size[1]);
@@ -144,30 +144,30 @@ fn update(self: *Self, dt: f32, t: f32) void {
   program.bind("uDT", dt);
   program.bind("uSpaceScale", self.cfg.space_scale * 2);
   program.bind("uAirResistance", logarithmic(5, 1 - self.cfg.air_resistance));
-  program.bind("uWindPower", self.cfg.wind_power * 100);
-  program.bind("uWindTurbulence", self.cfg.wind_turbulence);
+  program.bind("uFluxPower", self.cfg.flux_power * 100);
+  program.bind("uFluxTurbulence", self.cfg.flux_turbulence);
   program.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
   program.bindTextures(&.{
-    .{ "tSize", self.textures.particleSize() },
-    .{ "tAge", self.textures.particleAge()[0] },
-    .{ "tPosition", self.textures.particlePosition()[0] },
-    .{ "tVelocity", self.textures.particleVelocity()[0] },
+    .{ "tSize", self.textures.size() },
+    .{ "tAge", self.textures.age()[0] },
+    .{ "tPosition", self.textures.position()[0] },
+    .{ "tVelocity", self.textures.velocity()[0] },
   });
 
   c.glDrawBuffers(3, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2 });
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.particleAge()[1], 0);
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.age()[1], 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.particlePosition()[1], 0);
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.position()[1], 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.particleVelocity()[1], 0);
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.velocity()[1], 0);
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, 0, 0);
 
   c.glViewport(0, 0, self.cfg.simulation_size[0], self.cfg.simulation_size[1]);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
-  std.mem.reverse(c.GLuint, self.textures.particleAge());
-  std.mem.reverse(c.GLuint, self.textures.particlePosition());
-  std.mem.reverse(c.GLuint, self.textures.particleVelocity());
+  std.mem.reverse(c.GLuint, self.textures.age());
+  std.mem.reverse(c.GLuint, self.textures.position());
+  std.mem.reverse(c.GLuint, self.textures.velocity());
 }
 
 fn render(self: *Self, dt: f32) void {
@@ -187,11 +187,11 @@ fn render(self: *Self, dt: f32) void {
   program.bind("uSmoothSpawn", self.cfg.smooth_spawn);
   program.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
   program.bindTextures(&.{
-    .{ "tSize", self.textures.particleSize() },
-    .{ "tColor", self.textures.particleColor() },
-    .{ "tAge", self.textures.particleAge()[0] },
-    .{ "tPosition", self.textures.particlePosition()[0] },
-    .{ "tVelocity", self.textures.particleVelocity()[0] },
+    .{ "tSize", self.textures.size() },
+    .{ "tColor", self.textures.color() },
+    .{ "tAge", self.textures.age()[0] },
+    .{ "tPosition", self.textures.position()[0] },
+    .{ "tVelocity", self.textures.velocity()[0] },
   });
 
   c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });

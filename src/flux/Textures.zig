@@ -35,22 +35,22 @@ pub inline fn feedback(self: *Self) *[2]c.GLuint {
 
 // ---
 
-pub inline fn particleSize(self: *Self) c.GLuint {
+pub inline fn size(self: *Self) c.GLuint {
   return self.simulation[0];
 }
 
-pub inline fn particleColor(self: *Self) c.GLuint {
+pub inline fn color(self: *Self) c.GLuint {
   return self.simulation[1];
 }
 
-pub inline fn particleAge(self: *Self) *[2]c.GLuint {
+pub inline fn age(self: *Self) *[2]c.GLuint {
   return self.simulation[2..4];
 }
 
-pub inline fn particlePosition(self: *Self) *[2]c.GLuint {
+pub inline fn position(self: *Self) *[2]c.GLuint {
   return self.simulation[4..6];
 }
 
-pub inline fn particleVelocity(self: *Self) *[2]c.GLuint {
+pub inline fn velocity(self: *Self) *[2]c.GLuint {
   return self.simulation[6..8];
 }

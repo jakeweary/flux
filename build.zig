@@ -15,7 +15,7 @@ pub fn build(b: *std.build.Builder) !void {
     .default_target = if (try isWSL()) .{ .os_tag = .windows } else .{}
   });
 
-  const exe = b.addExecutable("bin", "src/main.zig");
+  const exe = b.addExecutable("flux", "src/main.zig");
   exe.setMainPkgPath("");
   exe.setTarget(target);
   exe.setBuildMode(mode);

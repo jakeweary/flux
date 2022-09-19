@@ -32,57 +32,57 @@ pub fn init() !Self {
   var self: Self = undefined;
 
   self.seed = blk: {
-    const vs = @embedFile("../glsl/particles/seed/vertex.glsl");
-    const fs = @embedFile("../glsl/particles/seed/fragment.glsl");
+    const vs = @embedFile("../glsl/flux/seed/vertex.glsl");
+    const fs = @embedFile("../glsl/flux/seed/fragment.glsl");
     break :blk try @TypeOf(self.seed).init(&.{ vs }, &.{ hashes, srgb, oklab, fs });
   };
   errdefer self.seed.deinit();
 
   self.update = blk: {
-    const vs = @embedFile("../glsl/particles/update/vertex.glsl");
-    const fs = @embedFile("../glsl/particles/update/fragment.glsl");
+    const vs = @embedFile("../glsl/flux/update/vertex.glsl");
+    const fs = @embedFile("../glsl/flux/update/fragment.glsl");
     break :blk try @TypeOf(self.update).init(&.{ vs }, &.{ hashes, simplex3d, fs });
   };
   errdefer self.update.deinit();
 
   self.render = blk: {
-    const vs = @embedFile("../glsl/particles/render/vertex.glsl");
-    const fs = @embedFile("../glsl/particles/render/fragment.glsl");
+    const vs = @embedFile("../glsl/flux/render/vertex.glsl");
+    const fs = @embedFile("../glsl/flux/render/fragment.glsl");
     break :blk try @TypeOf(self.render).init(&.{ vs }, &.{ fs });
   };
   errdefer self.render.deinit();
 
   self.feedback = blk: {
-    const vs = @embedFile("../glsl/particles/feedback/vertex.glsl");
-    const fs = @embedFile("../glsl/particles/feedback/fragment.glsl");
+    const vs = @embedFile("../glsl/flux/feedback/vertex.glsl");
+    const fs = @embedFile("../glsl/flux/feedback/fragment.glsl");
     break :blk try @TypeOf(self.feedback).init(&.{ vs }, &.{ fs });
   };
   errdefer self.feedback.deinit();
 
   self.postprocess = blk: {
-    const vs = @embedFile("../glsl/particles/postprocess/vertex.glsl");
-    const fs = @embedFile("../glsl/particles/postprocess/fragment.glsl");
+    const vs = @embedFile("../glsl/flux/postprocess/vertex.glsl");
+    const fs = @embedFile("../glsl/flux/postprocess/fragment.glsl");
     break :blk try @TypeOf(self.postprocess).init(&.{ vs }, &.{ aces, fs });
   };
   errdefer self.postprocess.deinit();
 
   self.bloom_blur = blk: {
-    const vs = @embedFile("../glsl/particles/bloom/vertex.glsl");
-    const fs = @embedFile("../glsl/particles/bloom/fragment_blur.glsl");
+    const vs = @embedFile("../glsl/flux/bloom/vertex.glsl");
+    const fs = @embedFile("../glsl/flux/bloom/fragment_blur.glsl");
     break :blk try @TypeOf(self.bloom_blur).init(&.{ vs }, &.{ fs });
   };
   errdefer self.bloom_blur.deinit();
 
   self.bloom_down = blk: {
-    const vs = @embedFile("../glsl/particles/bloom/vertex.glsl");
-    const fs = @embedFile("../glsl/particles/bloom/fragment_down.glsl");
+    const vs = @embedFile("../glsl/flux/bloom/vertex.glsl");
+    const fs = @embedFile("../glsl/flux/bloom/fragment_down.glsl");
     break :blk try @TypeOf(self.bloom_down).init(&.{ vs }, &.{ fs });
   };
   errdefer self.bloom_down.deinit();
 
   self.bloom_up = blk: {
-    const vs = @embedFile("../glsl/particles/bloom/vertex.glsl");
-    const fs = @embedFile("../glsl/particles/bloom/fragment_up.glsl");
+    const vs = @embedFile("../glsl/flux/bloom/vertex.glsl");
+    const fs = @embedFile("../glsl/flux/bloom/fragment_up.glsl");
     break :blk try @TypeOf(self.bloom_up).init(&.{ vs }, &.{ fs });
   };
   errdefer self.bloom_up.deinit();

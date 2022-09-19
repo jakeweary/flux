@@ -6,8 +6,8 @@ uniform float uT;
 uniform float uDT;
 uniform float uSpaceScale;
 uniform float uAirResistance;
-uniform float uWindPower;
-uniform float uWindTurbulence;
+uniform float uFluxPower;
+uniform float uFluxTurbulence;
 uniform ivec2 uViewport;
 in vec2 vUV;
 out float fAge;
@@ -59,11 +59,11 @@ void main() {
   Particle p = Particle(pSize, pAge, pPos, pVel);
 
   const vec2 r = vec2(uViewport) / float(uViewport.y);
-  vec3 xyz = vec3(1.0 / uSpaceScale * p.pos * r, uWindTurbulence * uT + 5.0);
+  vec3 xyz = vec3(1.0 / uSpaceScale * p.pos * r, uFluxTurbulence * uT + 5.0);
   float nx = simplex3d(xyz);
   float ny = simplex3d(xyz * vec3(1.0, 1.0, -1.0));
 
-  Particle_accelerate(p, uDT, uSpaceScale * uWindPower / r / p.size * vec2(nx, ny));
+  Particle_accelerate(p, uDT, uSpaceScale * uFluxPower / r / p.size * vec2(nx, ny));
   Particle_applyDrag(p, uDT, uAirResistance);
   Particle_travel(p, uDT);
 

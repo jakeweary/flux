@@ -4,12 +4,12 @@ space_scale: f32 = 0.5,
 
 // simulation
 air_resistance: f32 = 0.65,
-wind_power: f32 = 0.25,
-wind_turbulence: f32 = 0.05,
+flux_power: f32 = 0.25,
+flux_turbulence: f32 = 0.05,
 
 // rendering
-smooth_spawn: f32 = 0.0,
 point_scale: f32 = 1.0,
+smooth_spawn: f32 = 0.0,
 feedback: f32 = 0.3,
 
 // post-processing
