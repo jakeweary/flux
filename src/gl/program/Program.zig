@@ -44,6 +44,11 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
       return changed;
     }
 
+    pub fn use(self: *const Self) Inner {
+      self.inner.use();
+      return self.inner;
+    }
+
     fn initInner(vert: [:0]const c.GLchar, frag: [:0]const c.GLchar, defs: Defs) !Inner {
       var str = gl.String.init(root.allocator);
       defer str.deinit();

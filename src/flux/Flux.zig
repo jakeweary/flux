@@ -115,8 +115,7 @@ pub fn run(self: *Self) !void {
 fn seed(self: *Self) void {
   log.debug("step: seed", .{});
 
-  const program = self.programs.seed.inner;
-  program.use();
+  _ = self.programs.seed.use();
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
     .{ c.GL_COLOR_ATTACHMENT0, self.textures.size() },
@@ -132,8 +131,7 @@ fn seed(self: *Self) void {
 fn update(self: *Self, dt: f32, t: f32) void {
   log.debug("step: update", .{});
 
-  const program = self.programs.update.inner;
-  program.use();
+  const program = self.programs.update.use();
   program.uniforms(.{
     .uT = t,
     .uDT = dt,
@@ -172,8 +170,7 @@ fn render(self: *Self, dt: f32) void {
   c.glEnable(c.GL_BLEND);
   defer c.glDisable(c.GL_BLEND);
 
-  const program = self.programs.render.inner;
-  program.use();
+  const program = self.programs.render.use();
   program.uniforms(.{
     .uDT = dt,
     .uPointScale = self.cfg.point_scale,
@@ -205,8 +202,7 @@ fn render(self: *Self, dt: f32) void {
 fn feedback(self: *Self) void {
   log.debug("step: feedback", .{});
 
-  const program = self.programs.feedback.inner;
-  program.use();
+  const program = self.programs.feedback.use();
   program.uniforms(.{
     .uMix = 1 - util.logarithmic(5, 1 - self.cfg.feedback),
   });
@@ -235,8 +231,7 @@ fn postprocess(self: *Self) void {
   const bi = @intCast(usize, self.cfg.bloom_layer - 1);
   const bj = @intCast(usize, self.cfg.bloom_sublayer - 1);
 
-  const program = self.programs.postprocess.inner;
-  program.use();
+  const program = self.programs.postprocess.use();
   program.uniforms(.{
     .uBrightness = self.cfg.brightness,
     .uBloomMix = self.cfg.bloom,
@@ -252,7 +247,6 @@ fn postprocess(self: *Self) void {
 
 fn bloom(self: *Self) void {
   log.debug("step: bloom", .{});
-
   log.debug("substep: downscale and blur", .{});
 
   var layers = self.textures.bloom;
@@ -297,8 +291,7 @@ fn bloom(self: *Self) void {
 }
 
 fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei, dir: [2]f32) void {
-  const program = self.programs.bloom_blur.inner;
-  program.use();
+  const program = self.programs.bloom_blur.use();
   program.uniforms(.{ .uDirection = &[_][2]f32{ dir } });
   program.textures(.{ .tSrc = src });
 
@@ -312,8 +305,7 @@ fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsiz
 }
 
 fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei) void {
-  const program = self.programs.bloom_down.inner;
-  program.use();
+  const program = self.programs.bloom_down.use();
   program.textures(.{ .tSrc = src });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
@@ -326,8 +318,7 @@ fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsiz
 }
 
 fn bloomUp(self: *Self, a: c.GLuint, b: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei) void {
-  const program = self.programs.bloom_up.inner;
-  program.use();
+  const program = self.programs.bloom_up.use();
   program.textures(.{ .tA = a, .tB = b });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
