@@ -3,11 +3,11 @@ in vec3 vColor;
 out vec3 fColor;
 
 void main() {
-  #if RENDER_AS_LINES || !FANCY_POINT_RENDERING
-    fColor = vColor;
-  #else
+  #if FANCY_POINT_RENDERING && !RENDER_AS_LINES
     float dist = length(gl_PointCoord - 0.5);
     float circle = smoothstep(vRadius.x, vRadius.y, dist);
     fColor = circle * vColor;
+  #else
+    fColor = vColor;
   #endif
 }
