@@ -4,7 +4,7 @@ const std = @import("std");
 
 const KeyValue = std.meta.Tuple(&.{ c.GLenum, c.GLint });
 
-pub fn init(ids: []const c.GLuint, fmt: c.GLenum, w: c.GLint, h: c.GLint) void {
+pub fn init(ids: []c.GLuint, fmt: c.GLenum, w: c.GLint, h: c.GLint) void {
   c.glCreateTextures(c.GL_TEXTURE_2D, @intCast(c.GLsizei, ids.len), ids.ptr);
   for (ids) |id|
     c.glTextureStorage2D(id, 1, fmt, w, h);
@@ -14,15 +14,16 @@ pub fn deinit(ids: []const c.GLuint) void {
   c.glDeleteTextures(@intCast(c.GLsizei, ids.len), ids.ptr);
 }
 
-pub fn resize(ids: []const c.GLuint, w: c.GLint, h: c.GLint, params: []const KeyValue) void {
+pub fn resize(ids: []c.GLuint, w: c.GLint, h: c.GLint, params: []const KeyValue) void {
   var fmt: c.GLint = undefined;
   c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_INTERNAL_FORMAT, &fmt);
+
   deinit(ids);
   init(ids, @intCast(c.GLenum, fmt), w, h);
   setParams(ids, params);
 }
 
-pub fn resizeIfChanged(ids: []const c.GLuint, w: c.GLint, h: c.GLint, params: []const KeyValue) bool {
+pub fn resizeIfChanged(ids: []c.GLuint, w: c.GLint, h: c.GLint, params: []const KeyValue) bool {
   var curr_w: c.GLint = undefined;
   var curr_h: c.GLint = undefined;
   c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_WIDTH, &curr_w);
