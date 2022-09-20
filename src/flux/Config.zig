@@ -1,5 +1,5 @@
 // scaling
-time_scale: f32 = 0.8,
+time_scale: f32 = 0.5,
 space_scale: f32 = 0.5,
 
 // simulation
@@ -9,8 +9,8 @@ flux_turbulence: f32 = 0.05,
 
 // rendering
 point_scale: f32 = 1.0,
-smooth_spawn: f32 = 0.0,
-feedback: f32 = 0.3,
+smooth_spawn: f32 = 0.15,
+feedback: f32 = 0.25,
 
 // post-processing
 brightness: f32 = 4.0,

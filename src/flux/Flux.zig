@@ -200,6 +200,7 @@ fn render(self: *Self, dt: f32) void {
 
   c.glViewport(0, 0, self.width, self.height);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
+
   if (self.programs.render.defs.RENDER_AS_LINES)
     c.glDrawArrays(c.GL_LINES, 0, self.cfg.simulation_size[0] * self.cfg.simulation_size[1] * 2)
   else
@@ -225,7 +226,6 @@ fn feedback(self: *Self) void {
   defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
 
   c.glViewport(0, 0, self.width, self.height);
-  c.glClear(c.GL_COLOR_BUFFER_BIT);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
   std.mem.reverse(c.GLuint, self.textures.feedback());
@@ -250,7 +250,6 @@ fn postprocess(self: *Self) void {
   });
 
   c.glViewport(0, 0, self.width, self.height);
-  c.glClear(c.GL_COLOR_BUFFER_BIT);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
@@ -266,14 +265,14 @@ fn bloom(self: *Self) void {
 
   log.debug("substep: downscale", .{});
 
-  var textures = self.textures.bloom;
-  for (textures[0..]) |*tx, i| {
+  var layers = self.textures.bloom;
+  for (layers[0..]) |*pair, i| {
     const sh = @truncate(u5, i);
     const w = self.width >> sh;
     const h = self.height >> sh;
     log.debug("{}x{}", .{ w, h });
 
-    _ = gl.textures.resizeIfNeeded(tx, w, h, &.{
+    _ = gl.textures.resizeIfNeeded(pair, w, h, &.{
       .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
       .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
     });
@@ -285,18 +284,17 @@ fn bloom(self: *Self) void {
       else => downscale: {
         down.use();
         down.bindTextures(&.{
-          .{ "tSrc", textures[i - 1][1] },
+          .{ "tSrc", layers[i - 1][1] },
         });
 
         c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-        c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, tx[1], 0);
+        c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, pair[1], 0);
         defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
 
         c.glViewport(0, 0, w, h);
-        c.glClear(c.GL_COLOR_BUFFER_BIT);
         c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
-        break :downscale tx[1];
+        break :downscale pair[1];
       },
     };
 
@@ -309,7 +307,7 @@ fn bloom(self: *Self) void {
     });
 
     c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, tx[0], 0);
+    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, pair[0], 0);
     defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
 
     c.glViewport(0, 0, w, h);
@@ -320,11 +318,11 @@ fn bloom(self: *Self) void {
     blur.use();
     blur.bind("uDirection", &[_][2]f32{ .{ 0, 1 } });
     blur.bindTextures(&.{
-      .{ "tSrc", tx[0] },
+      .{ "tSrc", pair[0] },
     });
 
     c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, tx[1], 0);
+    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, pair[1], 0);
     defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
 
     c.glViewport(0, 0, w, h);
@@ -333,10 +331,10 @@ fn bloom(self: *Self) void {
 
   log.debug("substep: upscale", .{});
 
-  std.mem.reverse([2]c.GLuint, &textures);
-  std.mem.reverse(c.GLuint, &textures[0]);
-  for (textures[1..]) |*tx, i| {
-    const sh = @truncate(u5, textures.len - i - 2);
+  std.mem.reverse([2]c.GLuint, &layers);
+  std.mem.reverse(c.GLuint, &layers[0]);
+  for (layers[1..]) |*pair, i| {
+    const sh = @truncate(u5, layers.len - i - 2);
     const w = self.width >> sh;
     const h = self.height >> sh;
     log.debug("{}x{}", .{ w, h });
@@ -345,16 +343,15 @@ fn bloom(self: *Self) void {
 
     up.use();
     up.bindTextures(&.{
-      .{ "tA", tx[1] },
-      .{ "tB", textures[i][0] },
+      .{ "tA", pair[1] },
+      .{ "tB", layers[i][0] },
     });
 
     c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, tx[0], 0);
+    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, pair[0], 0);
     defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
 
     c.glViewport(0, 0, w, h);
-    c.glClear(c.GL_COLOR_BUFFER_BIT);
     c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
   }
 }

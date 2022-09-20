@@ -46,6 +46,15 @@ pub fn hint(str: []const u8) void {
   tooltip(str);
 }
 
+pub fn plot(fmt: [*:0]const u8, value: f32, storage: []f32) void {
+  storage[0] = value;
+  std.mem.rotate(f32, storage, 1);
+  c.igPlotLines_FloatPtr("", storage.ptr, @intCast(c_int, storage.len),
+    0, null, 0, c.igGET_FLT_MAX(), .{ .x = 0, .y = 0 }, @sizeOf(f32));
+  c.igSameLine(0, -1);
+  c.igText(fmt, @as(f64, value));
+}
+
 // ---
 
 pub fn loadCustomStyle() void {

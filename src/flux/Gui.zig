@@ -41,7 +41,6 @@ fn menu(self: *Self, flux: *Flux) void {
   const window_flags = c.ImGuiWindowFlags_AlwaysAutoResize;
   const tree_node_flags = c.ImGuiTreeNodeFlags_SpanAvailWidth | c.ImGuiTreeNodeFlags_DefaultOpen;
 
-  // c.igSetNextWindowCollapsed(true, c.ImGuiCond_FirstUseEver);
   c.igSetNextWindowPos(.{ .x = 16, .y = 16 }, c.ImGuiCond_FirstUseEver, .{ .x = 0, .y = 0 });
   _ = c.igBegin("Menu", null, window_flags);
   defer c.igEnd();
@@ -85,7 +84,7 @@ fn menu(self: *Self, flux: *Flux) void {
     const post = &flux.programs.postprocess;
     _ = c.igSliderFloat("Brightness", &cfg.brightness, 0.0, 5.0, null, 0);
     _ = c.igSliderFloat("Bloom mix", &cfg.bloom, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("Bloom radius", &blur.defs.SIGMA, 1.0, 5.0, null, 0);
+    _ = c.igSliderFloat("Bloom size", &blur.defs.SIGMA, 1.0, 5.0, null, 0);
     _ = c.igCheckbox("ACES filmic tone mapping", &post.defs.ACES_TONEMAPPING);
     c.igTreePop();
   }
@@ -98,8 +97,8 @@ fn menu(self: *Self, flux: *Flux) void {
   }
 
   if (c.igTreeNodeEx_Str("Metrics", tree_node_flags)) {
-    plot("%.1f fps", imgui.io().Framerate, &self.fps);
-    plot("%.1f ms/frame", 1e3 * imgui.io().DeltaTime, &self.dt);
+    imgui.plot("%.1f fps", imgui.io().Framerate, &self.fps);
+    imgui.plot("%.1f ms/frame", 1e3 * imgui.io().DeltaTime, &self.dt);
     if (c.igBeginTable("table", 3, c.ImGuiTableFlags_SizingStretchSame, .{ .x = 0, .y = 0 }, 0)) {
       const per_step = cfg.simulation_size[0] * cfg.simulation_size[1];
       const per_frame = per_step * cfg.steps_per_frame;
@@ -131,13 +130,4 @@ fn menu(self: *Self, flux: *Flux) void {
     _ = c.igCheckbox("Demo window", &self.debug);
     c.igTreePop();
   }
-}
-
-fn plot(fmt: [*:0]const u8, value: f32, storage: []f32) void {
-  storage[0] = value;
-  std.mem.rotate(f32, storage, 1);
-  c.igPlotLines_FloatPtr("", storage.ptr, @intCast(c_int, storage.len),
-    0, null, 0, c.igGET_FLT_MAX(), .{ .x = 0, .y = 0 }, @sizeOf(f32));
-  c.igSameLine(0, -1);
-  c.igText(fmt, @as(f64, value));
 }
