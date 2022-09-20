@@ -82,7 +82,7 @@ pub fn run(self: *Self) !void {
     log.debug("--- new frame ---", .{});
 
     const ss = self.cfg.simulation_size;
-    if (gl.textures.resizeIfNeeded(&self.textures.simulation, ss[0], ss[1], &.{}))
+    if (gl.textures.resizeIfChanged(&self.textures.simulation, ss[0], ss[1], &.{}))
       self.seed();
     self.resize();
     self.gui.update(self);
@@ -115,19 +115,15 @@ pub fn run(self: *Self) !void {
 fn seed(self: *Self) void {
   log.debug("step: seed", .{});
 
-  c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
-  defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
-
   const program = self.programs.seed.inner;
   program.use();
 
-  c.glDrawBuffers(3, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2 });
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.size(), 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.color(), 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.velocity()[0], 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, 0, 0);
+  const fbo = gl.Framebuffer.attach(self.fbo, &.{
+    .{ c.GL_COLOR_ATTACHMENT0, self.textures.size() },
+    .{ c.GL_COLOR_ATTACHMENT1, self.textures.color() },
+    .{ c.GL_COLOR_ATTACHMENT2, self.textures.velocity()[0] },
+  });
+  defer fbo.detach();
 
   c.glViewport(0, 0, self.cfg.simulation_size[0], self.cfg.simulation_size[1]);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
@@ -135,9 +131,6 @@ fn seed(self: *Self) void {
 
 fn update(self: *Self, dt: f32, t: f32) void {
   log.debug("step: update", .{});
-
-  c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
-  defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
   const program = self.programs.update.inner;
   program.use();
@@ -157,13 +150,12 @@ fn update(self: *Self, dt: f32, t: f32) void {
     .tVelocity = self.textures.velocity()[0],
   });
 
-  c.glDrawBuffers(3, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2 });
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.age()[1], 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, self.textures.position()[1], 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT1, 0, 0);
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, self.textures.velocity()[1], 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT2, 0, 0);
+  const fbo = gl.Framebuffer.attach(self.fbo, &.{
+    .{ c.GL_COLOR_ATTACHMENT0, self.textures.age()[1] },
+    .{ c.GL_COLOR_ATTACHMENT1, self.textures.position()[1] },
+    .{ c.GL_COLOR_ATTACHMENT2, self.textures.velocity()[1] },
+  });
+  defer fbo.detach();
 
   c.glViewport(0, 0, self.cfg.simulation_size[0], self.cfg.simulation_size[1]);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
@@ -175,9 +167,6 @@ fn update(self: *Self, dt: f32, t: f32) void {
 
 fn render(self: *Self, dt: f32) void {
   log.debug("step: render", .{});
-
-  c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
-  defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
   c.glBlendFunc(c.GL_ONE, c.GL_ONE);
   c.glEnable(c.GL_BLEND);
@@ -199,9 +188,10 @@ fn render(self: *Self, dt: f32) void {
     .tVelocity = self.textures.velocity()[0],
   });
 
-  c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.rendered(), 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+  const fbo = gl.Framebuffer.attach(self.fbo, &.{
+    .{ c.GL_COLOR_ATTACHMENT0, self.textures.rendered() },
+  });
+  defer fbo.detach();
 
   c.glViewport(0, 0, self.width, self.height);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
@@ -215,9 +205,6 @@ fn render(self: *Self, dt: f32) void {
 fn feedback(self: *Self) void {
   log.debug("step: feedback", .{});
 
-  c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
-  defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
-
   const program = self.programs.feedback.inner;
   program.use();
   program.uniforms(.{
@@ -228,9 +215,10 @@ fn feedback(self: *Self) void {
     .tFeedback = self.textures.feedback()[0],
   });
 
-  c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, self.textures.feedback()[1], 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+  const fbo = gl.Framebuffer.attach(self.fbo, &.{
+    .{ c.GL_COLOR_ATTACHMENT0, self.textures.feedback()[1] },
+  });
+  defer fbo.detach();
 
   c.glViewport(0, 0, self.width, self.height);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
@@ -265,9 +253,6 @@ fn postprocess(self: *Self) void {
 fn bloom(self: *Self) void {
   log.debug("step: bloom", .{});
 
-  c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
-  defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
-
   log.debug("substep: downscale and blur", .{});
 
   var layers = self.textures.bloom;
@@ -277,7 +262,7 @@ fn bloom(self: *Self) void {
     const h = self.height >> sh;
     log.debug("{}x{}", .{ w, h });
 
-    _ = gl.textures.resizeIfNeeded(pair, w, h, &.{
+    _ = gl.textures.resizeIfChanged(pair, w, h, &.{
       .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
       .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
     });
@@ -317,9 +302,10 @@ fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsiz
   program.uniforms(.{ .uDirection = &[_][2]f32{ dir } });
   program.textures(.{ .tSrc = src });
 
-  c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, dst, 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+  const fbo = gl.Framebuffer.attach(self.fbo, &.{
+    .{ c.GL_COLOR_ATTACHMENT0, dst },
+  });
+  defer fbo.detach();
 
   c.glViewport(0, 0, w, h);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
@@ -330,9 +316,10 @@ fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsiz
   program.use();
   program.textures(.{ .tSrc = src });
 
-  c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, dst, 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+  const fbo = gl.Framebuffer.attach(self.fbo, &.{
+    .{ c.GL_COLOR_ATTACHMENT0, dst },
+  });
+  defer fbo.detach();
 
   c.glViewport(0, 0, w, h);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
@@ -343,9 +330,10 @@ fn bloomUp(self: *Self, a: c.GLuint, b: c.GLuint, dst: c.GLuint, w: c.GLsizei, h
   program.use();
   program.textures(.{ .tA = a, .tB = b });
 
-  c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, dst, 0);
-  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+  const fbo = gl.Framebuffer.attach(self.fbo, &.{
+    .{ c.GL_COLOR_ATTACHMENT0, dst },
+  });
+  defer fbo.detach();
 
   c.glViewport(0, 0, w, h);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);

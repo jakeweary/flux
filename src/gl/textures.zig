@@ -2,7 +2,7 @@ const c = @import("../c.zig");
 const gl = @import("gl.zig");
 const std = @import("std");
 
-const Param = std.meta.Tuple(&.{ c.GLenum, c.GLint });
+const KeyValue = std.meta.Tuple(&.{ c.GLenum, c.GLint });
 
 pub fn init(ids: []const c.GLuint, fmt: c.GLenum, w: c.GLint, h: c.GLint) void {
   c.glCreateTextures(c.GL_TEXTURE_2D, @intCast(c.GLsizei, ids.len), ids.ptr);
@@ -14,7 +14,7 @@ pub fn deinit(ids: []const c.GLuint) void {
   c.glDeleteTextures(@intCast(c.GLsizei, ids.len), ids.ptr);
 }
 
-pub fn resize(ids: []const c.GLuint, w: c.GLint, h: c.GLint, params: []const Param) void {
+pub fn resize(ids: []const c.GLuint, w: c.GLint, h: c.GLint, params: []const KeyValue) void {
   var fmt: c.GLint = undefined;
   c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_INTERNAL_FORMAT, &fmt);
   deinit(ids);
@@ -22,7 +22,7 @@ pub fn resize(ids: []const c.GLuint, w: c.GLint, h: c.GLint, params: []const Par
   setParams(ids, params);
 }
 
-pub fn resizeIfNeeded(ids: []const c.GLuint, w: c.GLint, h: c.GLint, params: []const Param) bool {
+pub fn resizeIfChanged(ids: []const c.GLuint, w: c.GLint, h: c.GLint, params: []const KeyValue) bool {
   var curr_w: c.GLint = undefined;
   var curr_h: c.GLint = undefined;
   c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_WIDTH, &curr_w);
@@ -36,8 +36,8 @@ pub fn resizeIfNeeded(ids: []const c.GLuint, w: c.GLint, h: c.GLint, params: []c
   return changed;
 }
 
-pub fn setParams(ids: []const c.GLuint, params: []const Param) void {
+pub fn setParams(ids: []const c.GLuint, params: []const KeyValue) void {
   for (ids) |id|
-    for (params) |p|
-      c.glTextureParameteri(id, p[0], p[1]);
+    for (params) |kv|
+      c.glTextureParameteri(id, kv[0], kv[1]);
 }
