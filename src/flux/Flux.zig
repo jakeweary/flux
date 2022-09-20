@@ -256,14 +256,10 @@ fn postprocess(self: *Self) void {
 fn bloom(self: *Self) void {
   log.debug("step: bloom", .{});
 
-  const blur = self.programs.bloom_blur.inner;
-  const down = self.programs.bloom_down.inner;
-  const up = self.programs.bloom_up.inner;
-
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, self.fbo);
   defer c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
 
-  log.debug("substep: downscale", .{});
+  log.debug("substep: downscale and blur", .{});
 
   var layers = self.textures.bloom;
   for (layers[0..]) |*pair, i| {
@@ -278,58 +274,20 @@ fn bloom(self: *Self) void {
     });
 
     // downscale (or no-op)
-
     const src = switch (i) {
       0 => self.textures.feedback()[0],
-      else => downscale: {
-        down.use();
-        down.bindTextures(&.{
-          .{ "tSrc", layers[i - 1][1] },
-        });
-
-        c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-        c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, pair[1], 0);
-        defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
-
-        c.glViewport(0, 0, w, h);
-        c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
-
-        break :downscale pair[1];
+      else => blk: {
+        self.bloomDown(layers[i - 1][1], pair[1], w, h);
+        break :blk pair[1];
       },
     };
 
-    // blur: horizontal pass
-
-    blur.use();
-    blur.bind("uDirection", &[_][2]f32{ .{ 1, 0 } });
-    blur.bindTextures(&.{
-      .{ "tSrc", src },
-    });
-
-    c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, pair[0], 0);
-    defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
-
-    c.glViewport(0, 0, w, h);
-    c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
-
-    // blur: vertical pass
-
-    blur.use();
-    blur.bind("uDirection", &[_][2]f32{ .{ 0, 1 } });
-    blur.bindTextures(&.{
-      .{ "tSrc", pair[0] },
-    });
-
-    c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, pair[1], 0);
-    defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
-
-    c.glViewport(0, 0, w, h);
-    c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
+    // blur: horizontal and then vertical pass
+    self.bloomBlur(src, pair[0], w, h, .{ 1, 0 });
+    self.bloomBlur(pair[0], pair[1], w, h, .{ 0, 1 });
   }
 
-  log.debug("substep: upscale", .{});
+  log.debug("substep: upscale and merge", .{});
 
   std.mem.reverse([2]c.GLuint, &layers);
   std.mem.reverse(c.GLuint, &layers[0]);
@@ -339,21 +297,56 @@ fn bloom(self: *Self) void {
     const h = self.height >> sh;
     log.debug("{}x{}", .{ w, h });
 
-    // upscale + merge
-
-    up.use();
-    up.bindTextures(&.{
-      .{ "tA", pair[1] },
-      .{ "tB", layers[i][0] },
-    });
-
-    c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
-    c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, pair[0], 0);
-    defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
-
-    c.glViewport(0, 0, w, h);
-    c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
+    // upscale and merge
+    self.bloomUp(layers[i][0], pair[1], pair[0], w, h);
   }
+}
+
+fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei, dir: [2]f32) void {
+  const program = self.programs.bloom_blur.inner;
+  program.use();
+  program.bind("uDirection", &[_][2]f32{ dir });
+  program.bindTextures(&.{
+    .{ "tSrc", src },
+  });
+
+  c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, dst, 0);
+  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+
+  c.glViewport(0, 0, w, h);
+  c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
+}
+
+fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei) void {
+  const program = self.programs.bloom_down.inner;
+  program.use();
+  program.bindTextures(&.{
+    .{ "tSrc", src },
+  });
+
+  c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, dst, 0);
+  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+
+  c.glViewport(0, 0, w, h);
+  c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
+}
+
+fn bloomUp(self: *Self, a: c.GLuint, b: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei) void {
+  const program = self.programs.bloom_up.inner;
+  program.use();
+  program.bindTextures(&.{
+    .{ "tA", a },
+    .{ "tB", b },
+  });
+
+  c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
+  c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, dst, 0);
+  defer c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, 0, 0);
+
+  c.glViewport(0, 0, w, h);
+  c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
 // ---
