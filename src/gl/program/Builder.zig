@@ -29,9 +29,9 @@ pub fn link(self: *const Self) !c.GLuint {
   c.glLinkProgram(self.id);
   try self.checkError(&str);
 
-  try self.logActiveResources(&str, c.GL_UNIFORM, "uniform");
   try self.logActiveResources(&str, c.GL_PROGRAM_INPUT, "in");
   try self.logActiveResources(&str, c.GL_PROGRAM_OUTPUT, "out");
+  try self.logActiveResources(&str, c.GL_UNIFORM, "uniform");
 
   return self.id;
 }

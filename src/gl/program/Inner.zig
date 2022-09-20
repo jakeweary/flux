@@ -4,8 +4,6 @@ const std = @import("std");
 const Builder = @import("Builder.zig");
 const Self = @This();
 
-const Texture = std.meta.Tuple(&.{ [*:0]const c.GLchar, c.GLuint });
-
 id: c.GLuint,
 
 pub fn init(vert: []const [*:0]const c.GLchar, frag: []const [*:0]const c.GLchar) !Self {
@@ -19,31 +17,36 @@ pub fn deinit(self: *const Self) void {
   c.glDeleteProgram(self.id);
 }
 
-pub fn attribute(self: *const Self, name: [*:0]const c.GLchar) c.GLuint {
-  return @intCast(c.GLuint, c.glGetAttribLocation(self.id, name));
-}
-
-pub fn uniform(self: *const Self, name: [*:0]const c.GLchar) c.GLint {
-  return c.glGetUniformLocation(self.id, name);
-}
-
 pub fn use(self: *const Self) void {
   c.glUseProgram(self.id);
 }
 
-pub fn bindTexture(self: *const Self, name: [*:0]const c.GLchar, unit: c.GLuint, id: c.GLuint) void {
+pub fn textures(self: *const Self, arg: anytype) void {
+  switch (@typeInfo(@TypeOf(arg))) {
+    .Struct => |s| inline for (s.fields) |f, i| {
+      self.texture(f.name ++ "", @intCast(c.GLuint, i), @field(arg, f.name));
+    },
+    else => @compileError("unimplemented"),
+  }
+}
+
+pub fn texture(self: *const Self, name: [*:0]const c.GLchar, unit: c.GLuint, id: c.GLuint) void {
   c.glBindTextureUnit(unit, id);
   c.glUniform1i(c.glGetUniformLocation(self.id, name), @intCast(c.GLint, unit));
 }
 
-pub fn bindTextures(self: *const Self, textures: []const Texture) void {
-  for (textures) |t, i|
-    self.bindTexture(t[0], @intCast(c.GLuint, i), t[1]);
+pub fn uniforms(self: *const Self, arg: anytype) void {
+  switch (@typeInfo(@TypeOf(arg))) {
+    .Struct => |s| inline for (s.fields) |f| {
+      self.uniform(f.name ++ "", @field(arg, f.name));
+    },
+    else => @compileError("unimplemented"),
+  }
 }
 
 // here goes my attempt to cover (almost) all of `glUniform{1|2|3|4}{f|i|ui}[v]`
-pub fn bind(self: *const Self, name: [*:0]const c.GLchar, value: anytype) void {
-  const loc = self.uniform(name);
+pub fn uniform(self: *const Self, name: [*:0]const c.GLchar, value: anytype) void {
+  const loc = c.glGetUniformLocation(self.id, name);
   switch (@typeInfo(@TypeOf(value))) {
     .ComptimeFloat, .Float => c.glUniform1f(loc, @floatCast(c.GLfloat, value)),
     .ComptimeInt, .Int => c.glUniform1i(loc, @intCast(c.GLint, value)),

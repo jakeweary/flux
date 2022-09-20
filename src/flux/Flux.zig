@@ -141,18 +141,20 @@ fn update(self: *Self, dt: f32, t: f32) void {
 
   const program = self.programs.update.inner;
   program.use();
-  program.bind("uT", t);
-  program.bind("uDT", dt);
-  program.bind("uSpaceScale", self.cfg.space_scale * 2);
-  program.bind("uAirResistance", util.logarithmic(5, 1 - self.cfg.air_resistance));
-  program.bind("uFluxPower", self.cfg.flux_power * 100);
-  program.bind("uFluxTurbulence", self.cfg.flux_turbulence);
-  program.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
-  program.bindTextures(&.{
-    .{ "tSize", self.textures.size() },
-    .{ "tAge", self.textures.age()[0] },
-    .{ "tPosition", self.textures.position()[0] },
-    .{ "tVelocity", self.textures.velocity()[0] },
+  program.uniforms(.{
+    .uT = t,
+    .uDT = dt,
+    .uSpaceScale = self.cfg.space_scale * 2,
+    .uAirResistance = util.logarithmic(5, 1 - self.cfg.air_resistance),
+    .uFluxPower = self.cfg.flux_power * 100,
+    .uFluxTurbulence = self.cfg.flux_turbulence,
+    .uViewport = &[_][2]c.GLint{.{ self.width, self.height }},
+  });
+  program.textures(.{
+    .tSize = self.textures.size(),
+    .tAge = self.textures.age()[0],
+    .tPosition = self.textures.position()[0],
+    .tVelocity = self.textures.velocity()[0],
   });
 
   c.glDrawBuffers(3, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0, c.GL_COLOR_ATTACHMENT1, c.GL_COLOR_ATTACHMENT2 });
@@ -183,16 +185,18 @@ fn render(self: *Self, dt: f32) void {
 
   const program = self.programs.render.inner;
   program.use();
-  program.bind("uDT", dt);
-  program.bind("uPointScale", self.cfg.point_scale);
-  program.bind("uSmoothSpawn", self.cfg.smooth_spawn);
-  program.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
-  program.bindTextures(&.{
-    .{ "tSize", self.textures.size() },
-    .{ "tColor", self.textures.color() },
-    .{ "tAge", self.textures.age()[0] },
-    .{ "tPosition", self.textures.position()[0] },
-    .{ "tVelocity", self.textures.velocity()[0] },
+  program.uniforms(.{
+    .uDT = dt,
+    .uPointScale = self.cfg.point_scale,
+    .uSmoothSpawn = self.cfg.smooth_spawn,
+    .uViewport = &[_][2]c.GLint{.{ self.width, self.height }},
+  });
+  program.textures(.{
+    .tSize = self.textures.size(),
+    .tColor = self.textures.color(),
+    .tAge = self.textures.age()[0],
+    .tPosition = self.textures.position()[0],
+    .tVelocity = self.textures.velocity()[0],
   });
 
   c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
@@ -216,10 +220,12 @@ fn feedback(self: *Self) void {
 
   const program = self.programs.feedback.inner;
   program.use();
-  program.bind("uMix", 1 - util.logarithmic(5, 1 - self.cfg.feedback));
-  program.bindTextures(&.{
-    .{ "tRendered", self.textures.rendered() },
-    .{ "tFeedback", self.textures.feedback()[0] },
+  program.uniforms(.{
+    .uMix = 1 - util.logarithmic(5, 1 - self.cfg.feedback),
+  });
+  program.textures(.{
+    .tRendered = self.textures.rendered(),
+    .tFeedback = self.textures.feedback()[0],
   });
 
   c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
@@ -243,11 +249,13 @@ fn postprocess(self: *Self) void {
 
   const program = self.programs.postprocess.inner;
   program.use();
-  program.bind("uBrightness", self.cfg.brightness);
-  program.bind("uBloomMix", self.cfg.bloom);
-  program.bindTextures(&.{
-    .{ "tRendered", self.textures.feedback()[0] },
-    .{ "tBloom", self.textures.bloom[bi][bj] },
+  program.uniforms(.{
+    .uBrightness = self.cfg.brightness,
+    .uBloomMix = self.cfg.bloom,
+  });
+  program.textures(.{
+    .tRendered = self.textures.feedback()[0],
+    .tBloom = self.textures.bloom[bi][bj],
   });
 
   c.glViewport(0, 0, self.width, self.height);
@@ -306,10 +314,8 @@ fn bloom(self: *Self) void {
 fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei, dir: [2]f32) void {
   const program = self.programs.bloom_blur.inner;
   program.use();
-  program.bind("uDirection", &[_][2]f32{ dir });
-  program.bindTextures(&.{
-    .{ "tSrc", src },
-  });
+  program.uniforms(.{ .uDirection = &[_][2]f32{ dir } });
+  program.textures(.{ .tSrc = src });
 
   c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, dst, 0);
@@ -322,9 +328,7 @@ fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsiz
 fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei) void {
   const program = self.programs.bloom_down.inner;
   program.use();
-  program.bindTextures(&.{
-    .{ "tSrc", src },
-  });
+  program.textures(.{ .tSrc = src });
 
   c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, dst, 0);
@@ -337,10 +341,7 @@ fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsiz
 fn bloomUp(self: *Self, a: c.GLuint, b: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei) void {
   const program = self.programs.bloom_up.inner;
   program.use();
-  program.bindTextures(&.{
-    .{ "tA", a },
-    .{ "tB", b },
-  });
+  program.textures(.{ .tA = a, .tB = b });
 
   c.glNamedFramebufferDrawBuffers(self.fbo, 1, &[_]c.GLuint{ c.GL_COLOR_ATTACHMENT0 });
   c.glNamedFramebufferTexture(self.fbo, c.GL_COLOR_ATTACHMENT0, dst, 0);
