@@ -58,14 +58,10 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
     }
 
     fn writeHeader(str: *gl.String, defs: Defs) ![:0]c.GLchar {
-      const str_w = str.writer();
-      const fields = switch (@typeInfo(Defs)) {
-        .Struct => |s| s.fields,
-        else => @compileError("unimplemented"),
-      };
-
       try str.appendSlice(gl.VERSION ++ "\n");
-      inline for (fields) |f| {
+
+      const str_w = str.writer();
+      inline for (@typeInfo(Defs).Struct.fields) |f| {
         const k = f.name;
         const v = @field(defs, f.name);
         const kv = switch (f.field_type) {
@@ -79,6 +75,7 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
         try str_w.print(fmt ++ "\n", kv);
         gl.log.debug(fmt, kv);
       }
+
       try str.appendSlice("\n\x00");
 
       return str.items[0 .. str.items.len - 1 :0];

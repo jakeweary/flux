@@ -22,26 +22,18 @@ pub fn use(self: *const Self) void {
 }
 
 pub fn textures(self: *const Self, arg: anytype) void {
-  switch (@typeInfo(@TypeOf(arg))) {
-    .Struct => |s| inline for (s.fields) |f, i| {
-      self.texture(f.name ++ "", @intCast(c.GLuint, i), @field(arg, f.name));
-    },
-    else => @compileError("unimplemented"),
-  }
+  inline for (@typeInfo(@TypeOf(arg)).Struct.fields) |f, i|
+    self.texture(f.name ++ "", @intCast(c.GLuint, i), @field(arg, f.name));
+}
+
+pub fn uniforms(self: *const Self, arg: anytype) void {
+  inline for (@typeInfo(@TypeOf(arg)).Struct.fields) |f|
+    self.uniform(f.name ++ "", @field(arg, f.name));
 }
 
 pub fn texture(self: *const Self, name: [*:0]const c.GLchar, unit: c.GLuint, id: c.GLuint) void {
   c.glBindTextureUnit(unit, id);
   c.glUniform1i(c.glGetUniformLocation(self.id, name), @intCast(c.GLint, unit));
-}
-
-pub fn uniforms(self: *const Self, arg: anytype) void {
-  switch (@typeInfo(@TypeOf(arg))) {
-    .Struct => |s| inline for (s.fields) |f| {
-      self.uniform(f.name ++ "", @field(arg, f.name));
-    },
-    else => @compileError("unimplemented"),
-  }
 }
 
 // here goes my attempt to cover (almost) all of `glUniform{1|2|3|4}{f|i|ui}[v]`
