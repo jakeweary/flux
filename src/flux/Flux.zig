@@ -2,6 +2,7 @@ const std = @import("std");
 const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const glfw = @import("../glfw/glfw.zig");
+const util = @import("util.zig");
 const Config = @import("Config.zig");
 const Gui = @import("Gui.zig");
 const Programs = @import("Programs.zig");
@@ -143,7 +144,7 @@ fn update(self: *Self, dt: f32, t: f32) void {
   program.bind("uT", t);
   program.bind("uDT", dt);
   program.bind("uSpaceScale", self.cfg.space_scale * 2);
-  program.bind("uAirResistance", logarithmic(5, 1 - self.cfg.air_resistance));
+  program.bind("uAirResistance", util.logarithmic(5, 1 - self.cfg.air_resistance));
   program.bind("uFluxPower", self.cfg.flux_power * 100);
   program.bind("uFluxTurbulence", self.cfg.flux_turbulence);
   program.bind("uViewport", &[_][2]c.GLint{.{ self.width, self.height }});
@@ -215,7 +216,7 @@ fn feedback(self: *Self) void {
 
   const program = self.programs.feedback.inner;
   program.use();
-  program.bind("uMix", 1 - logarithmic(5, 1 - self.cfg.feedback));
+  program.bind("uMix", 1 - util.logarithmic(5, 1 - self.cfg.feedback));
   program.bindTextures(&.{
     .{ "tRendered", self.textures.rendered() },
     .{ "tFeedback", self.textures.feedback()[0] },
@@ -347,10 +348,4 @@ fn bloomUp(self: *Self, a: c.GLuint, b: c.GLuint, dst: c.GLuint, w: c.GLsizei, h
 
   c.glViewport(0, 0, w, h);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
-}
-
-// ---
-
-inline fn logarithmic(amp: f32, t: f32) f32 {
-  return (@exp(t * amp) - 1) / (@exp(amp) - 1);
 }
