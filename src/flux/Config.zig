@@ -13,7 +13,7 @@ smooth_spawn: f32 = 0.15,
 feedback: f32 = 0.25,
 
 // post-processing
-brightness: f32 = 4.0,
+brightness: f32 = 5.0,
 bloom: f32 = 0.5,
 
 // performance

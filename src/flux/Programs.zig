@@ -23,7 +23,7 @@ postprocess: gl.ProgramWithDefs(struct {
   ACES_TONEMAPPING: bool = true,
 }),
 bloom_blur: gl.ProgramWithDefs(struct {
-  SIGMA: f32 = 1.5,
+  SIGMA: f32 = 2.0,
 }),
 bloom_down: gl.Program,
 bloom_up: gl.Program,
