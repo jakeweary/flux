@@ -27,7 +27,9 @@ postprocess: gl.ProgramWithDefs(struct {
 bloom_blur: gl.ProgramWithDefs(struct {
   SIGMA: f32 = 2.0,
 }),
-bloom_down: gl.Program,
+bloom_down: gl.ProgramWithDefs(struct {
+  MODE: i32 = 1,
+}),
 bloom_up: gl.Program,
 
 pub fn init() !Self {
