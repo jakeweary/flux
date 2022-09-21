@@ -85,7 +85,9 @@ fn menu(self: *Self, flux: *Flux) void {
     _ = c.igSliderFloat("Bloom mix", &flux.cfg.bloom, 0.0, 1.0, null, 0);
     _ = c.igSliderFloat("Bloom scale", &blur.defs.SIGMA, 1.0, 5.0, null, 0);
     imgui.hint("controls sigma parameter in the gaussian blur formula");
-    _ = c.igCheckbox("ACES filmic tone mapping", &post.defs.ACES_TONEMAPPING);
+    _ = c.igCheckbox("ACES filmic tone mapping", &post.defs.ACES);
+    if (post.defs.ACES)
+      _ = c.igCheckbox("Use fast ACES approximation", &post.defs.ACES_FAST);
     c.igTreePop();
   }
 

@@ -10,9 +10,13 @@ void main() {
   vec3 b = texture(tBloom, vUV).rgb / 8.0;
   vec3 color = uBrightness * mix(r, b, uBloomMix);
 
-  #if ACES_TONEMAPPING
-    fColor = aces(color);
-  #else
-    fColor = color;
+  #if ACES
+    #if ACES_FAST
+      color = aces(color);
+    #else
+      color = ODT_RGBmonitor_100nits_dim(RRT(color * sRGB_2_AP0));
+    #endif
   #endif
+
+  fColor = color;
 }

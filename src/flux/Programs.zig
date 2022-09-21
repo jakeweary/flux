@@ -2,6 +2,7 @@ const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const Self = @This();
 
+const aces_fast = @embedFile("../../deps/glsl/aces-fast.glsl");
 const aces = @embedFile("../../deps/glsl/aces.glsl");
 const oklab = @embedFile("../../deps/glsl/oklab.glsl");
 const srgb = @embedFile("../../deps/glsl/srgb.glsl");
@@ -20,7 +21,8 @@ render: gl.ProgramWithDefs(struct {
 }),
 feedback: gl.Program,
 postprocess: gl.ProgramWithDefs(struct {
-  ACES_TONEMAPPING: bool = true,
+  ACES: bool = true,
+  ACES_FAST: bool = true,
 }),
 bloom_blur: gl.ProgramWithDefs(struct {
   SIGMA: f32 = 2.0,
@@ -62,7 +64,7 @@ pub fn init() !Self {
   self.postprocess = blk: {
     const vs = @embedFile("glsl/postprocess/vertex.glsl");
     const fs = @embedFile("glsl/postprocess/fragment.glsl");
-    break :blk try @TypeOf(self.postprocess).init(&.{ vs }, &.{ aces, fs });
+    break :blk try @TypeOf(self.postprocess).init(&.{ vs }, &.{ aces, aces_fast, fs });
   };
   errdefer self.postprocess.deinit();
 
