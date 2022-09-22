@@ -2,7 +2,7 @@ const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const Self = @This();
 
-simulation: [8]c.GLuint = undefined,
+simulation: [6]c.GLuint = undefined,
 rendering: [13]c.GLuint = undefined,
 bloom: [8][2]c.GLuint = undefined,
 empty: c.GLuint = undefined,
@@ -35,22 +35,14 @@ pub inline fn feedback(self: *Self) *[2]c.GLuint {
 
 // ---
 
-pub inline fn size(self: *Self) c.GLuint {
-  return self.simulation[0];
-}
-
-pub inline fn color(self: *Self) c.GLuint {
-  return self.simulation[1];
-}
-
 pub inline fn age(self: *Self) *[2]c.GLuint {
-  return self.simulation[2..4];
+  return self.simulation[0..2];
 }
 
 pub inline fn position(self: *Self) *[2]c.GLuint {
-  return self.simulation[4..6];
+  return self.simulation[2..4];
 }
 
 pub inline fn velocity(self: *Self) *[2]c.GLuint {
-  return self.simulation[6..8];
+  return self.simulation[4..6];
 }

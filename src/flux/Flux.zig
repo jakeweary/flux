@@ -95,8 +95,8 @@ pub fn run(self: *Self) !void {
     var step = self.cfg.steps_per_frame;
     while (step != 0) : (step -= 1) {
       const step_t = t - step_dt * @intToFloat(f32, step);
-      self.update(step_dt, step_t);
-      self.render(step_dt);
+      self.update(step_t, step_dt);
+      self.render(step_t, step_dt);
       self.feedback();
     }
 
@@ -118,9 +118,8 @@ fn seed(self: *Self) void {
   _ = self.programs.seed.use();
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, self.textures.size() },
-    .{ c.GL_COLOR_ATTACHMENT1, self.textures.color() },
-    .{ c.GL_COLOR_ATTACHMENT2, self.textures.velocity()[0] },
+    .{ c.GL_COLOR_ATTACHMENT0, self.textures.position()[0] },
+    .{ c.GL_COLOR_ATTACHMENT1, self.textures.velocity()[0] },
   });
   defer fbo.detach();
 
@@ -128,7 +127,7 @@ fn seed(self: *Self) void {
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
-fn update(self: *Self, dt: f32, t: f32) void {
+fn update(self: *Self, t: f32, dt: f32) void {
   log.debug("step: update", .{});
 
   const program = self.programs.update.use();
@@ -142,7 +141,6 @@ fn update(self: *Self, dt: f32, t: f32) void {
     .uViewport = &[_][2]c.GLint{.{ self.width, self.height }},
   });
   program.textures(.{
-    .tSize = self.textures.size(),
     .tAge = self.textures.age()[0],
     .tPosition = self.textures.position()[0],
     .tVelocity = self.textures.velocity()[0],
@@ -163,7 +161,7 @@ fn update(self: *Self, dt: f32, t: f32) void {
   std.mem.reverse(c.GLuint, self.textures.velocity());
 }
 
-fn render(self: *Self, dt: f32) void {
+fn render(self: *Self, t: f32, dt: f32) void {
   log.debug("step: render", .{});
 
   c.glBlendFunc(c.GL_ONE, c.GL_ONE);
@@ -172,14 +170,13 @@ fn render(self: *Self, dt: f32) void {
 
   const program = self.programs.render.use();
   program.uniforms(.{
+    .uT = t,
     .uDT = dt,
     .uPointScale = self.cfg.point_scale,
     .uSmoothSpawn = self.cfg.smooth_spawn,
     .uViewport = &[_][2]c.GLint{.{ self.width, self.height }},
   });
   program.textures(.{
-    .tSize = self.textures.size(),
-    .tColor = self.textures.color(),
     .tAge = self.textures.age()[0],
     .tPosition = self.textures.position()[0],
     .tVelocity = self.textures.velocity()[0],

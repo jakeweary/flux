@@ -1,8 +1,7 @@
-uniform sampler2D tSize;
-uniform sampler2D tColor;
 uniform sampler2D tAge;
 uniform sampler2D tPosition;
 uniform sampler2D tVelocity;
+uniform float uT;
 uniform float uDT;
 uniform float uPointScale;
 uniform float uSmoothSpawn;
@@ -21,9 +20,9 @@ void main() {
   ivec2 uv = ivec2(id.x % ts.x, id.x / ts.x);
 
   vec2 pos = texelFetch(tPosition, uv, 0).xy;
-  vec3 color = texelFetch(tColor, uv, 0).rgb;
   float age = texelFetch(tAge, uv, 0).x;
   float spawn = smoothstep(0.0, uSmoothSpawn, age);
+  vec3 color = Lab_to_sRGB(LCh_to_Lab(vec3(0.75, 0.125, radians(60.0) * (uT - age))));
 
   #if RENDER_AS_LINES
     vec2 vel = uDT * texelFetch(tVelocity, uv, 0).xy;
@@ -36,9 +35,8 @@ void main() {
     gl_Position = vec4(pos, 0.0, 1.0);
 
     #if FANCY_POINT_RENDERING
-      float size = uPointScale * texelFetch(tSize, uv, 0).x;
-      gl_PointSize = floor(size + 1.0);
-      vRadius = vec2(size + 1.0, size - 1.0) / 2.0 / gl_PointSize;
+      gl_PointSize = floor(uPointScale + 1.0);
+      vRadius = (uPointScale + vec2(-1.0, 1.0)) / (2.0 * gl_PointSize);
     #else
       gl_PointSize = 1.0;
     #endif

@@ -1,4 +1,3 @@
-uniform sampler2D tSize;
 uniform sampler2D tAge;
 uniform sampler2D tPosition;
 uniform sampler2D tVelocity;
@@ -15,7 +14,7 @@ out vec2 fPosition;
 out vec2 fVelocity;
 
 struct Particle {
-  float size, age;
+  float age;
   vec2 pos, vel;
 };
 
@@ -52,18 +51,17 @@ void Particle_bounce(inout Particle self, vec2 walls) {
 }
 
 void main() {
-  float pSize = texture(tSize, vUV).x;
   float pAge = texture(tAge, vUV).x;
   vec2 pPos = texture(tPosition, vUV).xy;
   vec2 pVel = texture(tVelocity, vUV).xy;
-  Particle p = Particle(pSize, pAge, pPos, pVel);
+  Particle p = Particle(pAge, pPos, pVel);
 
   const vec2 r = vec2(uViewport) / float(uViewport.y);
   vec3 xyz = vec3(1.0 / uSpaceScale * p.pos * r, uFluxTurbulence * uT + 5.0);
   float nx = simplex3d(xyz);
   float ny = simplex3d(xyz * vec3(1.0, 1.0, -1.0));
 
-  Particle_accelerate(p, uDT, uSpaceScale * uFluxPower / r / p.size * vec2(nx, ny));
+  Particle_accelerate(p, uDT, uSpaceScale * uFluxPower / r * vec2(nx, ny));
   Particle_applyDrag(p, uDT, uAirResistance);
   Particle_travel(p, uDT);
 

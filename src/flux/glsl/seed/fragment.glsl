@@ -1,6 +1,5 @@
 in vec2 vUV;
-out float fSize;
-out vec3 fColor;
+out vec2 fPosition;
 out vec2 fVelocity;
 
 // https://en.wikipedia.org/wiki/Box-Muller_transform
@@ -11,15 +10,8 @@ vec2 normal(vec2 random) {
 }
 
 void main() {
-  fSize = 1.0;
-
-  // the hashing has to be exactly the same
-  // as in `Particle_reset` from the `update` shader
-  float hue = hash22(1e3 * vUV).x * radians(360.0);
-  fColor = Lab_to_sRGB(LCh_to_Lab(vec3(0.75, 0.125, hue)));
-
+  fPosition = vec2(0.0);
   fVelocity = vec2(0.0);
   for (int i = 10; length(fVelocity) < 1e-3; i++)
     fVelocity = normal(hash23(-vec3(1e3 * vUV, i)));
-  fVelocity /= fSize;
 }

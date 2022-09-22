@@ -38,7 +38,7 @@ pub fn init() !Self {
   self.seed = blk: {
     const vs = @embedFile("glsl/seed/vertex.glsl");
     const fs = @embedFile("glsl/seed/fragment.glsl");
-    break :blk try @TypeOf(self.seed).init(&.{ vs }, &.{ hashes, srgb, oklab, fs });
+    break :blk try @TypeOf(self.seed).init(&.{ vs }, &.{ hashes, fs });
   };
   errdefer self.seed.deinit();
 
@@ -52,7 +52,7 @@ pub fn init() !Self {
   self.render = blk: {
     const vs = @embedFile("glsl/render/vertex.glsl");
     const fs = @embedFile("glsl/render/fragment.glsl");
-    break :blk try @TypeOf(self.render).init(&.{ vs }, &.{ fs });
+    break :blk try @TypeOf(self.render).init(&.{ srgb, oklab, vs }, &.{ fs });
   };
   errdefer self.render.deinit();
 
