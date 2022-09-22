@@ -28,7 +28,7 @@ bloom_blur: gl.ProgramWithDefs(struct {
   SIGMA: f32 = 2.0,
 }),
 bloom_down: gl.ProgramWithDefs(struct {
-  MODE: i32 = 1,
+  MODE: c_int = 0,
 }),
 bloom_up: gl.Program,
 
