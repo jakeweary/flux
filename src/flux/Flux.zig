@@ -255,24 +255,22 @@ fn bloom(self: *Self) void {
     log.debug("{}x{}", .{ w, h });
 
     _ = gl.textures.resizeIfChanged(pair, w, h, &.{
-      .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
-      .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
-      .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR },
-      .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR },
+      .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE }, // blur
+      .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE }, // blur
+      .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR }, // downscaling
+      .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR }, // upscaling
     });
 
-    // downscale (or no-op)
     const src = switch (i) {
-      0 => self.textures.feedback()[0],
+      0 => self.textures.feedback()[0], // no-op on 1st layer
       else => blk: {
         self.bloomDown(layers[i - 1][1], pair[1], w, h);
         break :blk pair[1];
       },
     };
 
-    // blur: horizontal and then vertical pass
-    self.bloomBlur(src, pair[0], w, h, .{ 1, 0 });
-    self.bloomBlur(pair[0], pair[1], w, h, .{ 0, 1 });
+    self.bloomBlur(src, pair[0], w, h, .{ 1, 0 }); // horizontal pass
+    self.bloomBlur(pair[0], pair[1], w, h, .{ 0, 1 }); // vertical pass
   }
 
   log.debug("substep: upscale and merge", .{});
@@ -285,7 +283,6 @@ fn bloom(self: *Self) void {
     const h = self.height >> sh;
     log.debug("{}x{}", .{ w, h });
 
-    // upscale and merge
     self.bloomUp(layers[i][0], pair[1], pair[0], w, h);
   }
 }
