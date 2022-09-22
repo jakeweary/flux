@@ -1,5 +1,6 @@
 uniform sampler2D tRendered;
 uniform sampler2D tBloom;
+uniform sampler2D tBlueNoise;
 uniform float uBrightness;
 uniform float uBloomMix;
 in vec2 vUV;
@@ -8,15 +9,22 @@ out vec3 fColor;
 void main() {
   vec3 r = texture(tRendered, vUV).rgb;
   vec3 b = texture(tBloom, vUV).rgb / 8.0;
-  vec3 color = uBrightness * mix(r, b, uBloomMix);
+  fColor = uBrightness * mix(r, b, uBloomMix);
 
   #if ACES
     #if ACES_FAST
-      color = aces(color);
+      fColor = aces(fColor);
     #else
-      color = ODT_RGBmonitor_100nits_dim(RRT(color * sRGB_2_AP0));
+      fColor = ODT_RGBmonitor_100nits_dim(RRT(fColor * sRGB_2_AP0));
     #endif
   #endif
 
-  fColor = color;
+  #if SRGB_OETF
+    fColor = sRGB_OETF(fColor);
+  #endif
+
+  #if DITHER
+    vec2 uv = gl_FragCoord.xy / vec2(textureSize(tBlueNoise, 0));
+    fColor += texture(tBlueNoise, uv).rgb / 256.0;
+  #endif
 }

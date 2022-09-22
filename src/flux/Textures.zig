@@ -1,21 +1,32 @@
 const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
+const stb = @import("../stb/stb.zig");
 const Self = @This();
 
+bluenoise: c.GLuint = undefined,
 bloom: [8][2]c.GLuint = undefined,
 rendering: [3]c.GLuint = undefined,
 simulation: [6]c.GLuint = undefined,
 
-pub fn init() Self {
+pub fn init() !Self {
   var self = Self{};
+
+  const bn_png = @embedFile("../../deps/assets/bluenoise/128/LDR_RGB1_0.png");
+  const bn = try stb.Image.fromMemory(bn_png);
+  defer bn.deinit();
+
+  bn.uploadToGPU(c.GL_RGB8, &self.bluenoise);
+
   // `GL_RGB32F` is basically a requirement for HQ bloom
   gl.textures.init(@ptrCast(*[8 * 2]c.GLuint, &self.bloom), c.GL_RGB32F, 1, 1);
   gl.textures.init(&self.rendering, c.GL_RGB32F, 1, 1);
   gl.textures.init(&self.simulation, c.GL_RGB32F, 1, 1);
+
   return self;
 }
 
 pub fn deinit(self: *const Self) void {
+  gl.textures.deinit(@ptrCast(*[1]c.GLuint, &self.bluenoise));
   gl.textures.deinit(@ptrCast(*[8 * 2]c.GLuint, &self.bloom));
   gl.textures.deinit(&self.rendering);
   gl.textures.deinit(&self.simulation);

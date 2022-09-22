@@ -23,6 +23,8 @@ feedback: gl.Program,
 postprocess: gl.ProgramWithDefs(struct {
   ACES: bool = true,
   ACES_FAST: bool = true,
+  SRGB_OETF: bool = true,
+  DITHER: bool = true,
 }),
 bloom_blur: gl.ProgramWithDefs(struct {
   SIGMA: f32 = 1.5,
@@ -66,7 +68,7 @@ pub fn init() !Self {
   self.postprocess = blk: {
     const vs = @embedFile("glsl/postprocess/vertex.glsl");
     const fs = @embedFile("glsl/postprocess/fragment.glsl");
-    break :blk try @TypeOf(self.postprocess).init(&.{ vs }, &.{ aces, aces_fast, fs });
+    break :blk try @TypeOf(self.postprocess).init(&.{ vs }, &.{ aces, aces_fast, srgb, fs });
   };
   errdefer self.postprocess.deinit();
 

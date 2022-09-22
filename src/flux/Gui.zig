@@ -131,8 +131,10 @@ fn menu(self: *Self, flux: *Flux) void {
         _ = c.igSliderInt("Downscale mode", &flux.programs.bloom_down.defs.MODE, 0, 2, "", 0);
         c.igEndTabItem();
       }
-      if (c.igBeginTabItem("ACES", null, 0)) {
+      if (c.igBeginTabItem("Post-processing", null, 0)) {
         _ = c.igCheckbox("Use fast ACES approximation", &flux.programs.postprocess.defs.ACES_FAST);
+        _ = c.igCheckbox("sRGB OEFT", &flux.programs.postprocess.defs.SRGB_OETF);
+        _ = c.igCheckbox("Dithering", &flux.programs.postprocess.defs.DITHER);
         c.igEndTabItem();
       }
       c.igEndTabBar();

@@ -27,7 +27,7 @@ pub fn init(window: *glfw.Window) !Self {
   var self = Self{
     .window = window,
     .programs = try Programs.init(),
-    .textures = Textures.init(),
+    .textures = try Textures.init(),
     .gui = Gui.init(window.ptr),
   };
 
@@ -223,9 +223,6 @@ fn feedback(self: *Self) void {
 fn postprocess(self: *Self) void {
   log.debug("step: postprocess", .{});
 
-  c.glEnable(c.GL_FRAMEBUFFER_SRGB);
-  defer c.glDisable(c.GL_FRAMEBUFFER_SRGB);
-
   const bi = @intCast(usize, self.cfg.bloom_layer);
   const bj = @intCast(usize, self.cfg.bloom_sublayer);
 
@@ -237,6 +234,7 @@ fn postprocess(self: *Self) void {
   program.textures(.{
     .tRendered = self.textures.feedback()[0],
     .tBloom = self.textures.bloom[bi][bj],
+    .tBlueNoise = self.textures.bluenoise,
   });
 
   c.glViewport(0, 0, self.width, self.height);

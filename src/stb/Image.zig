@@ -29,3 +29,13 @@ pub fn fromMemory(bytes: []const u8) !Self {
 pub fn deinit(self: *const Self) void {
   c.stbi_image_free(self.data.ptr);
 }
+
+pub fn uploadToGPU(self: *const Self, fmt: c.GLenum, id: *c.GLuint) void {
+  const storage_formats = [_]c.GLenum{ c.GL_RED, c.GL_RG, c.GL_RGB, c.GL_RGBA };
+  const sfmt = storage_formats[self.channels - 1];
+  const w = @intCast(c.GLsizei, self.width);
+  const h = @intCast(c.GLsizei, self.height);
+  c.glCreateTextures(c.GL_TEXTURE_2D, 1, id);
+  c.glTextureStorage2D(id.*, 1, fmt, w, h);
+  c.glTextureSubImage2D(id.*, 0, 0, 0, w, h, sfmt, c.GL_UNSIGNED_BYTE, self.data.ptr);
+}
