@@ -225,8 +225,8 @@ fn postprocess(self: *Self) void {
   c.glEnable(c.GL_FRAMEBUFFER_SRGB);
   defer c.glDisable(c.GL_FRAMEBUFFER_SRGB);
 
-  const bi = @intCast(usize, self.cfg.bloom_layer - 1);
-  const bj = @intCast(usize, self.cfg.bloom_sublayer - 1);
+  const bi = @intCast(usize, self.cfg.bloom_layer);
+  const bj = @intCast(usize, self.cfg.bloom_sublayer);
 
   const program = self.programs.postprocess.use();
   program.uniforms(.{

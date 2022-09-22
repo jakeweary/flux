@@ -22,5 +22,5 @@ simulation_size: [2]c_int = .{ 512, 512 },
 vsync: bool = true,
 
 // debug
-bloom_layer: c_int = 1,
-bloom_sublayer: c_int = 1,
+bloom_layer: c_int = 0,
+bloom_sublayer: c_int = 0,

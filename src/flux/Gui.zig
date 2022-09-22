@@ -126,9 +126,9 @@ fn menu(self: *Self, flux: *Flux) void {
   if (c.igTreeNodeEx_Str("Debug", node_closed)) {
     if (c.igBeginTabBar("tabs", 0)) {
       if (c.igBeginTabItem("Bloom", null, 0)) {
-        _ = c.igSliderInt("Layer", &flux.cfg.bloom_layer, 1, 8, null, 0);
-        _ = c.igSliderInt("Sublayer", &flux.cfg.bloom_sublayer, 1, 2, null, 0);
-        _ = c.igSliderInt("Downscale mode", &flux.programs.bloom_down.defs.MODE, 0, 2, null, 0);
+        _ = c.igSliderInt("Layer", &flux.cfg.bloom_layer, 0, 7, "", 0);
+        _ = c.igSliderInt("Sublayer", &flux.cfg.bloom_sublayer, 0, 1, "", 0);
+        _ = c.igSliderInt("Downscale mode", &flux.programs.bloom_down.defs.MODE, 0, 2, "", 0);
         c.igEndTabItem();
       }
       if (c.igBeginTabItem("ACES", null, 0)) {
