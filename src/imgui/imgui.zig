@@ -82,7 +82,7 @@ pub fn loadCustomPixelFont() void {
   var ids: [pixelfont.CHARS.len]c_int = undefined;
   for (pixelfont.CHARS) |char, i|
     ids[i] = c.ImFontAtlas_AddCustomRectFontGlyph(font_atlas, font,
-      char.code, pixelfont.WIDTH, pixelfont.HEIGHT, pixelfont.WIDTH + 1, .{ .x = 0, .y = 2 });
+      char.code, pixelfont.WIDTH, pixelfont.HEIGHT, pixelfont.WIDTH + 1, .{ .x = 1, .y = 2 });
 
   var pixels: [*c]u8 = undefined;
   var pixels_width: c_int = undefined;
