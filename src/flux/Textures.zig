@@ -10,8 +10,8 @@ empty: c.GLuint = undefined,
 pub fn init() Self {
   var self = Self{};
   gl.textures.init(&self.simulation, c.GL_RGB32F, 1, 1);
-  gl.textures.init(&self.rendering, c.GL_RGB16F, 1, 1);
-  gl.textures.init(@ptrCast(*[8 * 2]c.GLuint, &self.bloom), c.GL_RGB16F, 1, 1);
+  gl.textures.init(&self.rendering, c.GL_RGB32F, 1, 1);
+  gl.textures.init(@ptrCast(*[8 * 2]c.GLuint, &self.bloom), c.GL_RGB32F, 1, 1);
   gl.textures.init(@ptrCast(*[1]c.GLuint, &self.empty), c.GL_R8, 1, 1);
   return self;
 }
