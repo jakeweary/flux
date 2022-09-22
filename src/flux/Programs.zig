@@ -25,7 +25,7 @@ postprocess: gl.ProgramWithDefs(struct {
   ACES_FAST: bool = true,
 }),
 bloom_blur: gl.ProgramWithDefs(struct {
-  SIGMA: f32 = 2.0,
+  SIGMA: f32 = 1.5,
 }),
 bloom_down: gl.ProgramWithDefs(struct {
   MODE: c_int = 0,
