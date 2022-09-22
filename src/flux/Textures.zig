@@ -3,7 +3,7 @@ const gl = @import("../gl/gl.zig");
 const Self = @This();
 
 bloom: [8][2]c.GLuint = undefined,
-rendering: [13]c.GLuint = undefined,
+rendering: [3]c.GLuint = undefined,
 simulation: [6]c.GLuint = undefined,
 
 pub fn init() Self {
