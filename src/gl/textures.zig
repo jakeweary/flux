@@ -4,10 +4,11 @@ const std = @import("std");
 
 const KeyValue = std.meta.Tuple(&.{ c.GLenum, c.GLint });
 
-pub fn init(ids: []c.GLuint, fmt: c.GLenum, w: c.GLsizei, h: c.GLsizei) void {
+pub fn init(ids: []c.GLuint, fmt: c.GLenum, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
   c.glCreateTextures(c.GL_TEXTURE_2D, @intCast(c.GLsizei, ids.len), ids.ptr);
   for (ids) |id|
     c.glTextureStorage2D(id, 1, fmt, w, h);
+  setParams(ids, params);
 }
 
 pub fn deinit(ids: []const c.GLuint) void {
@@ -19,8 +20,7 @@ pub fn resize(ids: []c.GLuint, w: c.GLsizei, h: c.GLsizei, params: []const KeyVa
   c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_INTERNAL_FORMAT, &fmt);
 
   deinit(ids);
-  init(ids, @intCast(c.GLenum, fmt), w, h);
-  setParams(ids, params);
+  init(ids, @intCast(c.GLenum, fmt), w, h, params);
 }
 
 pub fn resizeIfChanged(ids: []c.GLuint, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) bool {
