@@ -84,6 +84,7 @@ pub fn run(self: *Self) !void {
     const ss = self.cfg.simulation_size;
     if (gl.textures.resizeIfChanged(&self.textures.simulation, ss[0], ss[1], &.{}))
       self.seed();
+
     self.resize();
     self.gui.update(self);
     try self.programs.reinit();
@@ -156,9 +157,9 @@ fn update(self: *Self, t: f32, dt: f32) void {
   c.glViewport(0, 0, self.cfg.simulation_size[0], self.cfg.simulation_size[1]);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
-  std.mem.reverse(c.GLuint, self.textures.age());
-  std.mem.reverse(c.GLuint, self.textures.position());
-  std.mem.reverse(c.GLuint, self.textures.velocity());
+  gl.textures.swap(self.textures.age());
+  gl.textures.swap(self.textures.position());
+  gl.textures.swap(self.textures.velocity());
 }
 
 fn render(self: *Self, t: f32, dt: f32) void {
@@ -216,7 +217,7 @@ fn feedback(self: *Self) void {
   c.glViewport(0, 0, self.width, self.height);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
-  std.mem.reverse(c.GLuint, self.textures.feedback());
+  gl.textures.swap(self.textures.feedback());
 }
 
 fn postprocess(self: *Self) void {
@@ -277,7 +278,7 @@ fn bloom(self: *Self) void {
   log.debug("substep: upscale and merge", .{});
 
   std.mem.reverse([2]c.GLuint, &layers);
-  std.mem.reverse(c.GLuint, &layers[0]);
+  gl.textures.swap(&layers[0]);
   for (layers[1..]) |*pair, i| {
     const sh = @truncate(u5, layers.len - i - 2);
     const w = self.width >> sh;

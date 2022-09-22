@@ -42,3 +42,7 @@ pub fn setParams(ids: []const c.GLuint, params: []const KeyValue) void {
     for (params) |kv|
       c.glTextureParameteri(id, kv[0], kv[1]);
 }
+
+pub fn swap(pair: *[2]c.GLuint) void {
+  std.mem.swap(c.GLuint, &pair[0], &pair[1]);
+}
