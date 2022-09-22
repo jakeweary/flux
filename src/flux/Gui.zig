@@ -79,15 +79,11 @@ fn menu(self: *Self, flux: *Flux) void {
   }
 
   if (c.igTreeNodeEx_Str("Post-processing", node_open)) {
-    const blur = &flux.programs.bloom_blur;
-    const post = &flux.programs.postprocess;
     _ = c.igSliderFloat("Brightness", &flux.cfg.brightness, 0.0, 10.0, null, 0);
     _ = c.igSliderFloat("Bloom mix", &flux.cfg.bloom, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("Bloom scale", &blur.defs.SIGMA, 1.0, 5.0, null, 0);
+    _ = c.igSliderFloat("Bloom scale", &flux.programs.bloom_blur.defs.SIGMA, 1.0, 5.0, null, 0);
     imgui.hint("controls sigma parameter in the gaussian blur formula");
-    _ = c.igCheckbox("ACES filmic tone mapping", &post.defs.ACES);
-    if (post.defs.ACES)
-      _ = c.igCheckbox("Use fast ACES approximation", &post.defs.ACES_FAST);
+    _ = c.igCheckbox("ACES filmic tone mapping", &flux.programs.postprocess.defs.ACES);
     c.igTreePop();
   }
 
@@ -133,6 +129,10 @@ fn menu(self: *Self, flux: *Flux) void {
         _ = c.igSliderInt("Layer", &flux.cfg.bloom_layer, 1, 8, null, 0);
         _ = c.igSliderInt("Sublayer", &flux.cfg.bloom_sublayer, 1, 2, null, 0);
         _ = c.igSliderInt("Downscale mode", &flux.programs.bloom_down.defs.MODE, 0, 2, null, 0);
+        c.igEndTabItem();
+      }
+      if (c.igBeginTabItem("ACES", null, 0)) {
+        _ = c.igCheckbox("Use fast ACES approximation", &flux.programs.postprocess.defs.ACES_FAST);
         c.igEndTabItem();
       }
       c.igEndTabBar();
