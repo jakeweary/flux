@@ -243,16 +243,17 @@ fn postprocess(self: *Self) void {
 
 fn bloom(self: *Self) void {
   log.debug("step: bloom", .{});
-  log.debug("substep: downscale and blur", .{});
 
-  var layers = self.textures.bloom;
-  for (layers[0..]) |*pair, i| {
+  log.debug("substep: downscale and blur", .{});
+  var i: usize = 0;
+  var ids = &self.textures.bloom;
+  while (i < ids.len) : (i += 1) {
     const sh = @truncate(u5, i);
     const w = self.width >> sh;
     const h = self.height >> sh;
     log.debug("{}x{}", .{ w, h });
 
-    _ = gl.textures.resizeIfChanged(pair, w, h, &.{
+    _ = gl.textures.resizeIfChanged(&ids[i], w, h, &.{
       .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE }, // blur
       .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE }, // blur
       .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR }, // downscaling
@@ -262,26 +263,25 @@ fn bloom(self: *Self) void {
     const src = switch (i) {
       0 => self.textures.feedback()[0], // no-op on 1st layer
       else => blk: {
-        self.bloomDown(layers[i - 1][1], pair[1], w, h);
-        break :blk pair[1];
+        self.bloomDown(ids[i - 1][1], ids[i][1], w, h);
+        break :blk ids[i][1];
       },
     };
 
-    self.bloomBlur(src, pair[0], w, h, .{ 1, 0 }); // horizontal pass
-    self.bloomBlur(pair[0], pair[1], w, h, .{ 0, 1 }); // vertical pass
+    self.bloomBlur(src, ids[i][0], w, h, .{ 1, 0 }); // horizontal pass
+    self.bloomBlur(ids[i][0], ids[i][1], w, h, .{ 0, 1 }); // vertical pass
   }
 
   log.debug("substep: upscale and merge", .{});
-
-  std.mem.reverse([2]c.GLuint, &layers);
-  gl.textures.swap(&layers[0]);
-  for (layers[1..]) |*pair, i| {
-    const sh = @truncate(u5, layers.len - i - 2);
+  var j: usize = ids.len - 1;
+  gl.textures.swap(&ids[j]);
+  while (!@subWithOverflow(usize, j, 1, &j)) {
+    const sh = @truncate(u5, j);
     const w = self.width >> sh;
     const h = self.height >> sh;
     log.debug("{}x{}", .{ w, h });
 
-    self.bloomUp(layers[i][0], pair[1], pair[0], w, h);
+    self.bloomUp(ids[j + 1][0], ids[j][1], ids[j][0], w, h);
   }
 }
 
