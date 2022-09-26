@@ -4,10 +4,10 @@ const std = @import("std");
 
 const KeyValue = std.meta.Tuple(&.{ c.GLenum, c.GLint });
 
-pub fn init(ids: []c.GLuint, fmt: c.GLenum, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
+pub fn init(ids: []c.GLuint, fmt: c.GLenum, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
   c.glCreateTextures(c.GL_TEXTURE_2D, @intCast(c.GLsizei, ids.len), ids.ptr);
   for (ids) |id|
-    c.glTextureStorage2D(id, 1, fmt, w, h);
+    c.glTextureStorage2D(id, mips, fmt, w, h);
   setParams(ids, params);
 }
 
@@ -15,24 +15,24 @@ pub fn deinit(ids: []const c.GLuint) void {
   c.glDeleteTextures(@intCast(c.GLsizei, ids.len), ids.ptr);
 }
 
-pub fn resize(ids: []c.GLuint, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
+pub fn resize(ids: []c.GLuint, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
   var fmt: c.GLint = undefined;
   c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_INTERNAL_FORMAT, &fmt);
 
   deinit(ids);
-  init(ids, @intCast(c.GLenum, fmt), w, h, params);
+  init(ids, @intCast(c.GLenum, fmt), mips, w, h, params);
 }
 
-pub fn resizeIfChanged(ids: []c.GLuint, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) bool {
-  var curr_w: c.GLint = undefined;
-  var curr_h: c.GLint = undefined;
-  c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_WIDTH, &curr_w);
-  c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_HEIGHT, &curr_h);
+pub fn resizeIfChanged(ids: []c.GLuint, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) bool {
+  var self: struct { mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei } = undefined;
+  c.glGetTextureParameteriv(ids[0], c.GL_TEXTURE_IMMUTABLE_LEVELS, &self.mips);
+  c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_WIDTH, &self.w);
+  c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_HEIGHT, &self.h);
 
-  const changed = curr_w != w or curr_h != h;
+  const changed = self.mips != mips or self.w != w or self.h != h;
   if (changed) {
-    gl.log.debug("resizing {} textures from {}x{} to {}x{}", .{ ids.len, curr_w, curr_h, w, h });
-    resize(ids, w, h, params);
+    gl.log.debug("resizing {} textures from {}x{} to {}x{} ({} mips)", .{ ids.len, self.w, self.h, w, h, mips });
+    resize(ids, mips, w, h, params);
   }
   return changed;
 }

@@ -68,7 +68,7 @@ pub fn resize(self: *Self) void {
 
   self.width = w;
   self.height = h;
-  gl.textures.resize(&self.textures.rendering, w, h, &.{
+  gl.textures.resize(&self.textures.rendering, 1, w, h, &.{
     .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
     .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
   });
@@ -82,7 +82,7 @@ pub fn run(self: *Self) !void {
     log.debug("--- new frame ---", .{});
 
     const ss = self.cfg.simulation_size;
-    if (gl.textures.resizeIfChanged(&self.textures.simulation, ss[0], ss[1], &.{}))
+    if (gl.textures.resizeIfChanged(&self.textures.simulation, 1, ss[0], ss[1], &.{}))
       self.seed();
 
     self.resize();
@@ -119,8 +119,8 @@ fn seed(self: *Self) void {
   _ = self.programs.seed.use();
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, self.textures.position()[0] },
-    .{ c.GL_COLOR_ATTACHMENT1, self.textures.velocity()[0] },
+    .{ c.GL_COLOR_ATTACHMENT0, self.textures.position()[0], 0 },
+    .{ c.GL_COLOR_ATTACHMENT1, self.textures.velocity()[0], 0 },
   });
   defer fbo.detach();
 
@@ -148,9 +148,9 @@ fn update(self: *Self, t: f32, dt: f32) void {
   });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, self.textures.age()[1] },
-    .{ c.GL_COLOR_ATTACHMENT1, self.textures.position()[1] },
-    .{ c.GL_COLOR_ATTACHMENT2, self.textures.velocity()[1] },
+    .{ c.GL_COLOR_ATTACHMENT0, self.textures.age()[1], 0 },
+    .{ c.GL_COLOR_ATTACHMENT1, self.textures.position()[1], 0 },
+    .{ c.GL_COLOR_ATTACHMENT2, self.textures.velocity()[1], 0 },
   });
   defer fbo.detach();
 
@@ -184,7 +184,7 @@ fn render(self: *Self, t: f32, dt: f32) void {
   });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, self.textures.rendered() },
+    .{ c.GL_COLOR_ATTACHMENT0, self.textures.rendered(), 0 },
   });
   defer fbo.detach();
 
@@ -210,7 +210,7 @@ fn feedback(self: *Self) void {
   });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, self.textures.feedback()[1] },
+    .{ c.GL_COLOR_ATTACHMENT0, self.textures.feedback()[1], 0 },
   });
   defer fbo.detach();
 
@@ -253,7 +253,7 @@ fn bloom(self: *Self) void {
     const h = self.height >> sh;
     log.debug("{}x{}", .{ w, h });
 
-    _ = gl.textures.resizeIfChanged(&ids[i], w, h, &.{
+    _ = gl.textures.resizeIfChanged(&ids[i], 1, w, h, &.{
       .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE }, // blur
       .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE }, // blur
       .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR }, // downscaling
@@ -291,7 +291,7 @@ fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsiz
   program.textures(.{ .tSrc = src });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, dst },
+    .{ c.GL_COLOR_ATTACHMENT0, dst, 0 },
   });
   defer fbo.detach();
 
@@ -304,7 +304,7 @@ fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsiz
   program.textures(.{ .tSrc = src });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, dst },
+    .{ c.GL_COLOR_ATTACHMENT0, dst, 0 },
   });
   defer fbo.detach();
 
@@ -317,7 +317,7 @@ fn bloomUp(self: *Self, a: c.GLuint, b: c.GLuint, dst: c.GLuint, w: c.GLsizei, h
   program.textures(.{ .tA = a, .tB = b });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, dst },
+    .{ c.GL_COLOR_ATTACHMENT0, dst, 0 },
   });
   defer fbo.detach();
 
