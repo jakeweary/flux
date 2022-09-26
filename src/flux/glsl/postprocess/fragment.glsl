@@ -3,12 +3,13 @@ uniform sampler2D tBloom;
 uniform sampler2D tBlueNoise;
 uniform float uBrightness;
 uniform float uBloomMix;
+uniform int uBloomLvl;
 in vec2 vUV;
 out vec3 fColor;
 
 void main() {
   vec3 r = texture(tRendered, vUV).rgb;
-  vec3 b = texture(tBloom, vUV).rgb / 8.0;
+  vec3 b = textureLod(tBloom, vUV, uBloomLvl).rgb / textureQueryLevels(tBloom);
   fColor = uBrightness * mix(r, b, uBloomMix);
 
   #if ACES

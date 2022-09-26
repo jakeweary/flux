@@ -1,4 +1,5 @@
 uniform sampler2D tSrc;
+uniform int uSrcLvl;
 uniform vec2 uDirection;
 in vec2 vUV;
 out vec3 fColor;
@@ -13,11 +14,11 @@ float gauss(float x) {
 }
 
 void main() {
-  vec2 px = uDirection / vec2(textureSize(tSrc, 0));
+  vec2 px = uDirection / vec2(textureSize(tSrc, uSrcLvl));
   vec3 acc = vec3(0.0);
-  for (int i = -K; i <= K; i += 1) {
+  for (int i = -K; i <= K; i++) {
     float x = float(i);
-    acc += gauss(x) * texture(tSrc, vUV + px * x).rgb;
+    acc += gauss(x) * textureLod(tSrc, vUV + px * x, uSrcLvl).rgb;
   }
   fColor = acc;
 }

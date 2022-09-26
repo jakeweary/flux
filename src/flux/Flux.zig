@@ -223,17 +223,15 @@ fn feedback(self: *Self) void {
 fn postprocess(self: *Self) void {
   log.debug("step: postprocess", .{});
 
-  const bi = @intCast(usize, self.cfg.bloom_layer);
-  const bj = @intCast(usize, self.cfg.bloom_sublayer);
-
   const program = self.programs.postprocess.use();
   program.uniforms(.{
     .uBrightness = self.cfg.brightness,
     .uBloomMix = self.cfg.bloom,
+    .uBloomLvl = self.cfg.bloom_level,
   });
   program.textures(.{
     .tRendered = self.textures.feedback()[0],
-    .tBloom = self.textures.bloom[bi][bj],
+    .tBloom = self.textures.bloom[@intCast(usize, self.cfg.bloom_texture)],
     .tBlueNoise = self.textures.bluenoise,
   });
 
@@ -244,54 +242,55 @@ fn postprocess(self: *Self) void {
 fn bloom(self: *Self) void {
   log.debug("step: bloom", .{});
 
-  log.debug("substep: downscale and blur", .{});
-  var i: usize = 0;
-  var ids = &self.textures.bloom;
-  while (i < ids.len) : (i += 1) {
-    const sh = @truncate(u5, i);
-    const w = self.width >> sh;
-    const h = self.height >> sh;
-    log.debug("{}x{}", .{ w, h });
+  const ids = &self.textures.bloom;
+  _ = gl.textures.resizeIfChanged(ids, self.cfg.bloom_levels, self.width, self.height, &.{
+    .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
+    .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
+    .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR_MIPMAP_NEAREST },
+    .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR },
+  });
 
-    _ = gl.textures.resizeIfChanged(&ids[i], 1, w, h, &.{
-      .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE }, // blur
-      .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE }, // blur
-      .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR }, // downscaling
-      .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR }, // upscaling
-    });
+  log.debug("substep: downscale and blur", .{});
+  var i: c.GLint = 0;
+  while (i < self.cfg.bloom_levels) : (i += 1) {
+    var size: struct { w: c.GLsizei, h: c.GLsizei } = undefined;
+    c.glGetTextureLevelParameteriv(ids[0], i, c.GL_TEXTURE_WIDTH, &size.w);
+    c.glGetTextureLevelParameteriv(ids[0], i, c.GL_TEXTURE_HEIGHT, &size.h);
+    log.debug("{}x{}", .{ size.w, size.h });
 
     const src = switch (i) {
-      0 => self.textures.feedback()[0], // no-op on 1st layer
+      0 => self.textures.feedback()[0],
       else => blk: {
-        self.bloomDown(ids[i - 1][1], ids[i][1], w, h);
-        break :blk ids[i][1];
+        self.bloomDown(ids[1], ids[1], i, size.w, size.h);
+        break :blk ids[1];
       },
     };
 
-    self.bloomBlur(src, ids[i][0], w, h, .{ 1, 0 }); // horizontal pass
-    self.bloomBlur(ids[i][0], ids[i][1], w, h, .{ 0, 1 }); // vertical pass
+    self.bloomBlur(src, ids[0], i, size.w, size.h, .{ 1, 0 }); // horizontal pass
+    self.bloomBlur(ids[0], ids[1], i, size.w, size.h, .{ 0, 1 }); // vertical pass
   }
 
   log.debug("substep: upscale and merge", .{});
-  var j: usize = ids.len - 1;
-  gl.textures.swap(&ids[j]);
-  while (!@subWithOverflow(usize, j, 1, &j)) {
-    const sh = @truncate(u5, j);
-    const w = self.width >> sh;
-    const h = self.height >> sh;
-    log.debug("{}x{}", .{ w, h });
+  const j_first = self.cfg.bloom_levels - 2;
+  var j = j_first;
+  while (j >= 0) : (j -= 1) {
+    var size: struct { w: c.GLsizei, h: c.GLsizei } = undefined;
+    c.glGetTextureLevelParameteriv(ids[0], j, c.GL_TEXTURE_WIDTH, &size.w);
+    c.glGetTextureLevelParameteriv(ids[0], j, c.GL_TEXTURE_HEIGHT, &size.h);
+    log.debug("{}x{}", .{ size.w, size.h });
 
-    self.bloomUp(ids[j + 1][0], ids[j][1], ids[j][0], w, h);
+    const prev = if (j == j_first) ids[1] else ids[0];
+    self.bloomUp(prev, ids[1], ids[0], j, size.w, size.h);
   }
 }
 
-fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei, dir: [2]f32) void {
+fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint, w: c.GLsizei, h: c.GLsizei, dir: [2]f32) void {
   const program = self.programs.bloom_blur.use();
-  program.uniforms(.{ .uDirection = &[_][2]f32{ dir } });
+  program.uniforms(.{ .uSrcLvl = lvl, .uDirection = &[_][2]f32{ dir } });
   program.textures(.{ .tSrc = src });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, dst, 0 },
+    .{ c.GL_COLOR_ATTACHMENT0, dst, lvl },
   });
   defer fbo.detach();
 
@@ -299,12 +298,13 @@ fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsiz
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
-fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei) void {
+fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint, w: c.GLsizei, h: c.GLsizei) void {
   const program = self.programs.bloom_down.use();
+  program.uniforms(.{ .uSrcLvl = lvl - 1 });
   program.textures(.{ .tSrc = src });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, dst, 0 },
+    .{ c.GL_COLOR_ATTACHMENT0, dst, lvl },
   });
   defer fbo.detach();
 
@@ -312,12 +312,13 @@ fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsiz
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
-fn bloomUp(self: *Self, a: c.GLuint, b: c.GLuint, dst: c.GLuint, w: c.GLsizei, h: c.GLsizei) void {
+fn bloomUp(self: *Self, prev: c.GLuint, curr: c.GLuint, dst: c.GLuint, lvl: c.GLint, w: c.GLsizei, h: c.GLsizei) void {
   const program = self.programs.bloom_up.use();
-  program.textures(.{ .tA = a, .tB = b });
+  program.uniforms(.{ .uCurrLvl = lvl });
+  program.textures(.{ .tCurr = curr, .tPrev = prev });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, dst, 0 },
+    .{ c.GL_COLOR_ATTACHMENT0, dst, lvl },
   });
   defer fbo.detach();
 

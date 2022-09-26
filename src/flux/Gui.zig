@@ -81,15 +81,15 @@ fn menu(self: *Self, flux: *Flux) void {
   if (c.igTreeNodeEx_Str("Post-processing", node_open)) {
     _ = c.igSliderFloat("Brightness", &flux.cfg.brightness, 0.0, 10.0, null, 0);
     _ = c.igSliderFloat("Bloom mix", &flux.cfg.bloom, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("Bloom scale", &flux.programs.bloom_blur.defs.SIGMA, 1.0, 5.0, null, 0);
-    imgui.hint("controls sigma parameter in the gaussian blur formula");
     _ = c.igCheckbox("ACES filmic tone mapping", &flux.programs.postprocess.defs.ACES);
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Performance", node_open)) {
-    _ = c.igSliderInt("Steps per frame", &flux.cfg.steps_per_frame, 1, 8, null, 0);
     _ = c.igSliderInt2("Simulation size", &flux.cfg.simulation_size, 1, 2048, null, 0);
+    _ = c.igSliderInt("Steps per frame", &flux.cfg.steps_per_frame, 1, 10, null, 0);
+    _ = c.igSliderInt("Bloom levels", &flux.cfg.bloom_levels, 1, 10, null, 0);
+    _ = c.igSliderFloat("Bloom scale", &flux.programs.bloom_blur.defs.SIGMA, 1.0, 5.0, null, 0);
     _ = c.igCheckbox("Vertical synchronization", &flux.cfg.vsync);
     c.igTreePop();
   }
@@ -126,8 +126,8 @@ fn menu(self: *Self, flux: *Flux) void {
   if (c.igTreeNodeEx_Str("Debug", node_closed)) {
     if (c.igBeginTabBar("tabs", 0)) {
       if (c.igBeginTabItem("Bloom", null, 0)) {
-        _ = c.igSliderInt("Layer", &flux.cfg.bloom_layer, 0, 7, "", 0);
-        _ = c.igSliderInt("Sublayer", &flux.cfg.bloom_sublayer, 0, 1, "", 0);
+        _ = c.igSliderInt("MIP Level", &flux.cfg.bloom_level, 0, flux.cfg.bloom_levels - 1, "", 0);
+        _ = c.igSliderInt("MIP Texture", &flux.cfg.bloom_texture, 0, 1, "", 0);
         _ = c.igSliderInt("Downscale mode", &flux.programs.bloom_down.defs.MODE, 0, 2, "", 0);
         c.igEndTabItem();
       }
