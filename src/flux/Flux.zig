@@ -119,12 +119,11 @@ fn seed(self: *Self) void {
   _ = self.programs.seed.use();
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, self.textures.position()[0], 0 },
-    .{ c.GL_COLOR_ATTACHMENT1, self.textures.velocity()[0], 0 },
+    .{ self.textures.position()[0], 0 },
+    .{ self.textures.velocity()[0], 0 },
   });
   defer fbo.detach();
 
-  c.glViewport(0, 0, self.cfg.simulation_size[0], self.cfg.simulation_size[1]);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
@@ -148,13 +147,12 @@ fn update(self: *Self, t: f32, dt: f32) void {
   });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, self.textures.age()[1], 0 },
-    .{ c.GL_COLOR_ATTACHMENT1, self.textures.position()[1], 0 },
-    .{ c.GL_COLOR_ATTACHMENT2, self.textures.velocity()[1], 0 },
+    .{ self.textures.age()[1], 0 },
+    .{ self.textures.position()[1], 0 },
+    .{ self.textures.velocity()[1], 0 },
   });
   defer fbo.detach();
 
-  c.glViewport(0, 0, self.cfg.simulation_size[0], self.cfg.simulation_size[1]);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
   gl.textures.swap(self.textures.age());
@@ -184,17 +182,17 @@ fn render(self: *Self, t: f32, dt: f32) void {
   });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, self.textures.rendered(), 0 },
+    .{ self.textures.rendered(), 0 },
   });
   defer fbo.detach();
 
-  c.glViewport(0, 0, self.width, self.height);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
 
+  const count = self.cfg.simulation_size[0] * self.cfg.simulation_size[1];
   if (self.programs.render.defs.RENDER_AS_LINES)
-    c.glDrawArrays(c.GL_LINES, 0, self.cfg.simulation_size[0] * self.cfg.simulation_size[1] * 2)
+    c.glDrawArrays(c.GL_LINES, 0, count * 2)
   else
-    c.glDrawArrays(c.GL_POINTS, 0, self.cfg.simulation_size[0] * self.cfg.simulation_size[1]);
+    c.glDrawArrays(c.GL_POINTS, 0, count);
 }
 
 fn feedback(self: *Self) void {
@@ -210,11 +208,10 @@ fn feedback(self: *Self) void {
   });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, self.textures.feedback()[1], 0 },
+    .{ self.textures.feedback()[1], 0 },
   });
   defer fbo.detach();
 
-  c.glViewport(0, 0, self.width, self.height);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
   gl.textures.swap(self.textures.feedback());
@@ -253,78 +250,61 @@ fn bloom(self: *Self) void {
     .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR },
   });
 
-  log.debug("substep: downscale and blur", .{});
+  log.debug("substep: blur and downscale", .{});
   var i: c.GLint = 0;
   while (i < self.cfg.bloom_levels) : (i += 1) {
-    var size: struct { w: c.GLsizei, h: c.GLsizei } = undefined;
-    c.glGetTextureLevelParameteriv(ids[0], i, c.GL_TEXTURE_WIDTH, &size.w);
-    c.glGetTextureLevelParameteriv(ids[0], i, c.GL_TEXTURE_HEIGHT, &size.h);
-    log.debug("{}x{}", .{ size.w, size.h });
-
-    const src = switch (i) {
-      0 => self.textures.feedback()[0],
-      else => blk: {
-        self.bloomDown(ids[1], ids[1], i, size.w, size.h);
-        break :blk ids[1];
-      },
+    const src = if (i == 0) self.textures.feedback()[0] else blk: {
+      self.bloomDown(ids[1], ids[1], i);
+      break :blk ids[1];
     };
-
-    self.bloomBlur(src, ids[0], i, size.w, size.h, .{ 1, 0 }); // horizontal pass
-    self.bloomBlur(ids[0], ids[1], i, size.w, size.h, .{ 0, 1 }); // vertical pass
+    self.bloomBlur(src, ids[0], i, .{ 1, 0 }); // horizontal pass
+    self.bloomBlur(ids[0], ids[1], i, .{ 0, 1 }); // vertical pass
   }
 
   log.debug("substep: upscale and merge", .{});
   const j_first = self.cfg.bloom_levels - 2;
   var j = j_first;
   while (j >= 0) : (j -= 1) {
-    var size: struct { w: c.GLsizei, h: c.GLsizei } = undefined;
-    c.glGetTextureLevelParameteriv(ids[0], j, c.GL_TEXTURE_WIDTH, &size.w);
-    c.glGetTextureLevelParameteriv(ids[0], j, c.GL_TEXTURE_HEIGHT, &size.h);
-    log.debug("{}x{}", .{ size.w, size.h });
-
     const prev = if (j == j_first) ids[1] else ids[0];
-    self.bloomUp(prev, ids[1], ids[0], j, size.w, size.h);
+    self.bloomUp(prev, ids[1], ids[0], j);
   }
 }
 
-fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint, w: c.GLsizei, h: c.GLsizei, dir: [2]f32) void {
+fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint, dir: [2]f32) void {
   const program = self.programs.bloom_blur.use();
   program.uniforms(.{ .uSrcLvl = lvl, .uDirection = &[_][2]f32{ dir } });
   program.textures(.{ .tSrc = src });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, dst, lvl },
+    .{ dst, lvl },
   });
   defer fbo.detach();
 
-  c.glViewport(0, 0, w, h);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
-fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint, w: c.GLsizei, h: c.GLsizei) void {
+fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint) void {
   const program = self.programs.bloom_down.use();
   program.uniforms(.{ .uSrcLvl = lvl - 1 });
   program.textures(.{ .tSrc = src });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, dst, lvl },
+    .{ dst, lvl },
   });
   defer fbo.detach();
 
-  c.glViewport(0, 0, w, h);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
-fn bloomUp(self: *Self, prev: c.GLuint, curr: c.GLuint, dst: c.GLuint, lvl: c.GLint, w: c.GLsizei, h: c.GLsizei) void {
+fn bloomUp(self: *Self, prev: c.GLuint, curr: c.GLuint, dst: c.GLuint, lvl: c.GLint) void {
   const program = self.programs.bloom_up.use();
   program.uniforms(.{ .uCurrLvl = lvl });
   program.textures(.{ .tCurr = curr, .tPrev = prev });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ c.GL_COLOR_ATTACHMENT0, dst, lvl },
+    .{ dst, lvl },
   });
   defer fbo.detach();
 
-  c.glViewport(0, 0, w, h);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }

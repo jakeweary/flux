@@ -3,24 +3,36 @@ const gl = @import("gl.zig");
 const std = @import("std");
 const Self = @This();
 
-const AttachmentTextureLevel = std.meta.Tuple(&.{ c.GLenum, c.GLuint, c.GLint });
+const TextureLevel = std.meta.Tuple(&.{ c.GLuint, c.GLint });
+
+const enums = init: {
+  var buf = [_]c.GLenum{ c.GL_COLOR_ATTACHMENT0 } ** 0x20;
+  for (buf) |*ptr, i| ptr.* += @intCast(c.GLenum, i);
+  break :init buf;
+};
 
 fbo: c.GLuint,
-tuples: []const AttachmentTextureLevel,
+len: usize,
 
-pub fn attach(fbo: c.GLuint, attachments: []const AttachmentTextureLevel) Self {
+pub fn attach(fbo: c.GLuint, attachments: []const TextureLevel) Self {
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, fbo);
-  var buf: [32]c.GLenum = undefined;
-  for (attachments) |kv, i| {
-    buf[i] = kv[0];
-    c.glNamedFramebufferTexture(fbo, kv[0], kv[1], kv[2]);
-  }
-  c.glNamedFramebufferDrawBuffers(fbo, @intCast(c.GLsizei, attachments.len), &buf);
-  return .{ .fbo = fbo, .tuples = attachments };
+  for (attachments) |tuple, i|
+    c.glNamedFramebufferTexture(fbo, enums[i], tuple[0], tuple[1]);
+  c.glNamedFramebufferDrawBuffers(fbo, @intCast(c.GLsizei, attachments.len), &enums);
+  updateViewport(attachments[0]);
+  return .{ .fbo = fbo, .len = attachments.len };
 }
 
 pub fn detach(self: *const Self) void {
-  for (self.tuples) |kv|
-    c.glNamedFramebufferTexture(self.fbo, kv[0], 0, 0);
+  var i: usize = 0;
+  while (i < self.len) : (i += 1)
+    c.glNamedFramebufferTexture(self.fbo, enums[i], 0, 0);
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
+}
+
+fn updateViewport(tuple: TextureLevel) void {
+  var size: struct { w: c.GLsizei, h: c.GLsizei } = undefined;
+  c.glGetTextureLevelParameteriv(tuple[0], tuple[1], c.GL_TEXTURE_WIDTH, &size.w);
+  c.glGetTextureLevelParameteriv(tuple[0], tuple[1], c.GL_TEXTURE_HEIGHT, &size.h);
+  c.glViewport(0, 0, size.w, size.h);
 }
