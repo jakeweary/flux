@@ -242,6 +242,9 @@ fn postprocess(self: *Self) void {
 fn bloom(self: *Self) void {
   log.debug("step: bloom", .{});
 
+  if (self.cfg.bloom == 0)
+    return log.debug("skipping", .{});
+
   const ids = &self.textures.bloom;
   _ = gl.textures.resizeIfChanged(ids, self.cfg.bloom_levels, self.width, self.height, &.{
     .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
