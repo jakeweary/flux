@@ -10,22 +10,24 @@ out vec3 fColor;
 void main() {
   vec3 r = texture(tRendered, vUV).rgb;
   vec3 b = textureLod(tBloom, vUV, uBloomLvl).rgb / textureQueryLevels(tBloom);
-  fColor = uBrightness * mix(r, b, uBloomMix);
+  vec3 color = uBrightness * mix(r, b, uBloomMix);
 
   #if ACES
     #if ACES_FAST
-      fColor = aces(fColor);
+      color = aces(color);
     #else
-      fColor = ODT_RGBmonitor_100nits_dim(RRT(fColor * sRGB_2_AP0));
+      color = ODT_RGBmonitor_100nits_dim(RRT(mul(sRGB_2_AP0, color)));
     #endif
   #endif
 
   #if SRGB_OETF
-    fColor = sRGB_OETF(fColor);
+    color = sRGB_OETF(color);
   #endif
 
   #if DITHER
     vec2 uv = gl_FragCoord.xy / vec2(textureSize(tBlueNoise, 0));
-    fColor += texture(tBlueNoise, uv).rgb / 256.0;
+    color += texture(tBlueNoise, uv).rgb / 256.0;
   #endif
+
+  fColor = color;
 }

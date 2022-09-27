@@ -1,4 +1,6 @@
 // https://www.shadertoy.com/view/XtGGzG
+// https://www.shadertoy.com/view/3lBXR3
+
 vec3 viridis(float t) {
   const vec3 c0 = vec3(0.2777273272234177, 0.005407344544966578, 0.3340998053353061);
   const vec3 c1 = vec3(0.1050930431085774, 1.404613529898575, 1.384590162594685);
@@ -10,7 +12,6 @@ vec3 viridis(float t) {
   return c0 + t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * (c5 + t * c6)))));
 }
 
-// https://www.shadertoy.com/view/XtGGzG
 vec3 plasma(float t) {
   const vec3 c0 = vec3(0.05873234392399702, 0.02333670892565664, 0.5433401826748754);
   const vec3 c1 = vec3(2.176514634195958, 0.2383834171260182, 0.7539604599784036);
@@ -22,7 +23,6 @@ vec3 plasma(float t) {
   return c0 + t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * (c5 + t * c6)))));
 }
 
-// https://www.shadertoy.com/view/XtGGzG
 vec3 magma(float t) {
   const vec3 c0 = vec3(-0.002136485053939582, -0.000749655052795221, -0.005386127855323933);
   const vec3 c1 = vec3(0.2516605407371642, 0.6775232436837668, 2.494026599312351);
@@ -34,7 +34,6 @@ vec3 magma(float t) {
   return c0 + t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * (c5 + t * c6)))));
 }
 
-// https://www.shadertoy.com/view/XtGGzG
 vec3 inferno(float t) {
   const vec3 c0 = vec3(0.0002189403691192265, 0.001651004631001012, -0.01948089843709184);
   const vec3 c1 = vec3(0.1065134194856116, 0.5639564367884091, 3.932712388889277);
@@ -46,7 +45,6 @@ vec3 inferno(float t) {
   return c0 + t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * (c5 + t * c6)))));
 }
 
-// https://www.shadertoy.com/view/3lBXR3
 vec3 turbo(float t) {
   const vec3 c0 = vec3(0.1140890109226559, 0.06288340699912215, 0.2248337216805064);
   const vec3 c1 = vec3(6.716419496985708, 3.182286745507602, 7.571581586103393);

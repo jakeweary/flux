@@ -2,13 +2,12 @@ const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const Self = @This();
 
-const aces_fast = @embedFile("../../deps/glsl/aces-fast.glsl");
 const aces = @embedFile("../../deps/glsl/aces.glsl");
-const oklab = @embedFile("../../deps/glsl/oklab.glsl");
-const srgb = @embedFile("../../deps/glsl/srgb.glsl");
-
+const aces_fast = @embedFile("../../deps/glsl/aces-fast.glsl");
 const hashes = @embedFile("../../deps/glsl/hashes.glsl");
+const oklab = @embedFile("../../deps/glsl/colorspaces/oklab.glsl");
 const simplex3d = @embedFile("../../deps/glsl/simplex3d.glsl");
+const srgb = @embedFile("../../deps/glsl/colorspaces/srgb.glsl");
 
 seed: gl.Program,
 update: gl.ProgramWithDefs(struct {

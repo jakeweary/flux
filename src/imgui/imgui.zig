@@ -84,17 +84,16 @@ pub fn loadCustomPixelFont() void {
     ids[i] = c.ImFontAtlas_AddCustomRectFontGlyph(font_atlas, font,
       char.code, pixelfont.WIDTH, pixelfont.HEIGHT, pixelfont.WIDTH + 1, .{ .x = 1, .y = 2 });
 
-  var pixels: [*c]u8 = undefined;
-  var pixels_width: c_int = undefined;
-  c.ImFontAtlas_GetTexDataAsAlpha8(font_atlas, &pixels, &pixels_width, null, null);
+  var pixels: struct { ptr: [*c]u8, width: c_int } = undefined;
+  c.ImFontAtlas_GetTexDataAsAlpha8(font_atlas, &pixels.ptr, &pixels.width, null, null);
 
   for (pixelfont.CHARS) |char, i| {
     const rect: *c.ImFontAtlasCustomRect = c
       .ImFontAtlas_GetCustomRectByIndex(font_atlas, ids[i]);
 
-    const next_row = @intCast(usize, pixels_width);
-    const first_row = @intCast(usize, pixels_width * rect.Y + rect.X);
-    var row = pixels + first_row;
+    const next_row = @intCast(usize, pixels.width);
+    const first_row = @intCast(usize, pixels.width * rect.Y + rect.X);
+    var row = pixels.ptr + first_row;
 
     var y: u6 = 0;
     while (y < rect.Height) : (y += 1) {

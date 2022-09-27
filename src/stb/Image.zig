@@ -8,21 +8,18 @@ channels: usize,
 data: []u8,
 
 pub fn fromMemory(bytes: []const u8) !Self {
-  var w: c_int = undefined;
-  var h: c_int = undefined;
-  var n: c_int = undefined;
-
+  var shape: struct { w: c_int, h: c_int, c: c_int } = undefined;
   const len = @intCast(c_int, bytes.len);
-  const data = c.stbi_load_from_memory(bytes.ptr, len, &w, &h, &n, 0) orelse {
+  const data = c.stbi_load_from_memory(bytes.ptr, len, &shape.w, &shape.h, &shape.c, 0) orelse {
     stb.log.err("{s}", .{ c.stbi_failure_reason() });
     return error.STB_LoadImageError;
   };
 
   return .{
-    .width = @intCast(usize, w),
-    .height = @intCast(usize, h),
-    .channels = @intCast(usize, n),
-    .data = data[0..@intCast(usize, w * h * n)],
+    .width = @intCast(usize, shape.w),
+    .height = @intCast(usize, shape.h),
+    .channels = @intCast(usize, shape.c),
+    .data = data[0..@intCast(usize, shape.w * shape.h * shape.c)],
   };
 }
 

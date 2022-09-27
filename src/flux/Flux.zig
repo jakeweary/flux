@@ -60,15 +60,14 @@ pub fn resize(self: *Self) void {
   if (c.glfwGetWindowAttrib(self.window.ptr, c.GLFW_ICONIFIED) == c.GLFW_TRUE)
     return;
 
-  var w: c_int = undefined;
-  var h: c_int = undefined;
-  c.glfwGetWindowSize(self.window.ptr, &w, &h);
-  if (self.width == w and self.height == h)
+  var size: struct { w: c_int, h: c_int } = undefined;
+  c.glfwGetWindowSize(self.window.ptr, &size.w, &size.h);
+  if (self.width == size.w and self.height == size.h)
     return;
 
-  self.width = w;
-  self.height = h;
-  gl.textures.resize(&self.textures.rendering, 1, w, h, &.{
+  self.width = size.w;
+  self.height = size.h;
+  gl.textures.resize(&self.textures.rendering, 1, size.w, size.h, &.{
     .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
     .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
   });
