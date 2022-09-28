@@ -1,8 +1,6 @@
-// scaling
+// simulation
 time_scale: f32 = 0.5,
 space_scale: f32 = 0.5,
-
-// simulation
 air_resistance: f32 = 0.65,
 flux_power: f32 = 0.25,
 flux_turbulence: f32 = 0.05,

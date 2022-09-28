@@ -22,7 +22,28 @@ void main() {
   vec2 pos = texelFetch(tPosition, uv, 0).xy;
   float age = texelFetch(tAge, uv, 0).x;
   float spawn = smoothstep(0.0, uSmoothSpawn, age);
-  vec3 color = Lab_to_sRGB(LCh_to_Lab(vec3(0.75, 0.125, radians(60.0) * (uT - age))));
+  float hue = (uT - age) / 6.0;
+
+  #if COLORSPACE == 6 // Oklab
+    vec3 LCh = vec3(0.75, 0.125, radians(360.0) * hue);
+    vec3 color = XYZ_to_sRGB * Oklab_to_XYZ(Oklch_to_Oklab(LCh));
+  #elif COLORSPACE == 5 // Jzazbz
+    vec3 JCh = vec3(0.124, 0.059, radians(360.0) * hue);
+    vec3 color = XYZ_to_sRGB * Jzazbz_to_XYZ(JzCzhz_to_Jzazbz(JCh));
+  #elif COLORSPACE == 4 // CAM16
+    vec3 JMh = vec3(0.612, 0.348, radians(360.0) * hue);
+    vec3 color = XYZ_to_sRGB * CAM16_to_XYZ(JMh);
+  #elif COLORSPACE == 3 // CIELUV
+    vec3 LCh = vec3(0.760, 0.595, radians(360.0) * hue);
+    vec3 color = Luv_to_sRGB(LCh_to_Luv(LCh));
+  #elif COLORSPACE == 2 // CIELAB
+    vec3 LCh = vec3(0.722, 0.425, radians(360.0) * hue);
+    vec3 color = Lab_to_sRGB(LCh_to_Lab(LCh));
+  #elif COLORSPACE == 1 // Smooth HSL
+    vec3 color = smooth_hsl_to_rgb(vec3(hue, 2.0, 0.5));
+  #else // HSL
+    vec3 color = hsl_to_rgb(vec3(hue, 1.0, 0.5));
+  #endif
 
   #if RENDER_AS_LINES
     vec2 vel = uDT * texelFetch(tVelocity, uv, 0).xy;

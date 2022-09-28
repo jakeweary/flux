@@ -10,40 +10,24 @@ const mat3 M2 = mat3(
   -0.0040720468, +0.4505937099, -0.8086757660
 );
 
-vec3 XYZ_to_Lab(vec3 XYZ) {
+vec3 XYZ_to_Oklab(vec3 XYZ) {
   vec3 lms = M1 * XYZ;
   vec3 lms_p = sign(lms) * pow(abs(lms), vec3(1.0 / 3.0));
   return M2 * lms_p;
 }
 
-vec3 Lab_to_XYZ(vec3 Lab) {
+vec3 Oklab_to_XYZ(vec3 Lab) {
   vec3 lms_p = inverse(M2) * Lab;
   vec3 lms = lms_p * lms_p * lms_p;
   return inverse(M1) * lms;
 }
 
-vec3 LCh_to_Lab(vec3 LCh) {
+vec3 Oklch_to_Oklab(vec3 LCh) {
   return vec3(LCh.x, LCh.y * vec2(cos(LCh.z), sin(LCh.z)));
 }
 
-vec3 Lab_to_LCh(vec3 Lab) {
+vec3 Oklab_to_Oklch(vec3 Lab) {
   return vec3(Lab.x, length(Lab.yz), atan(Lab.z, Lab.y));
-}
-
-vec3 sRGB_to_Lab(vec3 sRGB) {
-  return XYZ_to_Lab(sRGB_to_XYZ * sRGB);
-}
-
-vec3 Lab_to_sRGB(vec3 Lab) {
-  return XYZ_to_sRGB * Lab_to_XYZ(Lab);
-}
-
-vec3 sRGB_to_LCh(vec3 sRGB) {
-  return Lab_to_LCh(sRGB_to_Lab(sRGB));
-}
-
-vec3 LCh_to_sRGB(vec3 LCh) {
-  return Lab_to_sRGB(LCh_to_Lab(LCh));
 }
 
 float L_to_Lr(float L) {

@@ -47,14 +47,10 @@ fn menu(self: *Self, flux: *Flux) void {
   c.igPushItemWidth(128);
   defer c.igPopItemWidth();
 
-  if (c.igTreeNodeEx_Str("Scaling", node_open)) {
-    _ = c.igSliderFloat("Time scale", &flux.cfg.time_scale, 0.001, 1.0, null, 0);
-    _ = c.igSliderFloat("Space scale", &flux.cfg.space_scale, 0.001, 1.0, null, 0);
-    c.igTreePop();
-  }
-
   if (c.igTreeNodeEx_Str("Simulation", node_open)) {
     const defs = &flux.programs.update.defs;
+    _ = c.igSliderFloat("Time scale", &flux.cfg.time_scale, 0.001, 1.0, null, 0);
+    _ = c.igSliderFloat("Space scale", &flux.cfg.space_scale, 0.001, 1.0, null, 0);
     _ = c.igSliderFloat("Air resistance", &flux.cfg.air_resistance, 0.0, 1.0, null, 0);
     _ = c.igSliderFloat("Flux power", &flux.cfg.flux_power, 0.0, 1.0, null, 0);
     _ = c.igSliderFloat("Flux turbulence", &flux.cfg.flux_turbulence, 0.0, 1.0, null, 0);
@@ -64,6 +60,9 @@ fn menu(self: *Self, flux: *Flux) void {
 
   if (c.igTreeNodeEx_Str("Rendering", node_open)) {
     const defs = &flux.programs.render.defs;
+    const colorspaces = [_][*:0]const u8{ "HSL", "Smooth HSL", "CIELAB", "CIELUV", "CAM16", "Jzazbz", "Oklab" };
+    const cs = colorspaces[@intCast(usize, defs.COLORSPACE)];
+    _ = c.igSliderInt("Color space", &defs.COLORSPACE, 0, 6, cs, 0);
     _ = c.igCheckbox("Render as lines", &defs.RENDER_AS_LINES);
     if (defs.RENDER_AS_LINES) {
       _ = c.igCheckbox("Dynamic line brightness", &defs.DYNAMIC_LINE_BRIGHTNESS);

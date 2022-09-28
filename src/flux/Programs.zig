@@ -2,18 +2,25 @@ const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const Self = @This();
 
+const srgb = @embedFile("../../deps/glsl/colorspaces/srgb.glsl");
+const lab = @embedFile("../../deps/glsl/colorspaces/cielab.glsl");
+const luv = @embedFile("../../deps/glsl/colorspaces/cieluv.glsl");
+const cam16 = @embedFile("../../deps/glsl/colorspaces/cam16.glsl");
+const jzazbz = @embedFile("../../deps/glsl/colorspaces/jzazbz.glsl");
+const oklab = @embedFile("../../deps/glsl/colorspaces/oklab.glsl");
+const hsl = @embedFile("../../deps/glsl/colorspaces/hsl.glsl");
+
 const aces = @embedFile("../../deps/glsl/aces.glsl");
 const aces_fast = @embedFile("../../deps/glsl/aces-fast.glsl");
 const hashes = @embedFile("../../deps/glsl/hashes.glsl");
-const oklab = @embedFile("../../deps/glsl/colorspaces/oklab.glsl");
 const simplex3d = @embedFile("../../deps/glsl/simplex3d.glsl");
-const srgb = @embedFile("../../deps/glsl/colorspaces/srgb.glsl");
 
 seed: gl.Program,
 update: gl.ProgramWithDefs(struct {
   WALLS_COLLISION: bool = false,
 }),
 render: gl.ProgramWithDefs(struct {
+  COLORSPACE: c_int = 6,
   RENDER_AS_LINES: bool = true,
   DYNAMIC_LINE_BRIGHTNESS: bool = true,
   FANCY_POINT_RENDERING: bool = false,
@@ -53,7 +60,7 @@ pub fn init() !Self {
   self.render = blk: {
     const vs = @embedFile("glsl/render/vertex.glsl");
     const fs = @embedFile("glsl/render/fragment.glsl");
-    break :blk try @TypeOf(self.render).init(&.{ srgb, oklab, vs }, &.{ fs });
+    break :blk try @TypeOf(self.render).init(&.{ srgb, lab, luv, cam16, jzazbz, oklab, hsl, vs }, &.{ fs });
   };
   errdefer self.render.deinit();
 
