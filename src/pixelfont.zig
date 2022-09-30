@@ -96,7 +96,7 @@ const CHARMAP =
   \\|  o       o     o                                                        |
   \\|  ooo     o   ooo        ooooo                                           |
   \\| u0067 u0068 u0069 u006a u006b u006c u006d u006e u006f u0070 u0071 u0072 |
-  \\|       o       o       o o     oo                                        |
+  \\|       o       o       o o     ooo                                       |
   \\|       o                 o       o                                       |
   \\|  oooo oooo  ooo     ooo o   o   o   oooo  oooo   ooo  oooo   oooo o oo  |
   \\| o   o o   o   o       o o   o   o   o o o o   o o   o o   o o   o oo  o |
