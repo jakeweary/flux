@@ -139,6 +139,7 @@ fn menu(self: *Self, flux: *Flux) void {
         _ = c.igSliderInt("MIP Texture", &flux.cfg.bloom_texture, 0, 1, null, 0);
         _ = c.igSliderInt("Downscale mode", &flux.programs.bloom_down.defs.MODE, 0, 2, null, 0);
         _ = c.igSliderFloat("Kernel scale", &flux.programs.bloom_blur.defs.KERNEL_SCALE, 1.0, 5.0, null, 0);
+        _ = c.igCheckbox("Bilinear optimization", &flux.programs.bloom_blur.defs.BILINEAR_OPTIMIZATION);
         c.igEndTabItem();
       }
       c.igEndTabBar();

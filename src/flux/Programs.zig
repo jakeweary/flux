@@ -36,6 +36,7 @@ postprocess: gl.ProgramWithDefs(struct {
 bloom_blur: gl.ProgramWithDefs(struct {
   SIGMA: f32 = 1.5,
   KERNEL_SCALE: f32 = 3.0,
+  BILINEAR_OPTIMIZATION: bool = true,
 }),
 bloom_down: gl.ProgramWithDefs(struct {
   MODE: c_int = 0,

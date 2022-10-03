@@ -70,6 +70,8 @@ pub fn resize(self: *Self) void {
   gl.textures.resize(&self.textures.rendering, 1, size.w, size.h, &.{
     .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
     .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
+    .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR },
+    .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR },
   });
 }
 
