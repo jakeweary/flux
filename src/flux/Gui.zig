@@ -124,16 +124,21 @@ fn menu(self: *Self, flux: *Flux) void {
 
   if (c.igTreeNodeEx_Str("Debug", node_closed)) {
     if (c.igBeginTabBar("tabs", 0)) {
-      if (c.igBeginTabItem("Bloom", null, 0)) {
-        _ = c.igSliderInt("MIP Level", &flux.cfg.bloom_level, 0, flux.cfg.bloom_levels - 1, "", 0);
-        _ = c.igSliderInt("MIP Texture", &flux.cfg.bloom_texture, 0, 1, "", 0);
-        _ = c.igSliderInt("Downscale mode", &flux.programs.bloom_down.defs.MODE, 0, 2, "", 0);
+      if (c.igBeginTabItem("Rendering", null, 0)) {
+        _ = c.igCheckbox("Point edge linearstep", &flux.programs.render.defs.POINT_EDGE_LINEARSTEP);
         c.igEndTabItem();
       }
       if (c.igBeginTabItem("Post-processing", null, 0)) {
         _ = c.igCheckbox("Use fast ACES approximation", &flux.programs.postprocess.defs.ACES_FAST);
         _ = c.igCheckbox("sRGB OEFT", &flux.programs.postprocess.defs.SRGB_OETF);
         _ = c.igCheckbox("Dithering", &flux.programs.postprocess.defs.DITHER);
+        c.igEndTabItem();
+      }
+      if (c.igBeginTabItem("Bloom", null, 0)) {
+        _ = c.igSliderInt("MIP Level", &flux.cfg.bloom_level, 0, flux.cfg.bloom_levels - 1, null, 0);
+        _ = c.igSliderInt("MIP Texture", &flux.cfg.bloom_texture, 0, 1, null, 0);
+        _ = c.igSliderInt("Downscale mode", &flux.programs.bloom_down.defs.MODE, 0, 2, null, 0);
+        _ = c.igSliderFloat("Kernel scale", &flux.programs.bloom_blur.defs.KERNEL_SCALE, 1.0, 5.0, null, 0);
         c.igEndTabItem();
       }
       c.igEndTabBar();

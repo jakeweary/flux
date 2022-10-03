@@ -24,6 +24,7 @@ render: gl.ProgramWithDefs(struct {
   RENDER_AS_LINES: bool = true,
   DYNAMIC_LINE_BRIGHTNESS: bool = true,
   FANCY_POINT_RENDERING: bool = false,
+  POINT_EDGE_LINEARSTEP: bool = false,
 }),
 feedback: gl.Program,
 postprocess: gl.ProgramWithDefs(struct {
@@ -34,6 +35,7 @@ postprocess: gl.ProgramWithDefs(struct {
 }),
 bloom_blur: gl.ProgramWithDefs(struct {
   SIGMA: f32 = 1.5,
+  KERNEL_SCALE: f32 = 3.0,
 }),
 bloom_down: gl.ProgramWithDefs(struct {
   MODE: c_int = 0,
