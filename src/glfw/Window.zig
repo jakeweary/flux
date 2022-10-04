@@ -38,7 +38,7 @@ pub fn fullscreen(self: *Self) void {
 
   self.r = Rect.ofWindow(self.ptr);
   const monitor = self.getMonitorWithMaxOverlap();
-  const mode: *c.GLFWvidmode = c.glfwGetVideoMode(monitor);
+  const mode: *const c.GLFWvidmode = c.glfwGetVideoMode(monitor);
   c.glfwSetWindowMonitor(self.ptr, monitor, 0, 0, mode.width, mode.height, 0);
 }
 

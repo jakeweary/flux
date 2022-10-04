@@ -16,7 +16,7 @@ pub fn ofWindow(ptr: *c.GLFWwindow) Self {
 pub fn ofMonitor(ptr: *c.GLFWmonitor) Self {
   var self: Self = undefined;
   c.glfwGetMonitorPos(ptr, &self.x, &self.y);
-  const mode: *c.GLFWvidmode = c.glfwGetVideoMode(ptr);
+  const mode: *const c.GLFWvidmode = c.glfwGetVideoMode(ptr);
   return .{ .x = self.x, .y = self.y, .w = mode.width, .h = mode.height };
 }
 

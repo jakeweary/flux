@@ -1,6 +1,6 @@
 ```
 $ zig version
-0.10.0-dev.3877+3deb33fff
+0.10.0-dev.4217+9d8cdb855
 ```
 ```sh
 # build and run:
