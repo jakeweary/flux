@@ -2,7 +2,7 @@ const c = @import("../c.zig");
 const gl = @import("gl.zig");
 const std = @import("std");
 
-const KeyValue = std.meta.Tuple(&.{ c.GLenum, c.GLint });
+pub const KeyValue = std.meta.Tuple(&.{ c.GLenum, c.GLint });
 
 pub fn init(ids: []c.GLuint, fmt: c.GLenum, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
   c.glCreateTextures(c.GL_TEXTURE_2D, @intCast(c.GLsizei, ids.len), ids.ptr);
@@ -31,7 +31,8 @@ pub fn resizeIfChanged(ids: []c.GLuint, mips: c.GLsizei, w: c.GLsizei, h: c.GLsi
 
   const changed = self.mips != mips or self.w != w or self.h != h;
   if (changed) {
-    gl.log.debug("resizing {} textures from {}x{} to {}x{} ({} mips)", .{ ids.len, self.w, self.h, w, h, mips });
+    const fmt = "resizing {} textures from {}x{} ({} mips) to {}x{} ({} mips)";
+    gl.log.debug(fmt, .{ ids.len, self.w, self.h, self.mips, w, h, mips });
     resize(ids, mips, w, h, params);
   }
   return changed;

@@ -2,19 +2,6 @@ const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const Self = @This();
 
-const srgb = @embedFile("../../deps/glsl/colorspaces/srgb.glsl");
-const lab = @embedFile("../../deps/glsl/colorspaces/cielab.glsl");
-const luv = @embedFile("../../deps/glsl/colorspaces/cieluv.glsl");
-const cam16 = @embedFile("../../deps/glsl/colorspaces/cam16.glsl");
-const jzazbz = @embedFile("../../deps/glsl/colorspaces/jzazbz.glsl");
-const oklab = @embedFile("../../deps/glsl/colorspaces/oklab.glsl");
-const hsl = @embedFile("../../deps/glsl/colorspaces/hsl.glsl");
-
-const aces = @embedFile("../../deps/glsl/aces.glsl");
-const aces_fast = @embedFile("../../deps/glsl/aces-fast.glsl");
-const hashes = @embedFile("../../deps/glsl/hashes.glsl");
-const simplex3d = @embedFile("../../deps/glsl/simplex3d.glsl");
-
 seed: gl.Program,
 update: gl.ProgramWithDefs(struct {
   WALLS_COLLISION: bool = false,
@@ -35,7 +22,7 @@ postprocess: gl.ProgramWithDefs(struct {
 }),
 bloom_blur: gl.ProgramWithDefs(struct {
   SIGMA: f32 = 1.5,
-  KERNEL_SCALE: f32 = 3.0,
+  KERNEL_SCALE: f32 = 4.0,
   BILINEAR_OPTIMIZATION: bool = true,
 }),
 bloom_down: gl.ProgramWithDefs(struct {
@@ -44,60 +31,76 @@ bloom_down: gl.ProgramWithDefs(struct {
 bloom_up: gl.Program,
 
 pub fn init() !Self {
+  const srgb = @embedFile("../../deps/glsl/colorspaces/srgb.glsl");
+  const lab = @embedFile("../../deps/glsl/colorspaces/cielab.glsl");
+  const luv = @embedFile("../../deps/glsl/colorspaces/cieluv.glsl");
+  const cam16 = @embedFile("../../deps/glsl/colorspaces/cam16.glsl");
+  const jzazbz = @embedFile("../../deps/glsl/colorspaces/jzazbz.glsl");
+  const oklab = @embedFile("../../deps/glsl/colorspaces/oklab.glsl");
+  const hsl = @embedFile("../../deps/glsl/colorspaces/hsl.glsl");
+
+  const aces = @embedFile("../../deps/glsl/aces.glsl");
+  const aces_fast = @embedFile("../../deps/glsl/aces-fast.glsl");
+  const hashes = @embedFile("../../deps/glsl/hashes.glsl");
+  const simplex3d = @embedFile("../../deps/glsl/simplex3d.glsl");
+
+  const quad = @embedFile("glsl/quad/vertex.glsl");
+  const quad_flip_y = @embedFile("glsl/quad/vertex_flip_y.glsl");
+
   var self: Self = undefined;
 
   self.seed = blk: {
-    const vs = @embedFile("glsl/seed/vertex.glsl");
-    const fs = @embedFile("glsl/seed/fragment.glsl");
+    const vs = quad;
+    const fs = @embedFile("glsl/pass/seed/fragment.glsl");
     break :blk try @TypeOf(self.seed).init(&.{ vs }, &.{ hashes, fs });
   };
   errdefer self.seed.deinit();
 
   self.update = blk: {
-    const vs = @embedFile("glsl/update/vertex.glsl");
-    const fs = @embedFile("glsl/update/fragment.glsl");
+    const vs = quad;
+    const fs = @embedFile("glsl/pass/update/fragment.glsl");
     break :blk try @TypeOf(self.update).init(&.{ vs }, &.{ hashes, simplex3d, fs });
   };
   errdefer self.update.deinit();
 
   self.render = blk: {
-    const vs = @embedFile("glsl/render/vertex.glsl");
-    const fs = @embedFile("glsl/render/fragment.glsl");
+    const vs = @embedFile("glsl/pass/render/vertex.glsl");
+    const fs = @embedFile("glsl/pass/render/fragment.glsl");
     break :blk try @TypeOf(self.render).init(&.{ srgb, lab, luv, cam16, jzazbz, oklab, hsl, vs }, &.{ fs });
   };
   errdefer self.render.deinit();
 
   self.feedback = blk: {
-    const vs = @embedFile("glsl/feedback/vertex.glsl");
-    const fs = @embedFile("glsl/feedback/fragment.glsl");
+    const vs = quad;
+    const fs = @embedFile("glsl/pass/feedback/fragment.glsl");
     break :blk try @TypeOf(self.feedback).init(&.{ vs }, &.{ fs });
   };
   errdefer self.feedback.deinit();
 
   self.postprocess = blk: {
-    const vs = @embedFile("glsl/postprocess/vertex.glsl");
-    const fs = @embedFile("glsl/postprocess/fragment.glsl");
+    const vs = quad_flip_y;
+    const fs = @embedFile("glsl/pass/postprocess/fragment.glsl");
     break :blk try @TypeOf(self.postprocess).init(&.{ vs }, &.{ aces, aces_fast, srgb, fs });
   };
   errdefer self.postprocess.deinit();
 
   self.bloom_blur = blk: {
-    const vs = @embedFile("glsl/bloom/vertex.glsl");
-    const fs = @embedFile("glsl/bloom/fragment_blur.glsl");
+    const vs = quad;
+    const fs = @embedFile("glsl/pass/bloom/fragment_blur.glsl");
     break :blk try @TypeOf(self.bloom_blur).init(&.{ vs }, &.{ fs });
   };
   errdefer self.bloom_blur.deinit();
 
   self.bloom_down = blk: {
-    const vs = @embedFile("glsl/bloom/vertex.glsl");
-    const fs = @embedFile("glsl/bloom/fragment_down.glsl");
+    const vs = quad;
+    const fs = @embedFile("glsl/pass/bloom/fragment_down.glsl");
     break :blk try @TypeOf(self.bloom_down).init(&.{ vs }, &.{ fs });
   };
   errdefer self.bloom_down.deinit();
 
   self.bloom_up = blk: {
-    const vs = @embedFile("glsl/bloom/vertex.glsl");
-    const fs = @embedFile("glsl/bloom/fragment_up.glsl");
+    const vs = quad;
+    const fs = @embedFile("glsl/pass/bloom/fragment_up.glsl");
     break :blk try @TypeOf(self.bloom_up).init(&.{ vs }, &.{ fs });
   };
   errdefer self.bloom_up.deinit();

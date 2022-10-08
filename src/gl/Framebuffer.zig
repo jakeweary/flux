@@ -3,7 +3,7 @@ const gl = @import("gl.zig");
 const std = @import("std");
 const Self = @This();
 
-const TextureLevel = std.meta.Tuple(&.{ c.GLuint, c.GLint });
+pub const TextureLevel = std.meta.Tuple(&.{ c.GLuint, c.GLint });
 
 const enums = init: {
   var buf = [_]c.GLenum{ c.GL_COLOR_ATTACHMENT0 } ** 0x20;

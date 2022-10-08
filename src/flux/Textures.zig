@@ -11,11 +11,11 @@ simulation: [6]c.GLuint = undefined,
 pub fn init() !Self {
   var self = Self{};
 
-  const bn_png = @embedFile("../../deps/assets/bluenoise/128/LDR_RGB1_0.png");
-  const bn = try stb.Image.fromMemory(bn_png);
-  defer bn.deinit();
+  const bluenoise_png = @embedFile("../../deps/assets/bluenoise/128/LDR_RGB1_0.png");
+  const bluenoise = try stb.Image.fromMemory(bluenoise_png);
+  defer bluenoise.deinit();
 
-  bn.uploadToGPU(c.GL_RGB8, &self.bluenoise);
+  bluenoise.uploadToGPU(&self.bluenoise, c.GL_RGB8, &.{});
 
   // `GL_RGB32F` is basically a requirement for HQ bloom
   gl.textures.init(&self.bloom, c.GL_RGB32F, 1, 1, 1, &.{});

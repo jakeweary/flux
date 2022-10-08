@@ -4,9 +4,9 @@ uniform vec2 uDirection;
 in vec2 vUV;
 out vec3 fColor;
 
-// https://stackoverflow.com/a/62002971#comment109661968_62002971
 const int K = int(ceil(KERNEL_SCALE * SIGMA)) + 1;
 
+// https://www.desmos.com/calculator/rgaxqrkuts
 float gauss(float x) {
   const float k1 = 1.0 / (SIGMA * sqrt(radians(360.0)));
   const float k2 = 0.5 / (SIGMA * SIGMA);
