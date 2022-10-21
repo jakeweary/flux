@@ -26,6 +26,6 @@ pub fn overlap(a: *const Self, b: *const Self) c_int {
   return x * y;
 }
 
-inline fn overlap1d(min1: c_int, max1: c_int, min2: c_int, max2: c_int) c_int {
-  return @maximum(0, @minimum(max1, max2) - @maximum(min1, min2));
+fn overlap1d(min1: c_int, max1: c_int, min2: c_int, max2: c_int) c_int {
+  return @max(0, @min(max1, max2) - @max(min1, min2));
 }
