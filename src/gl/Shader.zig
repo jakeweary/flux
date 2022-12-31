@@ -44,7 +44,7 @@ fn logSource(self: *const Self, str: *gl.String) !void {
   try str.resize(@intCast(usize, len - 1));
   c.glGetShaderSource(self.id, len, null, str.items.ptr);
 
-  const trimmed = std.mem.trimRight(c.GLchar, str.items, &std.ascii.spaces);
+  const trimmed = std.mem.trimRight(c.GLchar, str.items, &std.ascii.whitespace);
   const lines_total = std.mem.count(c.GLchar, trimmed, "\n") + 1;
   const digits = @floatToInt(usize, @log10(@intToFloat(f64, lines_total))) + 1;
   var line_n: usize = 1;
@@ -60,7 +60,7 @@ fn logError(self: *const Self, str: *gl.String) !void {
   try str.resize(@intCast(usize, len - 1));
   c.glGetShaderInfoLog(self.id, len, null, str.items.ptr);
 
-  const trimmed = std.mem.trimRight(c.GLchar, str.items, &std.ascii.spaces);
+  const trimmed = std.mem.trimRight(c.GLchar, str.items, &std.ascii.whitespace);
   var lines = std.mem.split(c.GLchar, trimmed, "\n");
   while (lines.next()) |line|
     gl.log.err("{s}", .{ line });

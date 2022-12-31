@@ -54,7 +54,7 @@ fn logError(self: *const Self, str: *gl.String) !void {
     try str.resize(@intCast(usize, len - 1));
     c.glGetProgramInfoLog(self.id, len, null, str.items.ptr);
 
-    const trimmed = std.mem.trimRight(c.GLchar, str.items, &std.ascii.spaces);
+    const trimmed = std.mem.trimRight(c.GLchar, str.items, &std.ascii.whitespace);
     var lines = std.mem.split(c.GLchar, trimmed, "\n");
     while (lines.next()) |line|
       gl.log.err("{s}", .{ line });

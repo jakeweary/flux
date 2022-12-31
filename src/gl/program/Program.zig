@@ -64,7 +64,7 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
       inline for (@typeInfo(Defs).Struct.fields) |f| {
         const k = f.name;
         const v = @field(defs, f.name);
-        const kv = switch (f.field_type) {
+        const kv = switch (f.type) {
           bool => .{ k, @boolToInt(v) },
           else => .{ k, v },
         };
