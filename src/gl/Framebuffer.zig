@@ -16,11 +16,11 @@ fbo: c.GLuint,
 len: usize,
 
 pub fn attach(fbo: c.GLuint, attachments: []const TextureLevel) Self {
-  c.glBindFramebuffer(c.GL_FRAMEBUFFER, fbo);
+  updateViewport(attachments[0]);
   for (attachments) |tuple, i|
     c.glNamedFramebufferTexture(fbo, enums[i], tuple[0], tuple[1]);
   c.glNamedFramebufferDrawBuffers(fbo, @intCast(c.GLsizei, attachments.len), &enums);
-  updateViewport(attachments[0]);
+  c.glBindFramebuffer(c.GL_FRAMEBUFFER, fbo);
   return .{ .fbo = fbo, .len = attachments.len };
 }
 

@@ -36,3 +36,7 @@ pub fn uploadToGPU(self: *const Self, id: *c.GLuint, fmt: c.GLenum, params: []co
   gl.textures.init(@as(*[1]c.GLuint, id), fmt, 1, w, h, params);
   c.glTextureSubImage2D(id.*, 0, 0, 0, w, h, sfmt, c.GL_UNSIGNED_BYTE, self.data.ptr);
 }
+
+fn mipLevels(w: c.GLsizei, h: c.GLsizei) c.GLsizei {
+  return @floatToInt(c.GLsizei, @log2(@intToFloat(f64, @max(w, h)))) + 1;
+}

@@ -31,8 +31,8 @@ pub fn init(window: *glfw.Window) !Self {
     .gui = Gui.init(window.ptr),
   };
 
-  c.glGenFramebuffers(1, &self.fbo);
-  c.glGenVertexArrays(1, &self.vao);
+  c.glCreateFramebuffers(1, &self.fbo);
+  c.glCreateVertexArrays(1, &self.vao);
   c.glBindVertexArray(self.vao);
 
   c.glDisable(c.GL_DITHER);
