@@ -4,8 +4,10 @@ const gl = @import("gl/gl.zig");
 const glfw = @import("glfw/glfw.zig");
 const Flux = @import("flux/Flux.zig");
 
-pub const log_level = std.log.Level.info;
 pub const allocator = std.heap.c_allocator;
+pub const std_options = struct {
+  pub const log_level = std.log.Level.info;
+};
 
 pub fn main() !void {
   std.log.info("Glad v{s}", .{ c.GLAD_GENERATOR_VERSION });
