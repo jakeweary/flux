@@ -7,7 +7,7 @@ $ zig version
 zig build run
 
 # build in release mode:
-zig build -Drelease-fast
+zig build -Doptimize=ReleaseFast
 
 # dependencies to build/run on linux:
 apt install libglfw3 libglfw3-dev

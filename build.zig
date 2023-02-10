@@ -9,16 +9,19 @@ fn isWSL() !bool {
   };
 }
 
-pub fn build(b: *std.build.Builder) !void {
-  const mode = b.standardReleaseOptions();
+pub fn build(b: *std.Build) !void {
+  const optimize = b.standardOptimizeOption(.{});
   const target = b.standardTargetOptions(.{
     .default_target = if (try isWSL()) .{ .os_tag = .windows } else .{}
   });
 
-  const exe = b.addExecutable("flux", "src/main.zig");
+  const exe = b.addExecutable(.{
+    .name = "flux",
+    .root_source_file = .{ .path = "src/main.zig" },
+    .target = target,
+    .optimize = optimize,
+  });
   exe.setMainPkgPath("");
-  exe.setTarget(target);
-  exe.setBuildMode(mode);
   exe.addLibraryPath("deps/lib");
   exe.addIncludePath("deps/include");
   exe.addCSourceFile("deps/deps.c", &.{});
@@ -42,13 +45,16 @@ pub fn build(b: *std.build.Builder) !void {
 
   const run_cmd = exe.run();
   run_cmd.step.dependOn(b.getInstallStep());
-  run_cmd.addArgs(b.args orelse &[_][]const u8{});
+  run_cmd.addArgs(b.args orelse &.{});
 
   const run_step = b.step("run", "Run the app");
   run_step.dependOn(&run_cmd.step);
 
-  const exe_tests = b.addTest("src/tests.zig");
-  exe_tests.setBuildMode(mode);
+  const exe_tests = b.addTest(.{
+    .root_source_file = .{ .path = "src/main.zig" },
+    .target = target,
+    .optimize = optimize,
+  });
 
   const test_step = b.step("test", "Run unit tests");
   test_step.dependOn(&exe_tests.step);
