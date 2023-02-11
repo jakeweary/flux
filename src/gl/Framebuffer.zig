@@ -12,27 +12,27 @@ const enums = init: {
   break :init buf;
 };
 
-fbo: c.GLuint,
+id: c.GLuint,
 len: usize,
 
-pub fn attach(fbo: c.GLuint, attachments: []const TextureLevel) Self {
-  updateViewport(attachments[0]);
+pub fn attach(id: c.GLuint, attachments: []const TextureLevel) Self {
+  @call(.auto, updateViewport, attachments[0]);
   for (attachments) |tuple, i|
-    c.glNamedFramebufferTexture(fbo, enums[i], tuple[0], tuple[1]);
-  c.glNamedFramebufferDrawBuffers(fbo, @intCast(c.GLsizei, attachments.len), &enums);
-  c.glBindFramebuffer(c.GL_FRAMEBUFFER, fbo);
-  return .{ .fbo = fbo, .len = attachments.len };
+    c.glNamedFramebufferTexture(id, enums[i], tuple[0], tuple[1]);
+  c.glNamedFramebufferDrawBuffers(id, @intCast(c.GLsizei, attachments.len), &enums);
+  c.glBindFramebuffer(c.GL_FRAMEBUFFER, id);
+  return .{ .id = id, .len = attachments.len };
 }
 
 pub fn detach(self: *const Self) void {
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
   for (enums[0..self.len]) |e|
-    c.glNamedFramebufferTexture(self.fbo, e, 0, 0);
+    c.glNamedFramebufferTexture(self.id, e, 0, 0);
 }
 
-fn updateViewport(tuple: TextureLevel) void {
+fn updateViewport(texture: c.GLuint, level: c.GLint) void {
   var size: struct { w: c.GLsizei, h: c.GLsizei } = undefined;
-  c.glGetTextureLevelParameteriv(tuple[0], tuple[1], c.GL_TEXTURE_WIDTH, &size.w);
-  c.glGetTextureLevelParameteriv(tuple[0], tuple[1], c.GL_TEXTURE_HEIGHT, &size.h);
+  c.glGetTextureLevelParameteriv(texture, level, c.GL_TEXTURE_WIDTH, &size.w);
+  c.glGetTextureLevelParameteriv(texture, level, c.GL_TEXTURE_HEIGHT, &size.h);
   c.glViewport(0, 0, size.w, size.h);
 }
