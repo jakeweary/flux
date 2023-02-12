@@ -4,6 +4,8 @@ const std = @import("std");
 pub const log = std.log.scoped(.gl);
 pub const debug = @import("debug.zig");
 pub const textures = @import("textures.zig");
+pub usingnamespace @import("uniform.zig");
+
 pub const Framebuffer = @import("Framebuffer.zig");
 pub const Shader = @import("Shader.zig");
 pub usingnamespace @import("program/Program.zig");
