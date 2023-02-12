@@ -1,3 +1,9 @@
+noise_rotation: [3][3]f32 = .{
+  .{ 1, 0, 0 },
+  .{ 0, 1, 0 },
+  .{ 0, 0, 1 },
+},
+
 // simulation
 time_scale: f32 = 0.5,
 space_scale: f32 = 0.5,

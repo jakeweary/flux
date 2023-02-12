@@ -8,6 +8,7 @@ uniform float uAirResistance;
 uniform float uFluxPower;
 uniform float uFluxTurbulence;
 uniform ivec2 uViewport;
+uniform mat3 uNoiseRotation;
 in vec2 vUV;
 out float fAge;
 out vec2 fPosition;
@@ -57,9 +58,10 @@ void main() {
   Particle p = Particle(pAge, pPos, pVel);
 
   const vec2 r = vec2(uViewport) / float(uViewport.y);
-  vec3 xyz = vec3(1.0 / uSpaceScale * p.pos * r, uFluxTurbulence * uT + 5.0);
-  float nx = simplex3d(xyz);
-  float ny = simplex3d(xyz * vec3(1.0, 1.0, -1.0));
+  vec3 fwd = vec3(1.0 / uSpaceScale * p.pos * r, uFluxTurbulence * uT + 5.0);
+  vec3 rev = vec3(1.0, 1.0, -1.0) * fwd;
+  float nx = simplex3d(uNoiseRotation * fwd);
+  float ny = simplex3d(uNoiseRotation * rev);
 
   Particle_accelerate(p, uDT, uSpaceScale * uFluxPower / r * vec2(nx, ny));
   Particle_applyDrag(p, uDT, uAirResistance);

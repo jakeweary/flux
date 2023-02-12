@@ -26,9 +26,9 @@ vao: c.GLuint = undefined,
 pub fn init(window: *glfw.Window) !Self {
   var self = Self{
     .window = window,
+    .gui = Gui.init(window.ptr),
     .programs = try Programs.init(),
     .textures = try Textures.init(),
-    .gui = Gui.init(window.ptr),
   };
 
   c.glCreateFramebuffers(1, &self.fbo);
@@ -54,6 +54,14 @@ pub fn deinit(self: *const Self) void {
 pub fn defaults(self: *Self) void {
   self.cfg = .{};
   self.programs.defaults();
+}
+
+pub fn rotateNoise(self: *Self) void {
+  const time_ns = std.time.nanoTimestamp();
+  const prng_seed = @truncate(u64, @bitCast(u128, time_ns));
+  var prng = std.rand.DefaultPrng.init(prng_seed);
+  var rand = prng.random();
+  self.cfg.noise_rotation = util.randomRotationMatrix(f32, &rand);
 }
 
 pub fn resize(self: *Self) void {
@@ -140,6 +148,7 @@ fn update(self: *Self, t: f32, dt: f32) void {
     .uFluxPower = self.cfg.flux_power * 100,
     .uFluxTurbulence = self.cfg.flux_turbulence,
     .uViewport = &[_][2]c.GLint{.{ self.width, self.height }},
+    .uNoiseRotation = &[_][3][3]c.GLfloat{ self.cfg.noise_rotation },
   });
   program.textures(.{
     .tAge = self.textures.age()[0],

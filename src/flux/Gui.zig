@@ -96,7 +96,7 @@ fn menu(self: *Self, flux: *Flux) void {
   if (c.igTreeNodeEx_Str("Metrics", node_open)) {
     imgui.plot("%.1f fps", imgui.io().Framerate, &self.fps);
     imgui.plot("%.1f ms/frame", 1e3 * imgui.io().DeltaTime, &self.dt);
-    if (c.igBeginTable("table", 3, c.ImGuiTableFlags_SizingStretchSame, .{ .x = 0, .y = 0 }, 0)) {
+    if (c.igBeginTable("table", 3, c.ImGuiTableFlags_NoHostExtendX, .{ .x = 0, .y = 0 }, 0)) {
       const per_step = flux.cfg.simulation_size[0] * flux.cfg.simulation_size[1];
       const per_frame = per_step * flux.cfg.steps_per_frame;
       const per_second = @intToFloat(f64, per_frame) * imgui.io().Framerate;
@@ -117,13 +117,31 @@ fn menu(self: *Self, flux: *Flux) void {
     c.igSameLine(0, -1);
     if (c.igButton("Fullscreen", .{ .x = 0, .y = 0 }))
       flux.window.fullscreen();
-    c.igSameLine(0, -1);
-    _ = c.igCheckbox("Demo window", &self.demo);
+    if (@import("builtin").mode == .Debug) {
+      c.igSameLine(0, -1);
+      _ = c.igCheckbox("Demo window", &self.demo);
+    }
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Debug", node_closed)) {
     if (c.igBeginTabBar("tabs", 0)) {
+      if (c.igBeginTabItem("Noise", null, 0)) {
+        if (c.igTreeNodeEx_Str("Noise rotation matrix", node_open)) {
+          const flags = c.ImGuiTableFlags_Borders | c.ImGuiTableFlags_NoHostExtendX;
+          if (c.igBeginTable("table", 3, flags, .{ .x = 0, .y = 0 }, 0)) {
+            for (@ptrCast(*[9]c.GLfloat, &flux.cfg.noise_rotation)) |value| {
+              _ = c.igTableNextColumn();
+              c.igText("%8.5f", value);
+            }
+            c.igEndTable();
+          }
+          if (c.igButton("Generate new one", .{ .x = 0, .y = 0 }))
+            flux.rotateNoise();
+          c.igTreePop();
+        }
+        c.igEndTabItem();
+      }
       if (c.igBeginTabItem("Rendering", null, 0)) {
         _ = c.igCheckbox("Point edge linearstep", &flux.programs.render.defs.POINT_EDGE_LINEARSTEP);
         c.igEndTabItem();
