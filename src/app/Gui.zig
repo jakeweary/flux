@@ -1,7 +1,7 @@
 const c = @import("../c.zig");
 const std = @import("std");
 const imgui = @import("../imgui/imgui.zig");
-const Flux = @import("Flux.zig");
+const App = @import("App.zig");
 const Self = @This();
 
 ctx: imgui.Context,
@@ -26,9 +26,9 @@ pub fn render(_: *const Self) void {
   imgui.render();
 }
 
-pub fn update(self: *Self, flux: *Flux) void {
+pub fn update(self: *Self, app: *App) void {
   imgui.newFrame();
-  self.menu(flux);
+  self.menu(app);
 
   if (self.demo)
     c.igShowDemoWindow(&self.demo);
@@ -36,7 +36,7 @@ pub fn update(self: *Self, flux: *Flux) void {
 
 // ---
 
-fn menu(self: *Self, flux: *Flux) void {
+fn menu(self: *Self, app: *App) void {
   const node_closed = c.ImGuiTreeNodeFlags_SpanAvailWidth;
   const node_open = node_closed | c.ImGuiTreeNodeFlags_DefaultOpen;
 
@@ -48,18 +48,18 @@ fn menu(self: *Self, flux: *Flux) void {
   defer c.igPopItemWidth();
 
   if (c.igTreeNodeEx_Str("Simulation", node_open)) {
-    const defs = &flux.programs.update.defs;
-    _ = c.igSliderFloat("Time scale", &flux.cfg.time_scale, 0.001, 1.0, null, 0);
-    _ = c.igSliderFloat("Space scale", &flux.cfg.space_scale, 0.001, 1.0, null, 0);
-    _ = c.igSliderFloat("Air resistance", &flux.cfg.air_resistance, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("Flux power", &flux.cfg.flux_power, 0.0, 1.0, null, 0);
-    _ = c.igSliderFloat("Flux turbulence", &flux.cfg.flux_turbulence, 0.0, 1.0, null, 0);
+    const defs = &app.programs.update.defs;
+    _ = c.igSliderFloat("Time scale", &app.cfg.time_scale, 0.001, 1.0, null, 0);
+    _ = c.igSliderFloat("Space scale", &app.cfg.space_scale, 0.001, 1.0, null, 0);
+    _ = c.igSliderFloat("Air resistance", &app.cfg.air_resistance, 0.0, 1.0, null, 0);
+    _ = c.igSliderFloat("Flux power", &app.cfg.flux_power, 0.0, 1.0, null, 0);
+    _ = c.igSliderFloat("Flux turbulence", &app.cfg.flux_turbulence, 0.0, 1.0, null, 0);
     _ = c.igCheckbox("Walls collision", &defs.WALLS_COLLISION);
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Rendering", node_open)) {
-    const defs = &flux.programs.render.defs;
+    const defs = &app.programs.render.defs;
     const colorspaces = [_][*:0]const u8{ "HSL", "Smooth HSL", "CIELAB", "CIELUV", "CAM16", "Jzazbz", "Oklab" };
     const cs = colorspaces[@intCast(usize, defs.COLORSPACE)];
     _ = c.igSliderInt("Color space", &defs.COLORSPACE, 0, 6, cs, 0);
@@ -70,26 +70,26 @@ fn menu(self: *Self, flux: *Flux) void {
     else {
       _ = c.igCheckbox("Fancy point rendering", &defs.FANCY_POINT_RENDERING);
       if (defs.FANCY_POINT_RENDERING)
-        _ = c.igSliderFloat("Point scale", &flux.cfg.point_scale, 1.0, 10.0, null, 0);
+        _ = c.igSliderFloat("Point scale", &app.cfg.point_scale, 1.0, 10.0, null, 0);
     }
-    _ = c.igSliderFloat("Smooth spawn", &flux.cfg.smooth_spawn, 0.0, 1.0, "%.2fs", 0);
-    _ = c.igSliderFloat("Feedback mix", &flux.cfg.feedback, 0.0, 1.0, null, 0);
+    _ = c.igSliderFloat("Smooth spawn", &app.cfg.smooth_spawn, 0.0, 1.0, "%.2fs", 0);
+    _ = c.igSliderFloat("Feedback mix", &app.cfg.feedback, 0.0, 1.0, null, 0);
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Post-processing", node_open)) {
-    _ = c.igSliderFloat("Brightness", &flux.cfg.brightness, 0.0, 10.0, null, 0);
-    _ = c.igSliderFloat("Bloom mix", &flux.cfg.bloom, 0.0, 1.0, null, 0);
-    _ = c.igCheckbox("ACES filmic tone mapping", &flux.programs.postprocess.defs.ACES);
+    _ = c.igSliderFloat("Brightness", &app.cfg.brightness, 0.0, 10.0, null, 0);
+    _ = c.igSliderFloat("Bloom mix", &app.cfg.bloom, 0.0, 1.0, null, 0);
+    _ = c.igCheckbox("ACES filmic tone mapping", &app.programs.postprocess.defs.ACES);
     c.igTreePop();
   }
 
   if (c.igTreeNodeEx_Str("Performance", node_open)) {
-    _ = c.igSliderInt2("Simulation size", &flux.cfg.simulation_size, 1, 2048, null, 0);
-    _ = c.igSliderInt("Steps per frame", &flux.cfg.steps_per_frame, 1, 10, null, 0);
-    _ = c.igSliderInt("Bloom levels", &flux.cfg.bloom_levels, 1, 10, null, 0);
-    _ = c.igSliderFloat("Bloom scale", &flux.programs.bloom_blur.defs.SIGMA, 1.0, 5.0, null, 0);
-    _ = c.igCheckbox("Vertical synchronization", &flux.cfg.vsync);
+    _ = c.igSliderInt2("Simulation size", &app.cfg.simulation_size, 1, 2048, null, 0);
+    _ = c.igSliderInt("Steps per frame", &app.cfg.steps_per_frame, 1, 10, null, 0);
+    _ = c.igSliderInt("Bloom levels", &app.cfg.bloom_levels, 1, 10, null, 0);
+    _ = c.igSliderFloat("Bloom scale", &app.programs.bloom_blur.defs.SIGMA, 1.0, 5.0, null, 0);
+    _ = c.igCheckbox("Vertical synchronization", &app.cfg.vsync);
     c.igTreePop();
   }
 
@@ -97,8 +97,8 @@ fn menu(self: *Self, flux: *Flux) void {
     imgui.plot("%.1f fps", imgui.io().Framerate, &self.fps);
     imgui.plot("%.1f ms/frame", 1e3 * imgui.io().DeltaTime, &self.dt);
     if (c.igBeginTable("table", 3, c.ImGuiTableFlags_NoHostExtendX, .{ .x = 0, .y = 0 }, 0)) {
-      const per_step = flux.cfg.simulation_size[0] * flux.cfg.simulation_size[1];
-      const per_frame = per_step * flux.cfg.steps_per_frame;
+      const per_step = app.cfg.simulation_size[0] * app.cfg.simulation_size[1];
+      const per_frame = per_step * app.cfg.steps_per_frame;
       const per_second = @intToFloat(f64, per_frame) * imgui.io().Framerate;
       _ = c.igTableNextColumn(); c.igText("ops/step"); imgui.hint("particle updates per step");
       _ = c.igTableNextColumn(); c.igText("ops/frame"); imgui.hint("particle updates per frame");
@@ -113,10 +113,10 @@ fn menu(self: *Self, flux: *Flux) void {
 
   if (c.igTreeNodeEx_Str("Misc.", node_open)) {
     if (c.igButton("Defaults", .{ .x = 0, .y = 0 }))
-      flux.defaults();
+      app.defaults();
     c.igSameLine(0, -1);
     if (c.igButton("Fullscreen", .{ .x = 0, .y = 0 }))
-      flux.window.fullscreen();
+      app.window.fullscreen();
     if (@import("builtin").mode == .Debug) {
       c.igSameLine(0, -1);
       _ = c.igCheckbox("Demo window", &self.demo);
@@ -130,34 +130,34 @@ fn menu(self: *Self, flux: *Flux) void {
         if (c.igTreeNodeEx_Str("Noise rotation matrix", node_open)) {
           const flags = c.ImGuiTableFlags_Borders | c.ImGuiTableFlags_NoHostExtendX;
           if (c.igBeginTable("table", 3, flags, .{ .x = 0, .y = 0 }, 0)) {
-            for (@ptrCast(*[9]c.GLfloat, &flux.cfg.noise_rotation)) |value| {
+            for (@ptrCast(*[9]c.GLfloat, &app.cfg.noise_rotation)) |value| {
               _ = c.igTableNextColumn();
               c.igText("%8.5f", value);
             }
             c.igEndTable();
           }
-          if (c.igButton("Generate new one", .{ .x = 0, .y = 0 }))
-            flux.rotateNoise();
+          if (c.igButton("Randomize", .{ .x = 0, .y = 0 }))
+            app.randomizeNoiseRotation();
           c.igTreePop();
         }
         c.igEndTabItem();
       }
       if (c.igBeginTabItem("Rendering", null, 0)) {
-        _ = c.igCheckbox("Point edge linearstep", &flux.programs.render.defs.POINT_EDGE_LINEARSTEP);
+        _ = c.igCheckbox("Point edge linearstep", &app.programs.render.defs.POINT_EDGE_LINEARSTEP);
         c.igEndTabItem();
       }
       if (c.igBeginTabItem("Post-processing", null, 0)) {
-        _ = c.igCheckbox("Use fast ACES approximation", &flux.programs.postprocess.defs.ACES_FAST);
-        _ = c.igCheckbox("sRGB OEFT", &flux.programs.postprocess.defs.SRGB_OETF);
-        _ = c.igCheckbox("Dithering", &flux.programs.postprocess.defs.DITHER);
+        _ = c.igCheckbox("Use fast ACES approximation", &app.programs.postprocess.defs.ACES_FAST);
+        _ = c.igCheckbox("sRGB OEFT", &app.programs.postprocess.defs.SRGB_OETF);
+        _ = c.igCheckbox("Dithering", &app.programs.postprocess.defs.DITHER);
         c.igEndTabItem();
       }
       if (c.igBeginTabItem("Bloom", null, 0)) {
-        _ = c.igSliderInt("MIP Level", &flux.cfg.bloom_level, 0, flux.cfg.bloom_levels - 1, null, 0);
-        _ = c.igSliderInt("MIP Texture", &flux.cfg.bloom_texture, 0, 1, null, 0);
-        _ = c.igSliderInt("Downscale mode", &flux.programs.bloom_down.defs.MODE, 0, 3, null, 0);
-        _ = c.igSliderFloat("Kernel scale", &flux.programs.bloom_blur.defs.KERNEL_SCALE, 1.0, 5.0, null, 0);
-        _ = c.igCheckbox("Bilinear optimization", &flux.programs.bloom_blur.defs.BILINEAR_OPTIMIZATION);
+        _ = c.igSliderInt("MIP Level", &app.cfg.bloom_level, 0, app.cfg.bloom_levels - 1, null, 0);
+        _ = c.igSliderInt("MIP Texture", &app.cfg.bloom_texture, 0, 1, null, 0);
+        _ = c.igSliderInt("Downscale mode", &app.programs.bloom_down.defs.MODE, 0, 3, null, 0);
+        _ = c.igSliderFloat("Kernel scale", &app.programs.bloom_blur.defs.KERNEL_SCALE, 1.0, 5.0, null, 0);
+        _ = c.igCheckbox("Bilinear optimization", &app.programs.bloom_blur.defs.BILINEAR_OPTIMIZATION);
         c.igEndTabItem();
       }
       c.igEndTabBar();

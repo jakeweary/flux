@@ -18,7 +18,7 @@ fn randomQuat(T: anytype, r: *std.rand.Random) [4]T {
   return .{ x, y, z, w };
 }
 
-// https://github.com/recp/cglm/blob/bc8dc727/include/cglm/quat.h#L461
+// https://github.com/recp/cglm/blob/bc8dc727/include/cglm/quat.h#L555
 fn quatToMatrix(T: anytype, q: [4]T) [3][3]T {
   const x = q[0];
   const y = q[1];

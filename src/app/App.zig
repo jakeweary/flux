@@ -9,7 +9,7 @@ const Programs = @import("Programs.zig");
 const Textures = @import("Textures.zig");
 const Self = @This();
 
-const log = std.log.scoped(.Flux);
+const log = std.log.scoped(.App);
 
 window: *glfw.Window,
 width: c_int = 0,
@@ -56,7 +56,7 @@ pub fn defaults(self: *Self) void {
   self.programs.defaults();
 }
 
-pub fn rotateNoise(self: *Self) void {
+pub fn randomizeNoiseRotation(self: *Self) void {
   const time_ns = std.time.nanoTimestamp();
   const prng_seed = @truncate(u64, @bitCast(u128, time_ns));
   var prng = std.rand.DefaultPrng.init(prng_seed);

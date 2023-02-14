@@ -2,7 +2,7 @@ const std = @import("std");
 const c = @import("c.zig");
 const gl = @import("gl/gl.zig");
 const glfw = @import("glfw/glfw.zig");
-const Flux = @import("flux/Flux.zig");
+const App = @import("app/App.zig");
 
 pub const allocator = std.heap.c_allocator;
 pub const std_options = struct {
@@ -25,8 +25,8 @@ pub fn main() !void {
   });
   defer window.deinit();
 
-  var flux = try Flux.init(&window);
-  defer flux.deinit();
+  var app = try App.init(&window);
+  defer app.deinit();
 
-  try flux.run();
+  try app.run();
 }

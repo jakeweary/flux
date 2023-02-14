@@ -1,19 +1,18 @@
 const c = @import("../c.zig");
 const std = @import("std");
 
-pub fn uniform(loc: c.GLint, value: anytype) void {
+pub fn uniform(location: c.GLint, value: anytype) void {
   switch (@typeInfo(@TypeOf(value))) {
-    .ComptimeFloat => c.glUniform1f(loc, value),
-    .ComptimeInt => c.glUniform1i(loc, value),
-    .Float => c.glUniform1f(loc, @floatCast(c.GLfloat, value)),
+    .ComptimeFloat => c.glUniform1f(location, value),
+    .ComptimeInt => c.glUniform1i(location, value),
+    .Float => c.glUniform1f(location, @floatCast(c.GLfloat, value)),
     .Int => |info| switch (info.signedness) {
-      .signed => c.glUniform1i(loc, @intCast(c.GLint, value)),
-      .unsigned => c.glUniform1ui(loc, @intCast(c.GLuint, value)),
+      .signed => c.glUniform1i(location, @intCast(c.GLint, value)),
+      .unsigned => c.glUniform1ui(location, @intCast(c.GLuint, value)),
     },
-    .Bool => c.glUniform1i(loc, @boolToInt(value)),
+    .Bool => c.glUniform1i(location, @boolToInt(value)),
     .Pointer => {
       const Elem = std.meta.Elem(@TypeOf(value));
-      const len = @intCast(c_int, value.len);
       const outer = switch (@typeInfo(Elem)) {
         .Array => |info| info,
         .Vector => |info| info,
@@ -28,7 +27,7 @@ pub fn uniform(loc: c.GLint, value: anytype) void {
             .{ c.glUniformMatrix4x2fv, c.glUniformMatrix4x3fv, c.glUniformMatrix4fv   },
           };
           const f = matrix_fns[outer.len - 2][inner.len - 2];
-          f(loc, len, c.GL_FALSE, @ptrCast(*const inner.child, value));
+          f(location, @intCast(c_int, value.len), c.GL_FALSE, @ptrCast(*const inner.child, value));
         },
         // glUniform{1|2|3|4}{f|i|ui}v
         else => {
@@ -39,7 +38,7 @@ pub fn uniform(loc: c.GLint, value: anytype) void {
             else => @compileError("unimplemented")
           };
           const f = vector_fns[outer.len - 1];
-          f(loc, len, @ptrCast(*const outer.child, value));
+          f(location, @intCast(c_int, value.len), @ptrCast(*const outer.child, value));
         }
       }
     },
