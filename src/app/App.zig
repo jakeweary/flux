@@ -69,7 +69,7 @@ pub fn resize(self: *Self) void {
     return;
 
   var size: struct { w: c_int, h: c_int } = undefined;
-  c.glfwGetWindowSize(self.window.ptr, &size.w, &size.h);
+  c.glfwGetFramebufferSize(self.window.ptr, &size.w, &size.h);
   if (self.width == size.w and self.height == size.h)
     return;
 
