@@ -84,6 +84,8 @@ pub fn resize(self: *Self) void {
 }
 
 pub fn run(self: *Self) !void {
+  self.setupCallbacks();
+
   var timer = try std.time.Timer.start();
   var t: f32 = 0;
 
@@ -118,6 +120,31 @@ pub fn run(self: *Self) !void {
     c.glfwSwapBuffers(self.window.ptr);
     c.glfwPollEvents();
   }
+}
+
+// ---
+
+fn setupCallbacks(self: *Self) void {
+  const callbacks = struct {
+    fn onKey(window: ?*c.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.C) void {
+      glfw.windowUserPointerUpcast(Self, window).onKey(key, scancode, action, mods);
+      c.ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+    }
+  };
+
+  _ = c.glfwSetKeyCallback(self.window.ptr, callbacks.onKey);
+  c.glfwSetWindowUserPointer(self.window.ptr, self);
+}
+
+fn onKey(self: *Self, key: c_int, _: c_int, action: c_int, mods: c_int) void {
+  if (action != c.GLFW_PRESS)
+    return;
+
+  if (key == c.GLFW_KEY_ESCAPE)
+    c.glfwSetWindowShouldClose(self.window.ptr, c.GLFW_TRUE);
+
+  if (mods == c.GLFW_MOD_ALT and key == c.GLFW_KEY_ENTER or key == c.GLFW_KEY_F11)
+    self.window.fullscreen();
 }
 
 // ---
