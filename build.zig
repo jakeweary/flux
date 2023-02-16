@@ -21,6 +21,8 @@ pub fn build(b: *std.Build) !void {
     .target = target,
     .optimize = optimize,
   });
+  exe.strip = true;
+  exe.single_threaded = true;
   exe.setMainPkgPath("");
   exe.addLibraryPath("deps/lib");
   exe.addIncludePath("deps/include");

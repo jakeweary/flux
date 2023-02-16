@@ -10,9 +10,10 @@ pub const std_options = struct {
 };
 
 pub fn main() !void {
-  std.log.info("Glad v{s}", .{ c.GLAD_GENERATOR_VERSION });
-  std.log.info("GLFW v{s}", .{ c.glfwGetVersionString() });
-  std.log.info("Dear ImGui v{s}", .{ c.igGetVersion() });
+  std.log.info("Zig {}", .{ @import("builtin").zig_version });
+  std.log.info("Glad {s}", .{ c.GLAD_GENERATOR_VERSION });
+  std.log.info("GLFW {s}", .{ c.glfwGetVersionString() });
+  std.log.info("Dear ImGui {s}", .{ c.igGetVersion() });
 
   try glfw.init(&.{});
   defer glfw.deinit();
