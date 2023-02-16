@@ -32,15 +32,24 @@ void Particle_travel(inout Particle self, float dt) {
   self.age += dt;
 }
 
-void Particle_reset(inout Particle self, vec2 walls) {
-  self.pos = 2.0 * (hash22(1e3 * vUV) - 0.5) * walls;
+void Particle_respawn(inout Particle self, vec2 walls) {
+  #if RESPAWN_MODE == 0 // Same place
+    vec2 p = hash22(1e3 * vUV);
+  #elif RESPAWN_MODE == 1 // Random place
+    vec2 p = hash23(1e3 * vec3(vUV, fract(uT)));
+  #elif RESPAWN_MODE == 2 // Screen edges
+    vec3 h = hash33(1e3 * vec3(vUV, fract(uT)));
+    vec2 p = h.z < 0.5 ? vec2(h.x, round(h.y)) : vec2(round(h.x), h.y);
+  #endif
+
+  self.pos = 2.0 * (p - 0.5) * walls;
   self.vel *= 0.0;
   self.age *= 0.0;
 }
 
-void Particle_resetIfEscaped(inout Particle self, vec2 walls) {
+void Particle_respawnIfEscaped(inout Particle self, vec2 walls) {
   if (any(greaterThan(abs(self.pos), walls)))
-    Particle_reset(self, walls);
+    Particle_respawn(self, walls);
 }
 
 void Particle_bounce(inout Particle self, vec2 walls) {
@@ -70,7 +79,7 @@ void main() {
   #if WALLS_COLLISION
     Particle_bounce(p, vec2(1.0));
   #else
-    Particle_resetIfEscaped(p, vec2(1.0));
+    Particle_respawnIfEscaped(p, vec2(1.0));
   #endif
 
   fAge = p.age;

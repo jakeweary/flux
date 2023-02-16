@@ -4,6 +4,7 @@ const Self = @This();
 
 seed: gl.Program,
 update: gl.ProgramWithDefs(struct {
+  RESPAWN_MODE: c_int = 0,
   WALLS_COLLISION: bool = false,
 }),
 render: gl.ProgramWithDefs(struct {

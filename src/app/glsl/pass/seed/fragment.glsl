@@ -12,6 +12,6 @@ vec2 normal(vec2 random) {
 void main() {
   fPosition = vec2(0.0);
   fVelocity = vec2(0.0);
-  for (int i = 10; length(fVelocity) < 1e-3; i++)
-    fVelocity = normal(hash23(-vec3(1e3 * vUV, i)));
+  for (int i = 0; length(fVelocity) < 1e-3; i++)
+    fVelocity = normal(hash23(vec3(1e3 * vUV, i)));
 }
