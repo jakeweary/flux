@@ -80,14 +80,14 @@ pub fn loadCustomPixelFont() void {
   const font = c.ImFontAtlas_AddFontDefault(font_atlas, cfg);
 
   var ids: [pixelfont.CHARS.len]c_int = undefined;
-  for (pixelfont.CHARS) |char, i|
+  for (pixelfont.CHARS, 0..) |char, i|
     ids[i] = c.ImFontAtlas_AddCustomRectFontGlyph(font_atlas, font,
       char.code, pixelfont.WIDTH, pixelfont.HEIGHT, pixelfont.WIDTH + 1, .{ .x = 1, .y = 2 });
 
   var pixels: struct { ptr: [*c]u8, width: c_int } = undefined;
   c.ImFontAtlas_GetTexDataAsAlpha8(font_atlas, &pixels.ptr, &pixels.width, null, null);
 
-  for (pixelfont.CHARS) |char, i| {
+  for (pixelfont.CHARS, 0..) |char, i| {
     const rect: *c.ImFontAtlasCustomRect = c
       .ImFontAtlas_GetCustomRectByIndex(font_atlas, ids[i]);
 
@@ -95,11 +95,9 @@ pub fn loadCustomPixelFont() void {
     const first_row = @intCast(usize, pixels.width * rect.Y + rect.X);
     var row = pixels.ptr + first_row;
 
-    var y: u6 = 0;
-    while (y < rect.Height) : (y += 1) {
-      var x: u6 = 0;
-      while (x < rect.Width) : (x += 1) {
-        const shift = pixelfont.WIDTH * y + x;
+    for (0..rect.Height) |y| {
+      for (0..rect.Width) |x| {
+        const shift = @truncate(u6, pixelfont.WIDTH * y + x);
         row[x] = if (char.mask >> shift & 1 != 0) 0xff else 0;
       }
       row += next_row;

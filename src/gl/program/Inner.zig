@@ -22,7 +22,7 @@ pub fn use(self: *const Self) void {
 }
 
 pub fn textures(self: *const Self, arg: anytype) void {
-  inline for (@typeInfo(@TypeOf(arg)).Struct.fields) |f, i|
+  inline for (@typeInfo(@TypeOf(arg)).Struct.fields, 0..) |f, i|
     self.texture(f.name ++ "", @intCast(c.GLuint, i), @field(arg, f.name));
 }
 

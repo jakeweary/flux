@@ -17,10 +17,8 @@ pub const CHARS = parse: {
     const code = std.fmt.parseUnsigned(u16, hex, 16) catch unreachable;
     var char = Char{ .code = code };
 
-    var y: u6 = 0;
-    while (y < HEIGHT) : (y += 1) {
-      var x: u6 = 0;
-      while (x < WIDTH) : (x += 1) {
+    for (0..HEIGHT) |y| {
+      for (0..WIDTH) |x| {
         if (CHARMAP[CHARMAP_WIDTH * (y + 1) + x + i] != ' ')
           char.mask |= 1 << WIDTH * y + x;
       }
