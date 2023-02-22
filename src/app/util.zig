@@ -20,6 +20,7 @@ fn randomQuat(T: anytype, r: *std.rand.Random) [4]T {
 
 // https://github.com/recp/cglm/blob/bc8dc727/include/cglm/quat.h#L555
 fn quatToMatrix(T: anytype, q: [4]T) [3][3]T {
+  @setFloatMode(.Optimized);
   const x = q[0];
   const y = q[1];
   const z = q[2];
