@@ -10,6 +10,7 @@ update: gl.ProgramWithDefs(struct {
 render: gl.ProgramWithDefs(struct {
   COLORSPACE: c_int = 6,
   RENDER_AS_LINES: bool = true,
+  LINE_RENDERING_MODE: c_int = 2,
   DYNAMIC_LINE_BRIGHTNESS: bool = true,
   FANCY_POINT_RENDERING: bool = false,
   POINT_EDGE_LINEARSTEP: bool = false,

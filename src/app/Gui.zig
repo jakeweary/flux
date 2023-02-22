@@ -146,6 +146,7 @@ fn menu(self: *Self, app: *App) void {
         c.igEndTabItem();
       }
       if (c.igBeginTabItem("Rendering", null, 0)) {
+        _ = c.igSliderInt("Line rendering mode", &app.programs.render.defs.LINE_RENDERING_MODE, 0, 2, null, 0);
         _ = c.igCheckbox("Point edge linearstep", &app.programs.render.defs.POINT_EDGE_LINEARSTEP);
         c.igEndTabItem();
       }

@@ -49,20 +49,35 @@ void main() {
 
   #if RENDER_AS_LINES
     vec2 vel = uDT * texelFetch(tVelocity, uv, 0).xy;
-    gl_Position = vec4(pos - vel * float(id.y), 0.0, 1.0);
+
+    #if LINE_RENDERING_MODE == 0 // don't normalize
+      vec2 vel_px = uViewport * vel / 2.0;
+      float len_px = max(1.0, length(vel_px));
+      float scale = 1.0;
+    #elif LINE_RENDERING_MODE == 1 // normalize (circle)
+      vec2 vel_px = uViewport * vel / 2.0;
+      float len_px = length(vel_px);
+      float scale = max(1.0, 1.5 / len_px);
+    #elif LINE_RENDERING_MODE == 2 // normalize (square)
+      vec2 vel_px = abs(uViewport * vel / 2.0);
+      float len_px = length(vel_px);
+      float scale = max(1.0, 1.0 / max(vel_px.x, vel_px.y));
+    #endif
 
     #if DYNAMIC_LINE_BRIGHTNESS
-      color /= max(1.0, length(vel * vec2(uViewport)));
+      color /= scale * len_px;
     #endif
-  #else
-    gl_Position = vec4(pos, 0.0, 1.0);
 
+    gl_Position = vec4(pos - scale * vel * id.y, 0.0, 1.0);
+  #else
     #if FANCY_POINT_RENDERING
       gl_PointSize = floor(uPointScale + 1.0);
       vRadius = (uPointScale + vec2(-1.0, 1.0)) / (2.0 * gl_PointSize);
     #else
       gl_PointSize = 1.0;
     #endif
+
+    gl_Position = vec4(pos, 0.0, 1.0);
   #endif
 
   vColor = spawn * color;
