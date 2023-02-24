@@ -43,7 +43,7 @@ pub fn init() !Self {
 
   const aces = @embedFile("../../deps/glsl/aces.glsl");
   const aces_fast = @embedFile("../../deps/glsl/aces-fast.glsl");
-  const hashes = @embedFile("../../deps/glsl/hashes.glsl");
+  const hash = @embedFile("../../deps/glsl/hash/without-sine-2.glsl");
   const simplex3d = @embedFile("../../deps/glsl/simplex3d.glsl");
 
   const quad = @embedFile("glsl/quad/vertex.glsl");
@@ -54,14 +54,14 @@ pub fn init() !Self {
   self.seed = blk: {
     const vs = quad;
     const fs = @embedFile("glsl/pass/seed/fragment.glsl");
-    break :blk try @TypeOf(self.seed).init(&.{ vs }, &.{ hashes, fs });
+    break :blk try @TypeOf(self.seed).init(&.{ vs }, &.{ hash, fs });
   };
   errdefer self.seed.deinit();
 
   self.update = blk: {
     const vs = quad;
     const fs = @embedFile("glsl/pass/update/fragment.glsl");
-    break :blk try @TypeOf(self.update).init(&.{ vs }, &.{ hashes, simplex3d, fs });
+    break :blk try @TypeOf(self.update).init(&.{ vs }, &.{ hash, simplex3d, fs });
   };
   errdefer self.update.deinit();
 

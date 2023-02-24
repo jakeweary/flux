@@ -34,11 +34,11 @@ void Particle_travel(inout Particle self, float dt) {
 
 void Particle_respawn(inout Particle self, vec2 walls) {
   #if RESPAWN_MODE == 0 // Same place
-    vec2 p = hash22(1e3 * vUV);
+    vec2 p = hash22(uvec2(gl_FragCoord.xy));
   #elif RESPAWN_MODE == 1 // Random place
-    vec2 p = hash23(1e3 * vec3(vUV, fract(uT)));
+    vec2 p = hash23(uvec3(gl_FragCoord.xy, 1e4 * fract(uT)));
   #elif RESPAWN_MODE == 2 // Screen edges
-    vec3 h = hash33(1e3 * vec3(vUV, fract(uT)));
+    vec3 h = hash33(uvec3(gl_FragCoord.xy, 1e4 * fract(uT)));
     vec2 p = h.z < 0.5 ? vec2(h.x, round(h.y)) : vec2(round(h.x), h.y);
   #endif
 
