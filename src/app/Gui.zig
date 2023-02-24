@@ -49,14 +49,13 @@ fn menu(self: *Self, app: *App) void {
 
   if (c.igTreeNodeEx_Str("Simulation", node_open)) {
     const defs = &app.programs.update.defs;
-    const respawn_modes = [_][*:0]const u8{ "Same place", "Random place", "Screen edges" };
-    const respawn_mode = respawn_modes[@intCast(usize, defs.RESPAWN_MODE)];
+    const respawn_modes = [_][*:0]const u8{ "Same location", "Random location", "Screen edges" };
     _ = c.igSliderFloat("Time scale", &app.cfg.time_scale, 0.001, 1.0, null, 0);
     _ = c.igSliderFloat("Space scale", &app.cfg.space_scale, 0.001, 1.0, null, 0);
     _ = c.igSliderFloat("Air resistance", &app.cfg.air_resistance, 0.0, 1.0, null, 0);
     _ = c.igSliderFloat("Flux power", &app.cfg.flux_power, 0.0, 1.0, null, 0);
     _ = c.igSliderFloat("Flux turbulence", &app.cfg.flux_turbulence, 0.0, 1.0, null, 0);
-    _ = c.igSliderInt("Respawn mode", &defs.RESPAWN_MODE, 0, respawn_modes.len - 1, respawn_mode, 0);
+    _ = c.igCombo_Str_arr("Respawn mode", &defs.RESPAWN_MODE, &respawn_modes, respawn_modes.len, 0);
     _ = c.igCheckbox("Walls collision", &defs.WALLS_COLLISION);
     c.igTreePop();
   }
@@ -64,8 +63,7 @@ fn menu(self: *Self, app: *App) void {
   if (c.igTreeNodeEx_Str("Rendering", node_open)) {
     const defs = &app.programs.render.defs;
     const color_spaces = [_][*:0]const u8{ "HSL", "Smooth HSL", "CIELAB", "CIELUV", "CAM16", "Jzazbz", "Oklab" };
-    const color_space = color_spaces[@intCast(usize, defs.COLORSPACE)];
-    _ = c.igSliderInt("Color space", &defs.COLORSPACE, 0, color_spaces.len - 1, color_space, 0);
+    _ = c.igCombo_Str_arr("Color space", &defs.COLORSPACE, &color_spaces, color_spaces.len, 0);
     _ = c.igCheckbox("Render as lines", &defs.RENDER_AS_LINES);
     if (defs.RENDER_AS_LINES) {
       _ = c.igCheckbox("Dynamic line brightness", &defs.DYNAMIC_LINE_BRIGHTNESS);
@@ -129,7 +127,7 @@ fn menu(self: *Self, app: *App) void {
 
   if (c.igTreeNodeEx_Str("Debug", node_closed)) {
     if (c.igBeginTabBar("tabs", 0)) {
-      if (c.igBeginTabItem("Noise", null, 0)) {
+      if (c.igBeginTabItem("Simulation", null, 0)) {
         if (c.igTreeNodeEx_Str("Noise rotation matrix", node_open)) {
           const flags = c.ImGuiTableFlags_Borders | c.ImGuiTableFlags_NoHostExtendX;
           if (c.igBeginTable("table", 3, flags, .{ .x = 0, .y = 0 }, 0)) {
