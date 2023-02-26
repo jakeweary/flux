@@ -15,12 +15,16 @@ pub fn deinit(ids: []const c.GLuint) void {
   c.glDeleteTextures(@intCast(c.GLsizei, ids.len), ids.ptr);
 }
 
+pub fn reinit(ids: []c.GLuint, fmt: c.GLenum, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
+  deinit(ids);
+  init(ids, @intCast(c.GLenum, fmt), mips, w, h, params);
+}
+
 pub fn resize(ids: []c.GLuint, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
   var fmt: c.GLint = undefined;
   c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_INTERNAL_FORMAT, &fmt);
 
-  deinit(ids);
-  init(ids, @intCast(c.GLenum, fmt), mips, w, h, params);
+  reinit(ids, @intCast(c.GLenum, fmt), mips, w, h, params);
 }
 
 pub fn resizeIfChanged(ids: []c.GLuint, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) bool {

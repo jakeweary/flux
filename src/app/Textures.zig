@@ -20,7 +20,7 @@ pub fn init() !Self {
   // `GL_RGB32F` is basically a requirement for HQ bloom
   gl.textures.init(&self.bloom, c.GL_RGB32F, 1, 1, 1, &.{});
   gl.textures.init(&self.rendering, c.GL_RGB32F, 1, 1, 1, &.{});
-  gl.textures.init(&self.simulation, c.GL_RGB32F, 1, 1, 1, &.{});
+  gl.textures.init(&self.simulation, c.GL_RG32F, 1, 1, 1, &.{});
 
   return self;
 }

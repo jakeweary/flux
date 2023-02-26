@@ -11,15 +11,11 @@ const Self = @This();
 
 const log = std.log.scoped(.App);
 
-window: *glfw.Window,
-width: c_int = 0,
-height: c_int = 0,
-
 cfg: Config = .{},
+window: *glfw.Window,
 gui: Gui,
 programs: Programs,
 textures: Textures,
-
 fbo: c.GLuint = undefined,
 vao: c.GLuint = undefined,
 
@@ -51,7 +47,7 @@ pub fn deinit(self: *const Self) void {
   self.programs.deinit();
 }
 
-pub fn defaults(self: *Self) void {
+pub fn resetToDefaults(self: *Self) void {
   self.cfg = .{};
   self.programs.defaults();
 }
@@ -64,25 +60,6 @@ pub fn randomizeNoiseRotation(self: *Self) void {
   self.cfg.noise_rotation = util.randomRotationMatrix(f32, &rand);
 }
 
-pub fn resize(self: *Self) void {
-  if (c.glfwGetWindowAttrib(self.window.ptr, c.GLFW_ICONIFIED) == c.GLFW_TRUE)
-    return;
-
-  var size: struct { w: c_int, h: c_int } = undefined;
-  c.glfwGetFramebufferSize(self.window.ptr, &size.w, &size.h);
-  if (self.width == size.w and self.height == size.h)
-    return;
-
-  self.width = size.w;
-  self.height = size.h;
-  gl.textures.resize(&self.textures.rendering, 1, size.w, size.h, &.{
-    .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
-    .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
-    .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR },
-    .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR },
-  });
-}
-
 pub fn run(self: *Self) !void {
   self.setupCallbacks();
 
@@ -90,35 +67,47 @@ pub fn run(self: *Self) !void {
   var t: f32 = 0;
 
   while (c.glfwWindowShouldClose(self.window.ptr) == c.GLFW_FALSE) {
+    c.glfwPollEvents();
+    if (c.glfwGetWindowAttrib(self.window.ptr, c.GLFW_ICONIFIED) == c.GLFW_TRUE)
+      continue;
+
     log.debug("--- new frame ---", .{});
-
-    const ss = self.cfg.simulation_size;
-    if (gl.textures.resizeIfChanged(&self.textures.simulation, 1, ss[0], ss[1], &.{}))
-      self.seed();
-
-    self.resize();
-    self.gui.update(self);
-    try self.programs.reinit();
 
     const dt = 1e-9 * self.cfg.time_scale * @intToFloat(f32, timer.lap());
     const step_dt = dt / @intToFloat(f32, self.cfg.steps_per_frame);
     t += dt;
 
+    var size: struct { w: c_int, h: c_int } = undefined;
+    c.glfwGetFramebufferSize(self.window.ptr, &size.w, &size.h);
+
+    self.gui.update(self);
+    try self.programs.reinit();
+
+    _ = gl.textures.resizeIfChanged(&self.textures.rendering, 1, size.w, size.h, &.{
+      .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
+      .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
+      .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR },
+      .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR },
+    });
+
+    const ss = self.cfg.simulation_size;
+    if (gl.textures.resizeIfChanged(&self.textures.simulation, 1, ss[0], ss[1], &.{}))
+      self.seed();
+
     var step = self.cfg.steps_per_frame;
     while (step != 0) : (step -= 1) {
       const step_t = t - step_dt * @intToFloat(f32, step);
-      self.update(step_t, step_dt);
-      self.render(step_t, step_dt);
+      self.update(step_t, step_dt, size.w, size.h);
+      self.render(step_t, step_dt, size.w, size.h);
       self.feedback();
     }
 
-    self.bloom();
-    self.postprocess();
+    self.bloom(size.w, size.h);
+    self.postprocess(size.w, size.h);
     self.gui.render();
 
     c.glfwSwapInterval(@boolToInt(self.cfg.vsync));
     c.glfwSwapBuffers(self.window.ptr);
-    c.glfwPollEvents();
   }
 }
 
@@ -163,7 +152,7 @@ fn seed(self: *Self) void {
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
-fn update(self: *Self, t: f32, dt: f32) void {
+fn update(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
   log.debug("step: update", .{});
 
   const program = self.programs.update.use();
@@ -174,7 +163,7 @@ fn update(self: *Self, t: f32, dt: f32) void {
     .uAirResistance = util.logarithmic(5, 1 - self.cfg.air_resistance),
     .uFluxPower = self.cfg.flux_power * 100,
     .uFluxTurbulence = self.cfg.flux_turbulence,
-    .uViewport = &[_][2]c.GLint{.{ self.width, self.height }},
+    .uViewport = &[_][2]c.GLint{.{ w, h }},
     .uNoiseRotation = &[_][3][3]c.GLfloat{ self.cfg.noise_rotation },
   });
   program.textures(.{
@@ -197,7 +186,7 @@ fn update(self: *Self, t: f32, dt: f32) void {
   gl.textures.swap(self.textures.velocity());
 }
 
-fn render(self: *Self, t: f32, dt: f32) void {
+fn render(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
   log.debug("step: render", .{});
 
   c.glBlendFunc(c.GL_ONE, c.GL_ONE);
@@ -210,7 +199,7 @@ fn render(self: *Self, t: f32, dt: f32) void {
     .uDT = dt,
     .uPointScale = self.cfg.point_scale,
     .uSmoothSpawn = self.cfg.smooth_spawn,
-    .uViewport = &[_][2]c.GLint{.{ self.width, self.height }},
+    .uViewport = &[_][2]c.GLint{.{ w, h }},
   });
   program.textures(.{
     .tAge = self.textures.age()[0],
@@ -254,7 +243,7 @@ fn feedback(self: *Self) void {
   gl.textures.swap(self.textures.feedback());
 }
 
-fn postprocess(self: *Self) void {
+fn postprocess(self: *Self, w: c_int, h: c_int) void {
   log.debug("step: postprocess", .{});
 
   const program = self.programs.postprocess.use();
@@ -269,18 +258,18 @@ fn postprocess(self: *Self) void {
     .tBlueNoise = self.textures.bluenoise,
   });
 
-  c.glViewport(0, 0, self.width, self.height);
+  c.glViewport(0, 0, w, h);
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
-fn bloom(self: *Self) void {
+fn bloom(self: *Self, w: c_int, h: c_int) void {
   log.debug("step: bloom", .{});
 
   if (self.cfg.bloom == 0)
     return log.debug("skipping", .{});
 
   const ids = &self.textures.bloom;
-  _ = gl.textures.resizeIfChanged(ids, self.cfg.bloom_levels, self.width, self.height, &.{
+  _ = gl.textures.resizeIfChanged(ids, self.cfg.bloom_levels, w, h, &.{
     .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
     .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
     .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR_MIPMAP_NEAREST },
