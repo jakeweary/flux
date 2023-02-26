@@ -4,9 +4,9 @@ uniform vec2 uDirection;
 in vec2 vUV;
 out vec3 fColor;
 
-const int K = int(ceil(KERNEL_SCALE * SIGMA)) + 1;
+const int KERNEL_SIZE = int(ceil(KERNEL_SCALE * SIGMA));
 
-// https://www.desmos.com/calculator/rgaxqrkuts
+// https://www.desmos.com/calculator/qe9uixx0a2
 float gauss(float x) {
   const float k1 = 1.0 / (SIGMA * sqrt(radians(360.0)));
   const float k2 = 0.5 / (SIGMA * SIGMA);
@@ -19,7 +19,7 @@ void main() {
 
   #if BILINEAR_OPTIMIZATION
     // https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/
-    for (int i = 1; i < K; i += 2) {
+    for (int i = 1; i <= KERNEL_SIZE; i += 2) {
       float x = float(i), w1 = gauss(x), w2 = gauss(x + 1.0);
       float x_linear = x + w2 / (w1 + w2);
       vec3 a = textureLod(tSrc, vUV - x_linear * px, uSrcLvl).rgb;
@@ -27,7 +27,7 @@ void main() {
       acc += (w1 + w2) * (a + b);
     }
   #else
-    for (int i = 1; i < K; i++) {
+    for (int i = 1; i <= KERNEL_SIZE; i += 1) {
       float x = float(i);
       vec3 a = textureLod(tSrc, vUV - x * px, uSrcLvl).rgb;
       vec3 b = textureLod(tSrc, vUV + x * px, uSrcLvl).rgb;
