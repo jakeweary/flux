@@ -99,7 +99,7 @@ pub fn run(self: *Self) !void {
       const step_t = t - step_dt * @intToFloat(f32, step);
       self.update(step_t, step_dt, size.w, size.h);
       self.render(step_t, step_dt, size.w, size.h);
-      self.feedback();
+      self.feedback(size.w, size.h);
     }
 
     self.bloom(size.w, size.h);
@@ -221,8 +221,15 @@ fn render(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
     c.glDrawArrays(c.GL_POINTS, 0, count);
 }
 
-fn feedback(self: *Self) void {
+fn feedback(self: *Self, w: c_int, h: c_int) void {
   log.debug("step: feedback", .{});
+
+  if (self.cfg.feedback == 0)
+    return c.glCopyImageSubData(
+      self.textures.rendered(), c.GL_TEXTURE_2D, 0, 0, 0, 0,
+      self.textures.feedback()[0], c.GL_TEXTURE_2D, 0, 0, 0, 0,
+      w, h, 1
+    );
 
   const program = self.programs.feedback.use();
   program.uniforms(.{
