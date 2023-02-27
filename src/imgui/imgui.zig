@@ -69,6 +69,8 @@ pub fn loadCustomStyle() void {
   s.FrameRounding = 2;
   s.GrabRounding = 1;
   s.GrabMinSize = 4;
+  s.SeparatorTextBorderSize = 1;
+  s.SeparatorTextPadding = .{ .x = 16, .y = 2 };
 }
 
 pub fn loadCustomPixelFont() void {
