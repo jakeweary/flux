@@ -14,7 +14,7 @@ fps: [60]f32 = .{ 0 } ** 60,
 dt: [60]f32 = .{ 0 } ** 60,
 
 pub fn init(window: *c.GLFWwindow) Self {
-  const self = Self{ .ctx = imgui.Context.init(window) };
+  const self = Self{ .ctx = imgui.Context.init(window, false) };
   imgui.io().IniFilename = null;
   imgui.io().ConfigWindowsMoveFromTitleBarOnly = true;
   imgui.loadCustomStyle();

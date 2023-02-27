@@ -5,9 +5,9 @@ const Self = @This();
 
 ctx: *c.ImGuiContext,
 
-pub fn init(window: *c.GLFWwindow) Self {
+pub fn init(window: *c.GLFWwindow, install_callbacks: bool) Self {
   const self = Self{ .ctx = c.igCreateContext(null) };
-  _ = c.ImGui_ImplGlfw_InitForOpenGL(window, true);
+  _ = c.ImGui_ImplGlfw_InitForOpenGL(window, install_callbacks);
   _ = c.ImGui_ImplOpenGL3_Init(gl.VERSION);
   return self;
 }
