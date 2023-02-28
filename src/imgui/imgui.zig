@@ -24,6 +24,13 @@ pub fn newFrame() void {
 pub fn render() void {
   c.igRender();
   c.ImGui_ImplOpenGL3_RenderDrawData(c.igGetDrawData());
+
+  if (io().ConfigFlags & c.ImGuiConfigFlags_ViewportsEnable != 0) {
+    const backup = c.glfwGetCurrentContext();
+    c.igUpdatePlatformWindows();
+    c.igRenderPlatformWindowsDefault(null, null);
+    c.glfwMakeContextCurrent(backup);
+  }
 }
 
 // ---

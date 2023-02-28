@@ -14,9 +14,13 @@ fps: [60]f32 = .{ 0 } ** 60,
 dt: [60]f32 = .{ 0 } ** 60,
 
 pub fn init(window: *c.GLFWwindow) Self {
-  const self = Self{ .ctx = imgui.Context.init(window, false) };
-  imgui.io().IniFilename = null;
+  const flags =
+    c.ImGuiConfigFlags_ViewportsEnable |
+    c.ImGuiConfigFlags_DockingEnable |
+    c.ImGuiConfigFlags_NavEnableKeyboard;
+  const self = Self{ .ctx = imgui.Context.init(window, flags, false) };
   imgui.io().ConfigWindowsMoveFromTitleBarOnly = true;
+  imgui.io().IniFilename = null;
   imgui.loadCustomStyle();
   imgui.loadCustomPixelFont();
   return self;
@@ -41,7 +45,10 @@ pub fn update(self: *Self, app: *App) void {
 // ---
 
 fn menu(self: *Self, app: *App) void {
-  c.igSetNextWindowPos(.{ .x = 16, .y = 16 }, c.ImGuiCond_FirstUseEver, .{ .x = 0, .y = 0 });
+  const viewport_pos = c.igGetMainViewport().*.Pos;
+  const next_window_pos = .{ .x = viewport_pos.x + 16, .y = viewport_pos.y + 16 };
+  c.igSetNextWindowPos(next_window_pos, c.ImGuiCond_FirstUseEver, .{ .x = 0, .y = 0 });
+
   _ = c.igBegin("Menu", null, c.ImGuiWindowFlags_AlwaysAutoResize);
   defer c.igEnd();
 
