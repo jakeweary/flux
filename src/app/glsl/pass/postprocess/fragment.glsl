@@ -1,16 +1,16 @@
-uniform sampler2D tRendered;
-uniform sampler2D tBloom;
-uniform sampler2D tBlueNoise;
-uniform float uBrightness;
-uniform float uBloomMix;
-uniform int uBloomLvl;
-in vec2 vUV;
-out vec3 fColor;
+uniform sampler2D t_rendered;
+uniform sampler2D t_bloom;
+uniform sampler2D t_blue_noise;
+uniform float u_brightness;
+uniform float u_bloom_mix;
+uniform int u_bloom_lvl;
+in vec2 v_uv;
+out vec3 f_color;
 
 void main() {
-  vec3 r = texture(tRendered, vUV).rgb;
-  vec3 b = textureLod(tBloom, vUV, uBloomLvl).rgb / textureQueryLevels(tBloom);
-  vec3 color = uBrightness * mix(r, b, uBloomMix);
+  vec3 r = texture(t_rendered, v_uv).rgb;
+  vec3 b = textureLod(t_bloom, v_uv, u_bloom_lvl).rgb / textureQueryLevels(t_bloom);
+  vec3 color = u_brightness * mix(r, b, u_bloom_mix);
 
   #if ACES
     #if ACES_FAST
@@ -25,9 +25,9 @@ void main() {
   #endif
 
   #if DITHER
-    vec2 uv = gl_FragCoord.xy / vec2(textureSize(tBlueNoise, 0));
-    color += texture(tBlueNoise, uv).rgb / 256.0;
+    vec2 uv = gl_FragCoord.xy / vec2(textureSize(t_blue_noise, 0));
+    color += texture(t_blue_noise, uv).rgb / 256.0;
   #endif
 
-  fColor = color;
+  f_color = color;
 }

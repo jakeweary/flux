@@ -1,11 +1,11 @@
-uniform sampler2D tPrev;
-uniform sampler2D tCurr;
-uniform int uCurrLvl;
-in vec2 vUV;
-out vec3 fColor;
+uniform sampler2D t_prev;
+uniform sampler2D t_curr;
+uniform int u_curr_lvl;
+in vec2 v_uv;
+out vec3 f_color;
 
 void main() {
-  vec3 prev = textureLod(tPrev, vUV, uCurrLvl + 1).rgb;
-  vec3 curr = textureLod(tCurr, vUV, uCurrLvl).rgb;
-  fColor = curr + prev;
+  vec3 prev = textureLod(t_prev, v_uv, u_curr_lvl + 1).rgb;
+  vec3 curr = textureLod(t_curr, v_uv, u_curr_lvl).rgb;
+  f_color = curr + prev;
 }

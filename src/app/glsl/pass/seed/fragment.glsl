@@ -1,5 +1,5 @@
-out vec2 fPosition;
-out vec2 fVelocity;
+out vec2 f_position;
+out vec2 f_velocity;
 
 // https://en.wikipedia.org/wiki/Box-Muller_transform
 vec2 normal(vec2 random) {
@@ -9,8 +9,8 @@ vec2 normal(vec2 random) {
 }
 
 void main() {
-  fPosition = vec2(0);
-  fVelocity = vec2(0);
-  for (int i = 0; length(fVelocity) < 1e-3; i++)
-    fVelocity = normal(hash23(uvec3(gl_FragCoord.xy, i)));
+  f_position = vec2(0);
+  f_velocity = vec2(0);
+  for (int i = 0; length(f_velocity) < 1e-3; i++)
+    f_velocity = normal(hash23(uvec3(gl_FragCoord.xy, i)));
 }

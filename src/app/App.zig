@@ -157,19 +157,19 @@ fn update(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
 
   const program = self.programs.update.use();
   program.uniforms(.{
-    .uT = t,
-    .uDT = dt,
-    .uSpaceScale = self.cfg.space_scale * 2,
-    .uAirResistance = util.logarithmic(5, 1 - self.cfg.air_resistance),
-    .uFluxPower = self.cfg.flux_power * 100,
-    .uFluxTurbulence = self.cfg.flux_turbulence,
-    .uViewport = &[_][2]c.GLint{.{ w, h }},
-    .uNoiseRotation = &[_][3][3]c.GLfloat{ self.cfg.noise_rotation },
+    .u_t = t,
+    .u_dt = dt,
+    .u_space_scale = self.cfg.space_scale * 2,
+    .u_air_resistance = util.logarithmic(5, 1 - self.cfg.air_resistance),
+    .u_flux_power = self.cfg.flux_power * 100,
+    .u_flux_turbulence = self.cfg.flux_turbulence,
+    .u_viewport = &[_][2]c.GLint{.{ w, h }},
+    .u_noise_rotation = &[_][3][3]c.GLfloat{ self.cfg.noise_rotation },
   });
   program.textures(.{
-    .tAge = self.textures.age()[0],
-    .tPosition = self.textures.position()[0],
-    .tVelocity = self.textures.velocity()[0],
+    .t_age = self.textures.age()[0],
+    .t_position = self.textures.position()[0],
+    .t_velocity = self.textures.velocity()[0],
   });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
@@ -195,16 +195,16 @@ fn render(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
 
   const program = self.programs.render.use();
   program.uniforms(.{
-    .uT = t,
-    .uDT = dt,
-    .uPointScale = self.cfg.point_scale,
-    .uSmoothSpawn = self.cfg.smooth_spawn,
-    .uViewport = &[_][2]c.GLint{.{ w, h }},
+    .u_t = t,
+    .u_dt = dt,
+    .u_point_scale = self.cfg.point_scale,
+    .u_smooth_spawn = self.cfg.smooth_spawn,
+    .u_viewport = &[_][2]c.GLint{.{ w, h }},
   });
   program.textures(.{
-    .tAge = self.textures.age()[0],
-    .tPosition = self.textures.position()[0],
-    .tVelocity = self.textures.velocity()[0],
+    .t_age = self.textures.age()[0],
+    .t_position = self.textures.position()[0],
+    .t_velocity = self.textures.velocity()[0],
   });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
@@ -233,11 +233,11 @@ fn feedback(self: *Self, w: c_int, h: c_int) void {
 
   const program = self.programs.feedback.use();
   program.uniforms(.{
-    .uMix = 1 - util.logarithmic(5, 1 - self.cfg.feedback),
+    .u_mix = 1 - util.logarithmic(5, 1 - self.cfg.feedback),
   });
   program.textures(.{
-    .tRendered = self.textures.rendered(),
-    .tFeedback = self.textures.feedback()[0],
+    .t_rendered = self.textures.rendered(),
+    .t_feedback = self.textures.feedback()[0],
   });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
@@ -255,14 +255,14 @@ fn postprocess(self: *Self, w: c_int, h: c_int) void {
 
   const program = self.programs.postprocess.use();
   program.uniforms(.{
-    .uBrightness = self.cfg.brightness,
-    .uBloomMix = self.cfg.bloom,
-    .uBloomLvl = self.cfg.bloom_level,
+    .u_brightness = self.cfg.brightness,
+    .u_bloom_mix = self.cfg.bloom,
+    .u_bloom_lvl = self.cfg.bloom_level,
   });
   program.textures(.{
-    .tRendered = self.textures.feedback()[0],
-    .tBloom = self.textures.bloom[@intCast(usize, self.cfg.bloom_texture)],
-    .tBlueNoise = self.textures.bluenoise,
+    .t_rendered = self.textures.feedback()[0],
+    .t_bloom = self.textures.bloom[@intCast(usize, self.cfg.bloom_texture)],
+    .t_blue_noise = self.textures.bluenoise,
   });
 
   c.glViewport(0, 0, w, h);
@@ -305,8 +305,8 @@ fn bloom(self: *Self, w: c_int, h: c_int) void {
 
 fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint, dir: [2]f32) void {
   const program = self.programs.bloom_blur.use();
-  program.uniforms(.{ .uSrcLvl = lvl, .uDirection = &[_][2]f32{ dir } });
-  program.textures(.{ .tSrc = src });
+  program.uniforms(.{ .u_src_lvl = lvl, .u_direction = &[_][2]f32{ dir } });
+  program.textures(.{ .t_src = src });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
     .{ dst, lvl },
@@ -318,8 +318,8 @@ fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint, dir: [2]f3
 
 fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint) void {
   const program = self.programs.bloom_down.use();
-  program.uniforms(.{ .uSrcLvl = lvl - 1 });
-  program.textures(.{ .tSrc = src });
+  program.uniforms(.{ .u_src_lvl = lvl - 1 });
+  program.textures(.{ .t_src = src });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
     .{ dst, lvl },
@@ -331,8 +331,8 @@ fn bloomDown(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint) void {
 
 fn bloomUp(self: *Self, prev: c.GLuint, curr: c.GLuint, dst: c.GLuint, lvl: c.GLint) void {
   const program = self.programs.bloom_up.use();
-  program.uniforms(.{ .uCurrLvl = lvl });
-  program.textures(.{ .tCurr = curr, .tPrev = prev });
+  program.uniforms(.{ .u_curr_lvl = lvl });
+  program.textures(.{ .t_curr = curr, .t_prev = prev });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
     .{ dst, lvl },

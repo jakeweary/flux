@@ -1,13 +1,13 @@
-uniform sampler2D tAge;
-uniform sampler2D tPosition;
-uniform sampler2D tVelocity;
-uniform float uT;
-uniform float uDT;
-uniform float uPointScale;
-uniform float uSmoothSpawn;
-uniform ivec2 uViewport;
-out vec2 vRadius;
-out vec3 vColor;
+uniform sampler2D t_age;
+uniform sampler2D t_position;
+uniform sampler2D t_velocity;
+uniform float u_t;
+uniform float u_dt;
+uniform float u_point_scale;
+uniform float u_smooth_spawn;
+uniform ivec2 u_viewport;
+out vec2 v_radius;
+out vec3 v_color;
 
 vec3 hue_to_color(float hue) {
   #if COLORSPACE == 0 // HSL
@@ -39,27 +39,27 @@ void main() {
     ivec2 id = ivec2(gl_VertexID, 0);
   #endif
 
-  ivec2 ts = textureSize(tPosition, 0).xy;
+  ivec2 ts = textureSize(t_position, 0).xy;
   ivec2 uv = ivec2(id.x % ts.x, id.x / ts.x);
 
-  vec2 pos = texelFetch(tPosition, uv, 0).xy;
-  float age = texelFetch(tAge, uv, 0).x;
-  float spawn = smoothstep(0.0, uSmoothSpawn, age);
-  vec3 color = hue_to_color((uT - age) / 6.0);
+  vec2 pos = texelFetch(t_position, uv, 0).xy;
+  float age = texelFetch(t_age, uv, 0).x;
+  float spawn = smoothstep(0.0, u_smooth_spawn, age);
+  vec3 color = hue_to_color((u_t - age) / 6.0);
 
   #if RENDER_AS_LINES
-    vec2 vel = uDT * texelFetch(tVelocity, uv, 0).xy;
+    vec2 vel = u_dt * texelFetch(t_velocity, uv, 0).xy;
 
     #if LINE_RENDERING_MODE == 0 // don't normalize
-      vec2 vel_px = uViewport * vel / 2.0;
+      vec2 vel_px = u_viewport * vel / 2.0;
       float len_px = max(1.0, length(vel_px));
       float scale = 1.0;
     #elif LINE_RENDERING_MODE == 1 // normalize (circle)
-      vec2 vel_px = uViewport * vel / 2.0;
+      vec2 vel_px = u_viewport * vel / 2.0;
       float len_px = length(vel_px);
       float scale = max(1.0, 1.5 / len_px);
     #elif LINE_RENDERING_MODE == 2 // normalize (square)
-      vec2 vel_px = abs(uViewport * vel / 2.0);
+      vec2 vel_px = abs(u_viewport * vel / 2.0);
       float len_px = length(vel_px);
       float scale = max(1.0, 1.0 / max(vel_px.x, vel_px.y));
     #endif
@@ -71,8 +71,8 @@ void main() {
     gl_Position = vec4(pos - scale * vel * id.y, 0.0, 1.0);
   #else
     #if FANCY_POINT_RENDERING
-      gl_PointSize = floor(uPointScale + 1.0);
-      vRadius = (uPointScale + vec2(-1.0, 1.0)) / (2.0 * gl_PointSize);
+      gl_PointSize = floor(u_point_scale + 1.0);
+      v_radius = (u_point_scale + vec2(-1.0, 1.0)) / (2.0 * gl_PointSize);
     #else
       gl_PointSize = 1.0;
     #endif
@@ -80,5 +80,5 @@ void main() {
     gl_Position = vec4(pos, 0.0, 1.0);
   #endif
 
-  vColor = spawn * color;
+  v_color = spawn * color;
 }
