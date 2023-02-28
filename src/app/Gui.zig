@@ -154,7 +154,7 @@ fn devSettings(self: *Self, app: *App) void {
         const fmt_enums = .{ c.GL_RG32F, c.GL_RG16F };
         const fmt_names = .{ "RG32F", "RG16F" };
         inline for (fmt_enums, fmt_names) |fmt_enum, fmt_name| {
-          if (c.igSmallButton(fmt_name))
+          if (c.igButton(fmt_name, .{ .x = 0, .y = 0 }))
             gl.textures.reinit(&app.textures.simulation, fmt_enum, 1, 1, 1, &.{});
           c.igSameLine(0, -1);
         }
@@ -167,7 +167,7 @@ fn devSettings(self: *Self, app: *App) void {
         const fmt_enums = .{ c.GL_RGB32F, c.GL_RGB16F, c.GL_R11F_G11F_B10F };
         const fmt_names = .{ "RGB32F", "RGB16F", "R11F_G11F_B10F" };
         inline for (fmt_enums, fmt_names) |fmt_enum, fmt_name| {
-          if (c.igSmallButton(fmt_name))
+          if (c.igButton(fmt_name, .{ .x = 0, .y = 0 }))
             gl.textures.reinit(&app.textures.rendering, fmt_enum, 1, 1, 1, &.{});
           c.igSameLine(0, -1);
         }
