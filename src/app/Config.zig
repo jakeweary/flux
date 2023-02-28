@@ -1,9 +1,3 @@
-noise_rotation: [3][3]f32 = .{
-  .{ 1, 0, 0 },
-  .{ 0, 1, 0 },
-  .{ 0, 0, 1 },
-},
-
 // simulation
 time_scale: f32 = 0.5,
 space_scale: f32 = 0.5,
@@ -27,5 +21,14 @@ bloom_levels: c_int = 9,
 vsync: bool = true,
 
 // debug
+single_texture_feedback: struct {
+  one_read_one_write: bool = false,
+  many_reads_one_write: bool = false,
+} = .{},
 bloom_level: c_int = 0,
 bloom_texture: c_int = 0,
+noise_rotation: [3][3]f32 = .{
+  .{ 1, 0, 0 },
+  .{ 0, 1, 0 },
+  .{ 0, 0, 1 },
+},

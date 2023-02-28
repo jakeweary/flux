@@ -172,18 +172,21 @@ fn update(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
     .t_velocity = self.textures.velocity()[0],
   });
 
+  const idx = @boolToInt(!self.cfg.single_texture_feedback.one_read_one_write);
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ self.textures.age()[1], 0 },
-    .{ self.textures.position()[1], 0 },
-    .{ self.textures.velocity()[1], 0 },
+    .{ self.textures.age()[idx], 0 },
+    .{ self.textures.position()[idx], 0 },
+    .{ self.textures.velocity()[idx], 0 },
   });
   defer fbo.detach();
 
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
-  gl.textures.swap(self.textures.age());
-  gl.textures.swap(self.textures.position());
-  gl.textures.swap(self.textures.velocity());
+  if (!self.cfg.single_texture_feedback.one_read_one_write) {
+    gl.textures.swap(self.textures.age());
+    gl.textures.swap(self.textures.position());
+    gl.textures.swap(self.textures.velocity());
+  }
 }
 
 fn render(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
@@ -240,14 +243,16 @@ fn feedback(self: *Self, w: c_int, h: c_int) void {
     .t_feedback = self.textures.feedback()[0],
   });
 
+  const idx = @boolToInt(!self.cfg.single_texture_feedback.one_read_one_write);
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ self.textures.feedback()[1], 0 },
+    .{ self.textures.feedback()[idx], 0 },
   });
   defer fbo.detach();
 
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
-  gl.textures.swap(self.textures.feedback());
+  if (!self.cfg.single_texture_feedback.one_read_one_write)
+    gl.textures.swap(self.textures.feedback());
 }
 
 fn postprocess(self: *Self, w: c_int, h: c_int) void {
@@ -275,6 +280,7 @@ fn bloom(self: *Self, w: c_int, h: c_int) void {
   if (self.cfg.bloom == 0)
     return log.debug("skipping", .{});
 
+  const idx = @boolToInt(!self.cfg.single_texture_feedback.many_reads_one_write);
   const ids = &self.textures.bloom;
   _ = gl.textures.resizeIfChanged(ids, self.cfg.bloom_levels, w, h, &.{
     .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
@@ -287,19 +293,19 @@ fn bloom(self: *Self, w: c_int, h: c_int) void {
   var i: c.GLint = 0;
   while (i < self.cfg.bloom_levels) : (i += 1) {
     const src = if (i == 0) self.textures.feedback()[0] else blk: {
-      self.bloomDown(ids[1], ids[1], i);
-      break :blk ids[1];
+      self.bloomDown(ids[idx], ids[idx], i);
+      break :blk ids[idx];
     };
     self.bloomBlur(src, ids[0], i, .{ 1, 0 }); // horizontal pass
-    self.bloomBlur(ids[0], ids[1], i, .{ 0, 1 }); // vertical pass
+    self.bloomBlur(ids[0], ids[idx], i, .{ 0, 1 }); // vertical pass
   }
 
   log.debug("substep: upscale and merge", .{});
   const j_first = self.cfg.bloom_levels - 2;
   var j = j_first;
   while (j >= 0) : (j -= 1) {
-    const prev = if (j == j_first) ids[1] else ids[0];
-    self.bloomUp(prev, ids[1], ids[0], j);
+    const prev = if (j == j_first) ids[idx] else ids[0];
+    self.bloomUp(prev, ids[idx], ids[0], j);
   }
 }
 

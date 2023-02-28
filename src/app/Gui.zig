@@ -147,31 +147,39 @@ fn settings(self: *Self, app: *App) void {
 fn devSettings(self: *Self, app: *App) void {
   if (c.igBeginTabBar("tabs", 0)) {
     if (c.igBeginTabItem("Textures", null, 0)) {
-      {
-        c.igPushID_Ptr(&app.textures.simulation);
-        defer c.igPopID();
-
-        const fmt_enums = .{ c.GL_RG32F, c.GL_RG16F };
-        const fmt_names = .{ "RG32F", "RG16F" };
-        inline for (fmt_enums, fmt_names) |fmt_enum, fmt_name| {
-          if (c.igButton(fmt_name, .{ .x = 0, .y = 0 }))
-            gl.textures.reinit(&app.textures.simulation, fmt_enum, 1, 1, 1, &.{});
-          c.igSameLine(0, -1);
-        }
-        c.igText("- simulation");
+      if (c.igTreeNodeEx_Str("Single texture feedback", node_open)) {
+        _ = c.igCheckbox("One read - one write", &app.cfg.single_texture_feedback.one_read_one_write);
+        _ = c.igCheckbox("Many reads - one write", &app.cfg.single_texture_feedback.many_reads_one_write);
+        c.igTreePop();
       }
-      {
-        c.igPushID_Ptr(&app.textures.rendering);
-        defer c.igPopID();
+      if (c.igTreeNodeEx_Str("Textures precision", node_open)) {
+        {
+          c.igPushID_Ptr(&app.textures.simulation);
+          defer c.igPopID();
 
-        const fmt_enums = .{ c.GL_RGB32F, c.GL_RGB16F, c.GL_R11F_G11F_B10F };
-        const fmt_names = .{ "RGB32F", "RGB16F", "R11F_G11F_B10F" };
-        inline for (fmt_enums, fmt_names) |fmt_enum, fmt_name| {
-          if (c.igButton(fmt_name, .{ .x = 0, .y = 0 }))
-            gl.textures.reinit(&app.textures.rendering, fmt_enum, 1, 1, 1, &.{});
-          c.igSameLine(0, -1);
+          const fmt_enums = .{ c.GL_RG32F, c.GL_RG16F };
+          const fmt_names = .{ "RG32F", "RG16F" };
+          inline for (fmt_enums, fmt_names) |fmt_enum, fmt_name| {
+            if (c.igButton(fmt_name, .{ .x = 0, .y = 0 }))
+              gl.textures.reinit(&app.textures.simulation, fmt_enum, 1, 1, 1, &.{});
+            c.igSameLine(0, -1);
+          }
+          c.igText("- simulation");
         }
-        c.igText("- rendering");
+        {
+          c.igPushID_Ptr(&app.textures.rendering);
+          defer c.igPopID();
+
+          const fmt_enums = .{ c.GL_RGB32F, c.GL_RGB16F, c.GL_R11F_G11F_B10F };
+          const fmt_names = .{ "RGB32F", "RGB16F", "R11F_G11F_B10F" };
+          inline for (fmt_enums, fmt_names) |fmt_enum, fmt_name| {
+            if (c.igButton(fmt_name, .{ .x = 0, .y = 0 }))
+              gl.textures.reinit(&app.textures.rendering, fmt_enum, 1, 1, 1, &.{});
+            c.igSameLine(0, -1);
+          }
+          c.igText("- rendering");
+        }
+        c.igTreePop();
       }
       c.igEndTabItem();
     }
