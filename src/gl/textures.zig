@@ -4,6 +4,21 @@ const std = @import("std");
 
 pub const KeyValue = std.meta.Tuple(&.{ c.GLenum, c.GLint });
 
+pub const CLAMP = [_]KeyValue{
+  .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
+  .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
+};
+
+pub const NEAREST = [_]KeyValue{
+  .{ c.GL_TEXTURE_MIN_FILTER, c.GL_NEAREST },
+  .{ c.GL_TEXTURE_MAG_FILTER, c.GL_NEAREST },
+};
+
+pub const LINEAR = [_]KeyValue{
+  .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR },
+  .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR },
+};
+
 pub fn init(ids: []c.GLuint, fmt: c.GLenum, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
   c.glCreateTextures(c.GL_TEXTURE_2D, @intCast(c.GLsizei, ids.len), ids.ptr);
   for (ids) |id|

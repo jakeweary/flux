@@ -83,15 +83,10 @@ pub fn run(self: *Self) !void {
     self.gui.update(self);
     try self.programs.reinit();
 
-    _ = gl.textures.resizeIfChanged(&self.textures.rendering, 1, size.w, size.h, &.{
-      .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
-      .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
-      .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR },
-      .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR },
-    });
-
-    const ss = self.cfg.simulation_size;
-    if (gl.textures.resizeIfChanged(&self.textures.simulation, 1, ss[0], ss[1], &.{}))
+    const sim_size = self.cfg.simulation_size;
+    const params = gl.textures.CLAMP ++ gl.textures.NEAREST;
+    _ = gl.textures.resizeIfChanged(&self.textures.rendering, 1, size.w, size.h, &params);
+    if (gl.textures.resizeIfChanged(&self.textures.simulation, 1, sim_size[0], sim_size[1], &params))
       self.seed();
 
     var step = self.cfg.steps_per_frame;
@@ -282,12 +277,10 @@ fn bloom(self: *Self, w: c_int, h: c_int) void {
 
   const idx = @boolToInt(!self.cfg.single_texture_feedback.many_reads_one_write);
   const ids = &self.textures.bloom;
-  _ = gl.textures.resizeIfChanged(ids, self.cfg.bloom_levels, w, h, &.{
-    .{ c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE },
-    .{ c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE },
+  _ = gl.textures.resizeIfChanged(ids, self.cfg.bloom_levels, w, h, &(gl.textures.CLAMP ++ .{
     .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR_MIPMAP_NEAREST },
     .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR },
-  });
+  }));
 
   log.debug("substep: blur and downscale", .{});
   var i: c.GLint = 0;
