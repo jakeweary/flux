@@ -6,11 +6,11 @@ pub inline fn logarithmic(amp: f32, t: f32) f32 {
 
 // https://imois.in/posts/random-vectors-and-rotations-in-3d/#Quaternions
 // https://doi.org/10.1016/B978-0-08-050755-2.50036-1
-pub fn randomRotationMatrix(T: anytype, r: *std.rand.Random) [3][3]T {
+pub fn randomRotationMatrix(comptime T: type, r: *std.rand.Random) [3][3]T {
   return quatToMatrix(T, randomQuat(T, r));
 }
 
-fn randomQuat(T: anytype, r: *std.rand.Random) [4]T {
+fn randomQuat(comptime T: type, r: *std.rand.Random) [4]T {
   const x = r.floatNorm(T);
   const y = r.floatNorm(T);
   const z = r.floatNorm(T);
@@ -19,7 +19,7 @@ fn randomQuat(T: anytype, r: *std.rand.Random) [4]T {
 }
 
 // https://github.com/recp/cglm/blob/bc8dc727/include/cglm/quat.h#L555
-fn quatToMatrix(T: anytype, q: [4]T) [3][3]T {
+fn quatToMatrix(comptime T: type, q: [4]T) [3][3]T {
   @setFloatMode(.Optimized);
   const x = q[0];
   const y = q[1];
