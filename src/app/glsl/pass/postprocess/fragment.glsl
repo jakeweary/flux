@@ -16,7 +16,7 @@ void main() {
     #if ACES_FAST
       color = aces(color);
     #else
-      color = ODT_RGBmonitor_100nits_dim(RRT(mul(sRGB_2_AP0, color)));
+      color = ODT_RGBmonitor_100nits_dim(RRT(color * sRGB_2_AP0));
     #endif
   #endif
 

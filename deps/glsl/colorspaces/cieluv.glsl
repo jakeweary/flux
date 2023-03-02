@@ -1,6 +1,11 @@
-#define XYZ_to_uv(XYZ) vec2(4.0, 9.0) * XYZ.xy / (XYZ.x + 15.0 * XYZ.y + 3.0 * XYZ.z)
-#define xy_to_uv(xy) vec2(4.0, 9.0) * xy / (-2.0 * xy.x + 12.0 * xy.y + 3.0)
-#define uv_to_xy(uv) vec2(9.0, 4.0) * uv / (6.0 * uv.x - 16.0 * uv.y + 12.0)
+// https://en.wikipedia.org/wiki/CIELUV
+// http://www.brucelindbloom.com/Eqn_XYZ_to_Luv.html
+// http://www.brucelindbloom.com/Eqn_Luv_to_XYZ.html
+
+#define xyY_to_XYZ(x, y, Y) Y * vec3(x / y, 1.0, (1.0 - x - y) / y)
+#define XYZ_to_uv(XYZ) XYZ.xy * vec2(4, 9) / dot(vec3(1, 15, 3), XYZ)
+#define xy_to_uv(xy) xy * vec2(4, 9) / (dot(vec2(-2, 12), xy) + 3.0)
+#define uv_to_xy(uv) uv * vec2(9, 4) / (dot(vec2(6, -16), uv) + 12.0)
 
 vec3 XYZ_to_Luv(vec3 XYZ, vec3 XYZw) {
   float Y = XYZ.y / XYZw.y;
@@ -9,11 +14,10 @@ vec3 XYZ_to_Luv(vec3 XYZ, vec3 XYZw) {
 }
 
 vec3 Luv_to_XYZ(vec3 Luv, vec3 XYZw) {
-  vec2 uv = Luv.yz / (13.0 * Luv.x) + XYZ_to_uv(XYZw);
   float Y = Luv.x > 0.08 ? pow((Luv.x + 0.16) / 1.16, 3.0) : 2700.0 / 24389.0 * Luv.x;
-  float X = (9.0 * uv.x) / (4.0 * uv.y);
-  float Z = (12.0 - 3.0 * uv.x - 20.0 * uv.y) / (4.0 * uv.y);
-  return XYZw.y * vec3(Y * X, Y, Y * Z);
+  vec2 uv = Luv.yz / (13.0 * Luv.x) + XYZ_to_uv(XYZw);
+  vec2 xy = uv_to_xy(uv);
+  return xyY_to_XYZ(xy.x, xy.y, Y) * XYZw.y;
 }
 
 vec3 LCh_to_Luv(vec3 LCh) {
@@ -31,3 +35,8 @@ vec3 sRGB_to_Luv(vec3 sRGB) {
 vec3 Luv_to_sRGB(vec3 Luv) {
   return XYZ_to_sRGB * Luv_to_XYZ(Luv, D65);
 }
+
+#undef xyY_to_XYZ
+#undef XYZ_to_uv
+#undef xy_to_uv
+#undef uv_to_xy

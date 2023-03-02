@@ -1,7 +1,13 @@
-#define diag3(v) mat3((v).x, 0.0, 0.0, 0.0, (v).y, 0.0, 0.0, 0.0, (v).z)
-#define xyY_to_XYZ(x, y, Y) vec3(Y / y * x, Y, Y / y * (1.0 - x - y))
+// https://en.wikipedia.org/wiki/SRGB
+// https://en.wikipedia.org/wiki/CIE_XYZ
+// http://www.brucelindbloom.com/Math.html
+
+#define XYZ_to_xyY(X, Y, Z) vec3(vec2(X, Y) / vec2(X + Y + Z), Y)
+#define xyY_to_XYZ(x, y, Y) Y * xy_to_XYZ(x, y)
 #define xy_to_XYZ(x, y) vec3(x / y, 1.0, (1.0 - x - y) / y)
 #define xy_to_xyz(x, y) vec3(x, y, 1.0 - x - y)
+
+#define diag3(v) mat3((v).x, 0.0, 0.0, 0.0, (v).y, 0.0, 0.0, 0.0, (v).z)
 #define primaries(rx, ry, gx, gy, bx, by) mat3(xy_to_XYZ(rx, ry), xy_to_XYZ(gx, gy), xy_to_XYZ(bx, by))
 #define whitepoint(wx, wy) xy_to_XYZ(wx, wy)
 #define colorspace(gamut, wp) gamut * diag3(inverse(gamut) * wp)
@@ -30,3 +36,13 @@ vec3 sRGB_EOTF(vec3 c) {
   vec3 b = pow((c + 0.055) / 1.055, vec3(2.4));
   return mix(a, b, greaterThan(c, vec3(0.0404482362771082)));
 }
+
+#undef XYZ_to_xyY
+#undef xyY_to_XYZ
+#undef xy_to_XYZ
+#undef xy_to_xyz
+
+#undef diag3
+#undef primaries
+#undef whitepoint
+#undef colorspace

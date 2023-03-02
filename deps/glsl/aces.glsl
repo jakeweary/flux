@@ -1327,3 +1327,23 @@ half3 ODT_P3DCI_48nits(half3 oces)
 
   return outputCV;
 }
+
+#undef static
+#undef half
+#undef half2
+#undef half3
+#undef half4
+#undef half3x3
+#undef half4x4
+#undef atan2
+#undef lerp
+#undef log10
+#undef mul
+#undef saturate
+
+#undef PI
+#undef HALF_MAX
+#undef FLT_MAX
+
+#undef ACEScc_MAX
+#undef ACEScc_MIDGRAY

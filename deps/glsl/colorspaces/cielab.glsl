@@ -1,3 +1,7 @@
+// https://en.wikipedia.org/wiki/CIELAB
+// http://www.brucelindbloom.com/Eqn_XYZ_to_Lab.html
+// http://www.brucelindbloom.com/Eqn_Lab_to_XYZ.html
+
 vec3 XYZ_to_Lab(vec3 XYZ, vec3 XYZw) {
   vec3 t = XYZ / XYZw;
   vec3 a = pow(t, vec3(1.0 / 3.0));

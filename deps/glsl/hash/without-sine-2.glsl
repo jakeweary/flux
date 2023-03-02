@@ -120,3 +120,6 @@ vec4 hash44(uvec4 q) {
 vec4 hash44(vec4 p) {
   return hash44(uvec4(ivec4(p)));
 }
+
+#undef MUL
+#undef INV

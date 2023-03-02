@@ -95,3 +95,6 @@ vec4 hash44(vec4 p4) {
   p4 += dot(p4, p4.wzxy + ADD);
   return fract((p4.xxyz + p4.yzzw) * p4.zywx);
 }
+
+#undef MUL
+#undef ADD

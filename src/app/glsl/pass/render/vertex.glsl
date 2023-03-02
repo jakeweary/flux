@@ -9,7 +9,7 @@ uniform ivec2 u_viewport;
 out vec2 v_radius;
 out vec3 v_color;
 
-vec3 hue_to_color(float hue) {
+vec3 hueToColor(float hue) {
   #if COLORSPACE == 0 // HSL
     return hsl_to_rgb(vec3(hue, 1.0, 0.5));
   #elif COLORSPACE == 1 // Smooth HSL
@@ -45,7 +45,7 @@ void main() {
   vec2 pos = texelFetch(t_position, uv, 0).xy;
   float age = texelFetch(t_age, uv, 0).x;
   float spawn = smoothstep(0.0, u_smooth_spawn, age);
-  vec3 color = hue_to_color((u_t - age) / 6.0);
+  vec3 color = hueToColor((u_t - age) / 6.0);
 
   #if RENDER_AS_LINES
     vec2 vel = u_dt * texelFetch(t_velocity, uv, 0).xy;
