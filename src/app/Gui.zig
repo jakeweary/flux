@@ -131,6 +131,7 @@ fn settings(self: *Self, app: *App) void {
     _ = c.igSliderInt("Steps per frame", &app.cfg.steps_per_frame, 1, 10, null, 0);
     _ = c.igSliderInt("Bloom levels", &app.cfg.bloom_levels, 1, 10, null, 0);
     _ = c.igSliderFloat("Bloom scale", &app.programs.bloom_blur.defs.SIGMA, 1.0, 5.0, null, 0);
+    _ = c.igSliderInt("MSAA level", &app.cfg.msaa_level, 0, 4, null, 0);
     _ = c.igCheckbox("Vertical synchronization", &app.cfg.vsync);
     c.igTreePop();
   }

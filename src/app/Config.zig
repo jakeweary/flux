@@ -18,6 +18,7 @@ bloom: f32 = 0.5,
 simulation_size: [2]c_int = .{ 512, 512 },
 steps_per_frame: c_int = 1,
 bloom_levels: c_int = 9,
+msaa_level: c_int = 0,
 vsync: bool = true,
 
 // debug

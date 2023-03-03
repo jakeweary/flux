@@ -83,6 +83,8 @@ pub fn run(self: *Self) !void {
     self.gui.update(self);
     try self.programs.reinit();
 
+    const samples = std.math.powi(c.GLsizei, 2, self.cfg.msaa_level) catch unreachable;
+    _ = self.textures.resizeMSAA(size.w, size.h, samples);
     _ = self.textures.resizeRendering(size.w, size.h);
     _ = self.textures.resizeBloom(size.w, size.h, self.cfg.bloom_levels);
 
@@ -207,7 +209,10 @@ fn render(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
   });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
-    .{ self.textures.rendered(), 0 },
+    if (self.cfg.msaa_level > 0)
+      .{ self.textures.msaa, 0 }
+    else
+      .{ self.textures.rendered(), 0 },
   });
   defer fbo.detach();
 
@@ -218,6 +223,17 @@ fn render(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
     c.glDrawArrays(c.GL_LINES, 0, 2 * count)
   else
     c.glDrawArrays(c.GL_POINTS, 0, count);
+
+  if (self.cfg.msaa_level > 0) {
+    var blit_fbos: [2]c.GLuint = undefined;
+    c.glCreateFramebuffers(blit_fbos.len, &blit_fbos);
+    defer c.glDeleteFramebuffers(blit_fbos.len, &blit_fbos);
+
+    c.glNamedFramebufferTexture(blit_fbos[0], c.GL_COLOR_ATTACHMENT0, self.textures.msaa, 0);
+    c.glNamedFramebufferTexture(blit_fbos[1], c.GL_COLOR_ATTACHMENT0, self.textures.rendered(), 0);
+    c.glBlitNamedFramebuffer(blit_fbos[0], blit_fbos[1],
+      0, 0, w, h, 0, 0, w, h, c.GL_COLOR_BUFFER_BIT, c.GL_NEAREST);
+  }
 }
 
 fn feedback(self: *Self, w: c_int, h: c_int) void {

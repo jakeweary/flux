@@ -4,6 +4,7 @@ const stb = @import("../stb/stb.zig");
 const Self = @This();
 
 bluenoise: c.GLuint = undefined,
+msaa: c.GLuint = undefined,
 simulation: [6]c.GLuint = undefined,
 rendering: [3]c.GLuint = undefined,
 bloom: [2]c.GLuint = undefined,
@@ -21,6 +22,7 @@ pub fn init() !Self {
   c.glTextureStorage2D(self.bluenoise, 1, c.GL_RGB8, bn_w, bn_h);
   c.glTextureSubImage2D(self.bluenoise, 0, 0, 0, bn_w, bn_h, c.GL_RGB, c.GL_UNSIGNED_BYTE, bn.data.ptr);
 
+  c.glCreateTextures(c.GL_TEXTURE_2D_MULTISAMPLE, 1, &self.msaa);
   c.glCreateTextures(c.GL_TEXTURE_2D, self.simulation.len, &self.simulation);
   c.glCreateTextures(c.GL_TEXTURE_2D, self.rendering.len, &self.rendering);
   c.glCreateTextures(c.GL_TEXTURE_2D, self.bloom.len, &self.bloom);
@@ -30,6 +32,7 @@ pub fn init() !Self {
 
 pub fn deinit(self: *const Self) void {
   c.glDeleteTextures(1, &self.bluenoise);
+  c.glDeleteTextures(1, &self.msaa);
   c.glDeleteTextures(self.simulation.len, &self.simulation);
   c.glDeleteTextures(self.rendering.len, &self.rendering);
   c.glDeleteTextures(self.bloom.len, &self.bloom);
@@ -60,6 +63,22 @@ pub inline fn velocity(self: *Self) *[2]c.GLuint {
 }
 
 // ---
+
+pub fn resizeMSAA(self: *Self, w: c.GLsizei, h: c.GLsizei, samples: c.GLsizei) bool {
+  const changed = samples > 1 and blk: {
+    var info: struct { w: c.GLsizei, h: c.GLsizei, samples: c.GLsizei } = undefined;
+    c.glGetTextureLevelParameteriv(self.msaa, 0, c.GL_TEXTURE_WIDTH, &info.w);
+    c.glGetTextureLevelParameteriv(self.msaa, 0, c.GL_TEXTURE_HEIGHT, &info.h);
+    c.glGetTextureLevelParameteriv(self.msaa, 0, c.GL_TEXTURE_SAMPLES, &info.samples);
+    break :blk info.w != w or info.h != h or info.samples != samples;
+  };
+  if (changed) {
+    c.glDeleteTextures(1, &self.msaa);
+    c.glCreateTextures(c.GL_TEXTURE_2D_MULTISAMPLE, 1, &self.msaa);
+    c.glTextureStorage2DMultisample(self.msaa, samples, c.GL_RGB32F, w, h, c.GL_FALSE);
+  }
+  return changed;
+}
 
 pub fn resizeSimulation(self: *Self, w: c.GLsizei, h: c.GLsizei) bool {
   const changed = blk: {
