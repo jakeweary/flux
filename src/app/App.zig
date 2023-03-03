@@ -212,9 +212,9 @@ fn render(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
 
   c.glClear(c.GL_COLOR_BUFFER_BIT);
 
-  const count = self.cfg.simulation_size[0] * self.cfg.simulation_size[1];
+  const count = @reduce(.Mul, @as(@Vector(2, c_int), self.cfg.simulation_size));
   if (self.programs.render.defs.RENDER_AS_LINES)
-    c.glDrawArrays(c.GL_LINES, 0, count * 2)
+    c.glDrawArrays(c.GL_LINES, 0, 2 * count)
   else
     c.glDrawArrays(c.GL_POINTS, 0, count);
 }
