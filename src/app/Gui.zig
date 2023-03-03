@@ -152,6 +152,7 @@ fn devSettings(self: *Self, app: *App) void {
         _ = c.igCheckbox("Many reads - one write", &app.cfg.single_texture_feedback.many_reads_one_write);
         c.igTreePop();
       }
+      c.igBeginDisabled(true);
       if (c.igTreeNodeEx_Str("Textures precision", node_open)) {
         {
           c.igPushID_Ptr(&app.textures.simulation);
@@ -159,9 +160,10 @@ fn devSettings(self: *Self, app: *App) void {
 
           const fmt_enums = .{ c.GL_RG32F, c.GL_RG16F };
           const fmt_names = .{ "RG32F", "RG16F" };
-          inline for (fmt_enums, fmt_names) |fmt_enum, fmt_name| {
-            if (c.igButton(fmt_name, .{ .x = 0, .y = 0 }))
-              gl.textures.reinit(&app.textures.simulation, fmt_enum, 1, 1, 1, &.{});
+          inline for (fmt_enums, fmt_names) |_, fmt_name| {
+            if (c.igButton(fmt_name, .{ .x = 0, .y = 0 })) {
+              // TODO
+            }
             c.igSameLine(0, -1);
           }
           c.igText("- simulation");
@@ -172,15 +174,17 @@ fn devSettings(self: *Self, app: *App) void {
 
           const fmt_enums = .{ c.GL_RGB32F, c.GL_RGB16F, c.GL_R11F_G11F_B10F };
           const fmt_names = .{ "RGB32F", "RGB16F", "R11F_G11F_B10F" };
-          inline for (fmt_enums, fmt_names) |fmt_enum, fmt_name| {
-            if (c.igButton(fmt_name, .{ .x = 0, .y = 0 }))
-              gl.textures.reinit(&app.textures.rendering, fmt_enum, 1, 1, 1, &.{});
+          inline for (fmt_enums, fmt_names) |_, fmt_name| {
+            if (c.igButton(fmt_name, .{ .x = 0, .y = 0 })) {
+              // TODO
+            }
             c.igSameLine(0, -1);
           }
           c.igText("- rendering");
         }
         c.igTreePop();
       }
+      c.igEndDisabled();
       c.igEndTabItem();
     }
     if (c.igBeginTabItem("Simulation", null, 0)) {

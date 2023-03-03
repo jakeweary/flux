@@ -83,10 +83,11 @@ pub fn run(self: *Self) !void {
     self.gui.update(self);
     try self.programs.reinit();
 
+    _ = self.textures.resizeRendering(size.w, size.h);
+    _ = self.textures.resizeBloom(size.w, size.h, self.cfg.bloom_levels);
+
     const sim_size = self.cfg.simulation_size;
-    const params = gl.textures.CLAMP ++ gl.textures.NEAREST;
-    _ = gl.textures.resizeIfChanged(&self.textures.rendering, 1, size.w, size.h, &params);
-    if (gl.textures.resizeIfChanged(&self.textures.simulation, 1, sim_size[0], sim_size[1], &params))
+    if (self.textures.resizeSimulation(sim_size[0], sim_size[1]))
       self.seed();
 
     var step = self.cfg.steps_per_frame;
@@ -97,7 +98,7 @@ pub fn run(self: *Self) !void {
       self.feedback(size.w, size.h);
     }
 
-    self.bloom(size.w, size.h);
+    self.bloom();
     self.postprocess(size.w, size.h);
     self.gui.render();
 
@@ -178,9 +179,9 @@ fn update(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
   if (!self.cfg.single_texture_feedback.one_read_one_write) {
-    gl.textures.swap(self.textures.age());
-    gl.textures.swap(self.textures.position());
-    gl.textures.swap(self.textures.velocity());
+    util.swap(c.GLuint, self.textures.age());
+    util.swap(c.GLuint, self.textures.position());
+    util.swap(c.GLuint, self.textures.velocity());
   }
 }
 
@@ -247,7 +248,7 @@ fn feedback(self: *Self, w: c_int, h: c_int) void {
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 
   if (!self.cfg.single_texture_feedback.one_read_one_write)
-    gl.textures.swap(self.textures.feedback());
+    util.swap(c.GLuint, self.textures.feedback());
 }
 
 fn postprocess(self: *Self, w: c_int, h: c_int) void {
@@ -269,18 +270,14 @@ fn postprocess(self: *Self, w: c_int, h: c_int) void {
   c.glDrawArrays(c.GL_TRIANGLES, 0, 3);
 }
 
-fn bloom(self: *Self, w: c_int, h: c_int) void {
+fn bloom(self: *Self) void {
   log.debug("step: bloom", .{});
 
   if (self.cfg.bloom == 0)
     return log.debug("skipping", .{});
 
-  const idx = @boolToInt(!self.cfg.single_texture_feedback.many_reads_one_write);
   const ids = &self.textures.bloom;
-  _ = gl.textures.resizeIfChanged(ids, self.cfg.bloom_levels, w, h, &(gl.textures.CLAMP ++ .{
-    .{ c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR_MIPMAP_NEAREST },
-    .{ c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR },
-  }));
+  const idx = @boolToInt(!self.cfg.single_texture_feedback.many_reads_one_write);
 
   log.debug("substep: blur and downscale", .{});
   var i: c.GLint = 0;
@@ -297,7 +294,7 @@ fn bloom(self: *Self, w: c_int, h: c_int) void {
   const j_first = self.cfg.bloom_levels - 2;
   var j = j_first;
   while (j >= 0) : (j -= 1) {
-    const prev = if (j == j_first) ids[idx] else ids[0];
+    const prev = ids[if (j == j_first) idx else 0];
     self.bloomUp(prev, ids[idx], ids[0], j);
   }
 }

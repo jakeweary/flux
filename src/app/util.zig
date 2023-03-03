@@ -4,6 +4,10 @@ pub inline fn logarithmic(amp: f32, t: f32) f32 {
   return (@exp(t * amp) - 1) / (@exp(amp) - 1);
 }
 
+pub inline fn swap(comptime T: type, pair: *[2]T) void {
+  std.mem.swap(T, &pair[0], &pair[1]);
+}
+
 // https://imois.in/posts/random-vectors-and-rotations-in-3d/#Quaternions
 // https://doi.org/10.1016/B978-0-08-050755-2.50036-1
 pub fn randomRotationMatrix(comptime T: type, r: *std.rand.Random) [3][3]T {

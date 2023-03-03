@@ -4,32 +4,35 @@ const stb = @import("../stb/stb.zig");
 const Self = @This();
 
 bluenoise: c.GLuint = undefined,
-bloom: [2]c.GLuint = undefined,
-rendering: [3]c.GLuint = undefined,
 simulation: [6]c.GLuint = undefined,
+rendering: [3]c.GLuint = undefined,
+bloom: [2]c.GLuint = undefined,
 
 pub fn init() !Self {
   var self = Self{};
 
-  const bluenoise_png = @embedFile("../../deps/assets/bluenoise/128/LDR_RGB1_0.png");
-  const bluenoise = try stb.Image.fromMemory(bluenoise_png);
-  defer bluenoise.deinit();
+  const bn_png = @embedFile("../../deps/assets/bluenoise/128/LDR_RGB1_0.png");
+  const bn = try stb.Image.fromMemory(bn_png);
+  const bn_w = @intCast(c.GLsizei, bn.width);
+  const bn_h = @intCast(c.GLsizei, bn.height);
+  defer bn.deinit();
 
-  bluenoise.uploadToGPU(&self.bluenoise, c.GL_RGB8, &.{});
+  c.glCreateTextures(c.GL_TEXTURE_2D, 1, &self.bluenoise);
+  c.glTextureStorage2D(self.bluenoise, 1, c.GL_RGB8, bn_w, bn_h);
+  c.glTextureSubImage2D(self.bluenoise, 0, 0, 0, bn_w, bn_h, c.GL_RGB, c.GL_UNSIGNED_BYTE, bn.data.ptr);
 
-  // `GL_RGB32F` is basically a requirement for HQ bloom
-  gl.textures.init(&self.bloom, c.GL_RGB32F, 1, 1, 1, &.{});
-  gl.textures.init(&self.rendering, c.GL_RGB32F, 1, 1, 1, &.{});
-  gl.textures.init(&self.simulation, c.GL_RG32F, 1, 1, 1, &.{});
+  c.glCreateTextures(c.GL_TEXTURE_2D, self.simulation.len, &self.simulation);
+  c.glCreateTextures(c.GL_TEXTURE_2D, self.rendering.len, &self.rendering);
+  c.glCreateTextures(c.GL_TEXTURE_2D, self.bloom.len, &self.bloom);
 
   return self;
 }
 
 pub fn deinit(self: *const Self) void {
-  gl.textures.deinit(&.{ self.bluenoise });
-  gl.textures.deinit(&self.bloom);
-  gl.textures.deinit(&self.rendering);
-  gl.textures.deinit(&self.simulation);
+  c.glDeleteTextures(1, &self.bluenoise);
+  c.glDeleteTextures(self.simulation.len, &self.simulation);
+  c.glDeleteTextures(self.rendering.len, &self.rendering);
+  c.glDeleteTextures(self.bloom.len, &self.bloom);
 }
 
 // ---
@@ -54,4 +57,66 @@ pub inline fn position(self: *Self) *[2]c.GLuint {
 
 pub inline fn velocity(self: *Self) *[2]c.GLuint {
   return self.simulation[4..6];
+}
+
+// ---
+
+pub fn resizeSimulation(self: *Self, w: c.GLsizei, h: c.GLsizei) bool {
+  const changed = blk: {
+    var info: struct { w: c.GLsizei, h: c.GLsizei } = undefined;
+    c.glGetTextureLevelParameteriv(self.simulation[0], 0, c.GL_TEXTURE_WIDTH, &info.w);
+    c.glGetTextureLevelParameteriv(self.simulation[0], 0, c.GL_TEXTURE_HEIGHT, &info.h);
+    break :blk info.w != w or info.h != h;
+  };
+  if (changed) {
+    c.glDeleteTextures(self.simulation.len, &self.simulation);
+    c.glCreateTextures(c.GL_TEXTURE_2D, self.simulation.len, &self.simulation);
+    for (self.age())      |id| c.glTextureStorage2D(id, 1, c.GL_R32F,  w, h);
+    for (self.position()) |id| c.glTextureStorage2D(id, 1, c.GL_RG32F, w, h);
+    for (self.velocity()) |id| c.glTextureStorage2D(id, 1, c.GL_RG32F, w, h);
+  }
+  return changed;
+}
+
+pub fn resizeRendering(self: *Self, w: c.GLsizei, h: c.GLsizei) bool {
+  const changed = blk: {
+    var info: struct { w: c.GLsizei, h: c.GLsizei } = undefined;
+    c.glGetTextureLevelParameteriv(self.rendering[0], 0, c.GL_TEXTURE_WIDTH, &info.w);
+    c.glGetTextureLevelParameteriv(self.rendering[0], 0, c.GL_TEXTURE_HEIGHT, &info.h);
+    break :blk info.w != w or info.h != h;
+  };
+  if (changed) {
+    c.glDeleteTextures(self.rendering.len, &self.rendering);
+    c.glCreateTextures(c.GL_TEXTURE_2D, self.rendering.len, &self.rendering);
+    for (self.rendering) |id| {
+      c.glTextureStorage2D(id, 1, c.GL_RGB32F, w, h);
+      c.glTextureParameteri(id, c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE);
+      c.glTextureParameteri(id, c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE);
+      c.glTextureParameteri(id, c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR);
+      c.glTextureParameteri(id, c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR);
+    }
+  }
+  return changed;
+}
+
+pub fn resizeBloom(self: *Self, w: c.GLsizei, h: c.GLsizei, mips: c.GLsizei) bool {
+  const changed = blk: {
+    var info: struct { w: c.GLsizei, h: c.GLsizei, mips: c.GLsizei } = undefined;
+    c.glGetTextureLevelParameteriv(self.bloom[0], 0, c.GL_TEXTURE_WIDTH, &info.w);
+    c.glGetTextureLevelParameteriv(self.bloom[0], 0, c.GL_TEXTURE_HEIGHT, &info.h);
+    c.glGetTextureParameteriv(self.bloom[0], c.GL_TEXTURE_IMMUTABLE_LEVELS, &info.mips);
+    break :blk info.w != w or info.h != h or info.mips != mips;
+  };
+  if (changed) {
+    c.glDeleteTextures(self.bloom.len, &self.bloom);
+    c.glCreateTextures(c.GL_TEXTURE_2D, self.bloom.len, &self.bloom);
+    for (self.bloom) |id| {
+      c.glTextureStorage2D(id, mips, c.GL_RGB32F, w, h);
+      c.glTextureParameteri(id, c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_EDGE);
+      c.glTextureParameteri(id, c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_EDGE);
+      c.glTextureParameteri(id, c.GL_TEXTURE_MIN_FILTER, c.GL_LINEAR_MIPMAP_NEAREST);
+      c.glTextureParameteri(id, c.GL_TEXTURE_MAG_FILTER, c.GL_LINEAR);
+    }
+  }
+  return changed;
 }
