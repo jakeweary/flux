@@ -315,9 +315,9 @@ fn bloom(self: *Self) void {
   }
 }
 
-fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint, dir: [2]f32) void {
+fn bloomBlur(self: *Self, src: c.GLuint, dst: c.GLuint, lvl: c.GLint, dir: [2]c.GLint) void {
   const program = self.programs.bloom_blur.use();
-  program.uniforms(.{ .u_src_lvl = lvl, .u_direction = &[_][2]f32{ dir } });
+  program.uniforms(.{ .u_src_lvl = lvl, .u_direction = &[_][2]c.GLint{ dir } });
   program.textures(.{ .t_src = src });
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
