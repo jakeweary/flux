@@ -8,7 +8,7 @@ update: gl.ProgramWithDefs(struct {
   WALLS_COLLISION: bool = false,
 }),
 render: gl.ProgramWithDefs(struct {
-  COLORSPACE: c_int = 6,
+  COLORSPACE: c_int = 7,
   RENDER_AS_LINES: bool = true,
   LINE_RENDERING_MODE: c_int = 2,
   DYNAMIC_LINE_BRIGHTNESS: bool = true,

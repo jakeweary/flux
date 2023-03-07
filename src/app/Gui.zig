@@ -105,7 +105,7 @@ fn settings(self: *Self, app: *App) void {
   }
   if (c.igTreeNodeEx_Str("Rendering", node_open)) {
     const defs = &app.programs.render.defs;
-    const color_spaces = [_][*:0]const u8{ "HSL", "Smooth HSL", "CIELAB", "CIELUV", "CAM16", "Jzazbz", "Oklab" };
+    const color_spaces = [_][*:0]const u8{ "HSL", "HSL (smooth)", "HSL (sine)", "CIELAB", "CIELUV", "CAM16", "Jzazbz", "Oklab" };
     _ = c.igCombo_Str_arr("Color space", &defs.COLORSPACE, &color_spaces, color_spaces.len, 0);
     _ = c.igCheckbox("Render as lines", &defs.RENDER_AS_LINES);
     if (defs.RENDER_AS_LINES) {
