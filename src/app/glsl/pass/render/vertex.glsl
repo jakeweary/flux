@@ -31,6 +31,8 @@ vec3 hueToColor(float hue) {
   #elif COLORSPACE == 7 // Oklab
     vec3 LCh = vec3(0.75, 0.125, radians(360.0) * hue);
     return XYZ_to_sRGB * Oklab_to_XYZ(Oklch_to_Oklab(LCh));
+  #else
+    #error invalid COLORSPACE
   #endif
 }
 
@@ -64,6 +66,8 @@ void main() {
       vec2 vel_px = abs(u_viewport * vel / 2.0);
       float len_px = length(vel_px);
       float scale = max(1.0, 1.0 / max(vel_px.x, vel_px.y));
+    #else
+      #error invalid LINE_RENDERING_MODE
     #endif
 
     #if DYNAMIC_LINE_BRIGHTNESS

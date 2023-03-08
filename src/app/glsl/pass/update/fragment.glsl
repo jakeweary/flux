@@ -40,6 +40,8 @@ void Particle_respawn(inout Particle self, vec2 walls) {
   #elif RESPAWN_MODE == 2 // screen edges
     vec3 h = hash33(uvec3(gl_FragCoord.xy, 1e4 * fract(u_t)));
     vec2 p = h.z < 0.5 ? vec2(h.x, round(h.y)) : vec2(round(h.x), h.y);
+  #else
+    #error invalid RESPAWN_MODE
   #endif
 
   self.pos = 2.0 * (p - 0.5) * walls;

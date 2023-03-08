@@ -49,5 +49,7 @@ void main() {
       textureLod(t_src, v_uv + k.y * s.yx * px, u_src_lvl).rgb +
       textureLod(t_src, v_uv + k.y * s.yz * px, u_src_lvl).rgb;
     f_color = 0.37487566 * a - 0.12487566 * b;
+  #else
+    #error invalid MODE
   #endif
 }
