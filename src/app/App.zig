@@ -53,9 +53,8 @@ pub fn resetToDefaults(self: *Self) void {
 }
 
 pub fn randomizeNoiseRotation(self: *Self) void {
-  const time_ns = std.time.nanoTimestamp();
-  const prng_seed = @truncate(u64, @bitCast(u128, time_ns));
-  var prng = std.rand.DefaultPrng.init(prng_seed);
+  const time: u128 = @bitCast(std.time.nanoTimestamp());
+  var prng = std.rand.DefaultPrng.init(@truncate(time));
   var rand = prng.random();
   self.cfg.noise_rotation = util.randomRotationMatrix(f32, &rand);
 }
@@ -73,8 +72,8 @@ pub fn run(self: *Self) !void {
 
     log.debug("--- new frame ---", .{});
 
-    const dt = 1e-9 * self.cfg.time_scale * @intToFloat(f32, timer.lap());
-    const step_dt = dt / @intToFloat(f32, self.cfg.steps_per_frame);
+    const dt = 1e-9 * self.cfg.time_scale * @as(f32, @floatFromInt(timer.lap()));
+    const step_dt = dt / @as(f32, @floatFromInt(self.cfg.steps_per_frame));
     t += dt;
 
     var size: struct { w: c_int, h: c_int } = undefined;
@@ -94,7 +93,7 @@ pub fn run(self: *Self) !void {
 
     var step = self.cfg.steps_per_frame;
     while (step != 0) : (step -= 1) {
-      const step_t = t - step_dt * @intToFloat(f32, step);
+      const step_t = t - step_dt * @as(f32, @floatFromInt(step));
       self.update(step_t, step_dt, size.w, size.h);
       self.render(step_t, step_dt, size.w, size.h);
       self.feedback(size.w, size.h);
@@ -104,7 +103,7 @@ pub fn run(self: *Self) !void {
     self.postprocess(size.w, size.h);
     self.gui.render();
 
-    c.glfwSwapInterval(@boolToInt(self.cfg.vsync));
+    c.glfwSwapInterval(@intFromBool(self.cfg.vsync));
     c.glfwSwapBuffers(self.window.ptr);
   }
 }
@@ -170,7 +169,7 @@ fn update(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
     .t_velocity = self.textures.velocity()[0],
   });
 
-  const idx = @boolToInt(!self.cfg.single_texture_feedback.one_read_one_write);
+  const idx = @intFromBool(!self.cfg.single_texture_feedback.one_read_one_write);
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
     .{ self.textures.age()[idx], 0 },
     .{ self.textures.position()[idx], 0 },
@@ -255,7 +254,7 @@ fn feedback(self: *Self, w: c_int, h: c_int) void {
     .t_feedback = self.textures.feedback()[0],
   });
 
-  const idx = @boolToInt(!self.cfg.single_texture_feedback.one_read_one_write);
+  const idx = @intFromBool(!self.cfg.single_texture_feedback.one_read_one_write);
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
     .{ self.textures.feedback()[idx], 0 },
   });
@@ -278,7 +277,7 @@ fn postprocess(self: *Self, w: c_int, h: c_int) void {
   });
   program.textures(.{
     .t_rendered = self.textures.feedback()[0],
-    .t_bloom = self.textures.bloom[@intCast(usize, self.cfg.bloom_texture)],
+    .t_bloom = self.textures.bloom[@intCast(self.cfg.bloom_texture)],
     .t_blue_noise = self.textures.bluenoise,
   });
 
@@ -293,7 +292,7 @@ fn bloom(self: *Self) void {
     return log.debug("skipping", .{});
 
   const ids = &self.textures.bloom;
-  const idx = @boolToInt(!self.cfg.single_texture_feedback.many_reads_one_write);
+  const idx = @intFromBool(!self.cfg.single_texture_feedback.many_reads_one_write);
 
   log.debug("substep: blur and downscale", .{});
   var i: c.GLint = 0;

@@ -58,6 +58,6 @@ fn getMonitorWithMaxOverlap(self: *const Self) *c.GLFWmonitor {
 
 fn getMonitors() []*c.GLFWmonitor {
   var n: c_int = undefined;
-  const ptr = @ptrCast([*]*c.GLFWmonitor, c.glfwGetMonitors(&n));
-  return ptr[0..@intCast(usize, n)];
+  const ptr: [*]*c.GLFWmonitor = @ptrCast(c.glfwGetMonitors(&n));
+  return ptr[0..@intCast(n)];
 }

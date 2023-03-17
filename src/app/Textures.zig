@@ -1,3 +1,4 @@
+const deps = @import("deps");
 const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const stb = @import("../stb/stb.zig");
@@ -12,10 +13,9 @@ bloom: [2]c.GLuint = undefined,
 pub fn init() !Self {
   var self = Self{};
 
-  const bn_png = @embedFile("../../deps/assets/bluenoise/128/LDR_RGB1_0.png");
-  const bn = try stb.Image.fromMemory(bn_png);
-  const bn_w = @intCast(c.GLsizei, bn.width);
-  const bn_h = @intCast(c.GLsizei, bn.height);
+  const bn = try stb.Image.fromMemory(deps.assets.bluenoise);
+  const bn_w: c.GLsizei = @intCast(bn.width);
+  const bn_h: c.GLsizei = @intCast(bn.height);
   defer bn.deinit();
 
   c.glCreateTextures(c.GL_TEXTURE_2D, 1, &self.bluenoise);

@@ -65,7 +65,7 @@ pub fn ProgramWithDefs(comptime Defs: type) type {
         const k = f.name;
         const v = @field(defs, f.name);
         const kv = switch (f.type) {
-          bool => .{ k, @boolToInt(v) },
+          bool => .{ k, @intFromBool(v) },
           else => .{ k, v },
         };
         const fmt = "#define {s} {}";

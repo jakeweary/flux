@@ -2,7 +2,7 @@
 
 ```
 $ zig version
-0.11.0-dev.1783+436e99d13
+0.12.0
 ```
 
 ```sh
@@ -10,7 +10,7 @@ $ zig version
 zig build run
 
 # build in release mode:
-zig build -Doptimize=ReleaseFast
+zig build --release
 
 # dependencies to build/run on linux:
 apt install libglfw3 libglfw3-dev

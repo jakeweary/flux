@@ -51,7 +51,7 @@ fn logError(self: *const Self, str: *gl.String) !void {
   c.glGetProgramiv(self.id, c.GL_INFO_LOG_LENGTH, &len);
 
   if (len > 0) {
-    try str.resize(@intCast(usize, len - 1));
+    try str.resize(@intCast(len - 1));
     c.glGetProgramInfoLog(self.id, len, null, str.items.ptr);
 
     const trimmed = std.mem.trimRight(c.GLchar, str.items, &std.ascii.whitespace);
@@ -64,14 +64,14 @@ fn logError(self: *const Self, str: *gl.String) !void {
 fn logActiveResources(self: *const Self, str: *gl.String, kind: c.GLenum, kind_str: []const u8) !void {
   var name_len: c.GLint = undefined;
   c.glGetProgramInterfaceiv(self.id, kind, c.GL_MAX_NAME_LENGTH, &name_len);
-  try str.resize(@intCast(usize, name_len));
+  try str.resize(@intCast(name_len));
 
   var resources: c.GLint = undefined;
   c.glGetProgramInterfaceiv(self.id, kind, c.GL_ACTIVE_RESOURCES, &resources);
 
   var r: c.GLuint = 0;
   while (r < resources) : (r += 1) {
-    const name = @ptrCast([*:0]c.GLchar, str.items.ptr);
+    const name: [*:0]c.GLchar = @ptrCast(str.items.ptr);
     const keys = [_]c.GLenum{ c.GL_LOCATION, c.GL_TYPE, c.GL_ARRAY_SIZE };
     var values: [keys.len]c.GLint = undefined;
     c.glGetProgramResourceiv(self.id, kind, r, keys.len, &keys, values.len, null, &values);

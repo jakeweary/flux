@@ -5,12 +5,12 @@ pub fn uniform(location: c.GLint, value: anytype) void {
   switch (@typeInfo(@TypeOf(value))) {
     .ComptimeFloat => c.glUniform1f(location, value),
     .ComptimeInt => c.glUniform1i(location, value),
-    .Float => c.glUniform1f(location, @floatCast(c.GLfloat, value)),
+    .Float => c.glUniform1f(location, @floatCast(value)),
     .Int => |info| switch (info.signedness) {
-      .signed => c.glUniform1i(location, @intCast(c.GLint, value)),
-      .unsigned => c.glUniform1ui(location, @intCast(c.GLuint, value)),
+      .signed => c.glUniform1i(location, @intCast(value)),
+      .unsigned => c.glUniform1ui(location, @intCast(value)),
     },
-    .Bool => c.glUniform1i(location, @boolToInt(value)),
+    .Bool => c.glUniform1i(location, @intFromBool(value)),
     .Pointer => {
       const Elem = std.meta.Elem(@TypeOf(value));
       const outer = switch (@typeInfo(Elem)) {
@@ -27,7 +27,7 @@ pub fn uniform(location: c.GLint, value: anytype) void {
             .{ c.glUniformMatrix4x2fv, c.glUniformMatrix4x3fv, c.glUniformMatrix4fv   },
           };
           const f = matrix_fns[outer.len - 2][inner.len - 2];
-          f(location, @intCast(c_int, value.len), c.GL_FALSE, @ptrCast(*const inner.child, value));
+          f(location, @intCast(value.len), c.GL_FALSE, @ptrCast(value));
         },
         // glUniform{1|2|3|4}{f|i|ui}v
         else => {
@@ -38,7 +38,7 @@ pub fn uniform(location: c.GLint, value: anytype) void {
             else => @compileError("unimplemented")
           };
           const f = vector_fns[outer.len - 1];
-          f(location, @intCast(c_int, value.len), @ptrCast(*const outer.child, value));
+          f(location, @intCast(value.len), @ptrCast(value));
         }
       }
     },

@@ -2,6 +2,11 @@ const c = @import("../c.zig");
 const gl = @import("../gl/gl.zig");
 const Self = @This();
 
+const sh = @import("deps").shaders;
+const cs = @import("deps").shaders.colorspaces;
+const quad = @import("glsl/glsl.zig").quad;
+const pass = @import("glsl/glsl.zig").pass;
+
 seed: gl.Program,
 update: gl.ProgramWithDefs(struct {
   RESPAWN_MODE: c_int = 0,
@@ -33,78 +38,54 @@ bloom_down: gl.ProgramWithDefs(struct {
 bloom_up: gl.Program,
 
 pub fn init() !Self {
-  const srgb = @embedFile("../../deps/glsl/colorspaces/srgb.glsl");
-  const lab = @embedFile("../../deps/glsl/colorspaces/cielab.glsl");
-  const luv = @embedFile("../../deps/glsl/colorspaces/cieluv.glsl");
-  const cam16 = @embedFile("../../deps/glsl/colorspaces/cam16.glsl");
-  const jzazbz = @embedFile("../../deps/glsl/colorspaces/jzazbz.glsl");
-  const oklab = @embedFile("../../deps/glsl/colorspaces/oklab.glsl");
-  const hsl = @embedFile("../../deps/glsl/colorspaces/hsl.glsl");
-
-  const aces = @embedFile("../../deps/glsl/aces.glsl");
-  const aces_fast = @embedFile("../../deps/glsl/aces-fast.glsl");
-  const hash = @embedFile("../../deps/glsl/hash/without-sine-2.glsl");
-  const simplex3d = @embedFile("../../deps/glsl/simplex3d.glsl");
-
-  const quad = @embedFile("glsl/quad/vertex.glsl");
-  const quad_flip_y = @embedFile("glsl/quad/vertex_flip_y.glsl");
-
   var self: Self = undefined;
 
-  self.seed = blk: {
-    const vs = quad;
-    const fs = @embedFile("glsl/pass/seed/fragment.glsl");
-    break :blk try @TypeOf(self.seed).init(&.{ vs }, &.{ hash, fs });
-  };
+  self.seed = try @TypeOf(self.seed).init(
+    &.{ quad.v },
+    &.{ sh.hash, pass.seed.f },
+  );
   errdefer self.seed.deinit();
 
-  self.update = blk: {
-    const vs = quad;
-    const fs = @embedFile("glsl/pass/update/fragment.glsl");
-    break :blk try @TypeOf(self.update).init(&.{ vs }, &.{ hash, simplex3d, fs });
-  };
+  self.update = try @TypeOf(self.update).init(
+    &.{ quad.v },
+    &.{ sh.hash, sh.simplex3d, pass.update.f },
+  );
   errdefer self.update.deinit();
 
-  self.render = blk: {
-    const vs = @embedFile("glsl/pass/render/vertex.glsl");
-    const fs = @embedFile("glsl/pass/render/fragment.glsl");
-    break :blk try @TypeOf(self.render).init(&.{ srgb, lab, luv, cam16, jzazbz, oklab, hsl, vs }, &.{ fs });
-  };
+  self.render = try @TypeOf(self.render).init(
+    &.{ cs.srgb, cs.lab, cs.luv, cs.cam16, cs.jzazbz, cs.oklab, cs.hsl, pass.render.v },
+    &.{ pass.render.f },
+  );
   errdefer self.render.deinit();
 
-  self.feedback = blk: {
-    const vs = quad;
-    const fs = @embedFile("glsl/pass/feedback/fragment.glsl");
-    break :blk try @TypeOf(self.feedback).init(&.{ vs }, &.{ fs });
-  };
+  self.feedback = try @TypeOf(self.feedback).init(
+    &.{ quad.v },
+    &.{ pass.feedback.f },
+  );
   errdefer self.feedback.deinit();
 
-  self.postprocess = blk: {
-    const vs = quad_flip_y;
-    const fs = @embedFile("glsl/pass/postprocess/fragment.glsl");
-    break :blk try @TypeOf(self.postprocess).init(&.{ vs }, &.{ aces, aces_fast, srgb, fs });
-  };
+  self.postprocess = try @TypeOf(self.postprocess).init(
+    &.{ quad.v_flip_y },
+    &.{ sh.aces, sh.aces_fast, cs.srgb, pass.postprocess.f },
+  );
   errdefer self.postprocess.deinit();
 
-  self.bloom_blur = blk: {
-    const vs = quad;
-    const fs = @embedFile("glsl/pass/bloom/fragment_blur.glsl");
-    break :blk try @TypeOf(self.bloom_blur).init(&.{ vs }, &.{ fs });
-  };
+  self.bloom_blur = try @TypeOf(self.bloom_blur).init(
+    &.{ quad.v },
+    &.{ pass.bloom.f_blur },
+  );
   errdefer self.bloom_blur.deinit();
 
-  self.bloom_down = blk: {
-    const vs = quad;
-    const fs = @embedFile("glsl/pass/bloom/fragment_down.glsl");
-    break :blk try @TypeOf(self.bloom_down).init(&.{ vs }, &.{ fs });
-  };
+  self.bloom_down = try @TypeOf(self.bloom_down).init(
+    &.{ quad.v },
+    &.{ pass.bloom.f_down },
+  );
   errdefer self.bloom_down.deinit();
 
-  self.bloom_up = blk: {
-    const vs = quad;
-    const fs = @embedFile("glsl/pass/bloom/fragment_up.glsl");
-    break :blk try @TypeOf(self.bloom_up).init(&.{ vs }, &.{ fs });
-  };
+  self.bloom_up = try @TypeOf(self.bloom_up).init(
+    &.{ quad.v },
+    &.{ pass.bloom.f_up },
+  );
   errdefer self.bloom_up.deinit();
 
   return self;

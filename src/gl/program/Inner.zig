@@ -23,7 +23,7 @@ pub fn use(self: *const Self) void {
 
 pub fn textures(self: *const Self, arg: anytype) void {
   inline for (@typeInfo(@TypeOf(arg)).Struct.fields, 0..) |f, i|
-    self.texture(f.name ++ "", @intCast(c.GLuint, i), @field(arg, f.name));
+    self.texture(f.name ++ "", @intCast(i), @field(arg, f.name));
 }
 
 pub fn uniforms(self: *const Self, arg: anytype) void {
@@ -33,7 +33,7 @@ pub fn uniforms(self: *const Self, arg: anytype) void {
 
 pub fn texture(self: *const Self, name: [*:0]const c.GLchar, unit: c.GLuint, id: c.GLuint) void {
   c.glBindTextureUnit(unit, id);
-  c.glUniform1i(c.glGetUniformLocation(self.id, name), @intCast(c.GLint, unit));
+  c.glUniform1i(c.glGetUniformLocation(self.id, name), @intCast(unit));
 }
 
 pub fn uniform(self: *const Self, name: [*:0]const c.GLchar, value: anytype) void {

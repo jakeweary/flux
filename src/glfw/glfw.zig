@@ -25,6 +25,6 @@ pub fn onError(code: c_int, desc: [*c]const u8) callconv(.C) void {
 
 pub fn windowUserPointerUpcast(T: anytype, window: ?*c.GLFWwindow) *T {
   const ptr_opaque = c.glfwGetWindowUserPointer(window);
-  const ptr_aligned = @alignCast(@alignOf(T), ptr_opaque);
-  return @ptrCast(*T, ptr_aligned);
+  const ptr_aligned: ?*align(@alignOf(T)) anyopaque = @alignCast(ptr_opaque);
+  return @ptrCast(ptr_aligned);
 }

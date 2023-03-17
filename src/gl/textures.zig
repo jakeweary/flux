@@ -20,26 +20,26 @@ pub const LINEAR = [_]KeyValue{
 };
 
 pub fn init(ids: []c.GLuint, fmt: c.GLenum, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
-  c.glCreateTextures(c.GL_TEXTURE_2D, @intCast(c.GLsizei, ids.len), ids.ptr);
+  c.glCreateTextures(c.GL_TEXTURE_2D, @intCast(ids.len), ids.ptr);
   for (ids) |id|
     c.glTextureStorage2D(id, mips, fmt, w, h);
   setParams(ids, params);
 }
 
 pub fn deinit(ids: []const c.GLuint) void {
-  c.glDeleteTextures(@intCast(c.GLsizei, ids.len), ids.ptr);
+  c.glDeleteTextures(@intCast(ids.len), ids.ptr);
 }
 
 pub fn reinit(ids: []c.GLuint, fmt: c.GLenum, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
   deinit(ids);
-  init(ids, @intCast(c.GLenum, fmt), mips, w, h, params);
+  init(ids, @intCast(fmt), mips, w, h, params);
 }
 
 pub fn resize(ids: []c.GLuint, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) void {
   var fmt: c.GLint = undefined;
   c.glGetTextureLevelParameteriv(ids[0], 0, c.GL_TEXTURE_INTERNAL_FORMAT, &fmt);
 
-  reinit(ids, @intCast(c.GLenum, fmt), mips, w, h, params);
+  reinit(ids, @intCast(fmt), mips, w, h, params);
 }
 
 pub fn resizeIfChanged(ids: []c.GLuint, mips: c.GLsizei, w: c.GLsizei, h: c.GLsizei, params: []const KeyValue) bool {

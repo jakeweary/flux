@@ -78,7 +78,7 @@ fn metrics(self: *Self, app: *App) void {
   if (c.igBeginTable("table", 3, c.ImGuiTableFlags_NoHostExtendX, .{ .x = 0, .y = 0 }, 0)) {
     const per_step = app.cfg.simulation_size[0] * app.cfg.simulation_size[1];
     const per_frame = per_step * app.cfg.steps_per_frame;
-    const per_second = @intToFloat(f64, per_frame) * imgui.io().Framerate;
+    const per_second = @as(f64, @floatFromInt(per_frame)) * imgui.io().Framerate;
     _ = c.igTableNextColumn(); c.igText("ops/step"); imgui.hint("particle updates per step");
     _ = c.igTableNextColumn(); c.igText("ops/frame"); imgui.hint("particle updates per frame");
     _ = c.igTableNextColumn(); c.igText("ops/sec."); imgui.hint("particle updates per second");
@@ -192,7 +192,7 @@ fn devSettings(self: *Self, app: *App) void {
       if (c.igTreeNodeEx_Str("Noise rotation matrix", node_open)) {
         const flags = c.ImGuiTableFlags_Borders | c.ImGuiTableFlags_NoHostExtendX;
         if (c.igBeginTable("table", 3, flags, .{ .x = 0, .y = 0 }, 0)) {
-          for (@ptrCast(*[9]c.GLfloat, &app.cfg.noise_rotation)) |value| {
+          for (@as(*[9]c.GLfloat, @ptrCast(&app.cfg.noise_rotation))) |value| {
             _ = c.igTableNextColumn();
             c.igText("%8.5f", value);
           }

@@ -11,7 +11,7 @@ pub fn init(kind: c.GLenum, sources: []const [*:0]const c.GLchar) !Self {
   errdefer self.deinit();
 
   gl.log.debug("compiling shader: {}", .{ self.id });
-  c.glShaderSource(self.id, @intCast(c.GLint, sources.len), sources.ptr, null);
+  c.glShaderSource(self.id, @intCast(sources.len), sources.ptr, null);
   c.glCompileShader(self.id);
   try self.checkError();
 
@@ -41,12 +41,12 @@ fn logSource(self: *const Self, str: *gl.String) !void {
   var len: c.GLint = undefined;
   c.glGetShaderiv(self.id, c.GL_SHADER_SOURCE_LENGTH, &len);
 
-  try str.resize(@intCast(usize, len - 1));
+  try str.resize(@intCast(len - 1));
   c.glGetShaderSource(self.id, len, null, str.items.ptr);
 
   const trimmed = std.mem.trimRight(c.GLchar, str.items, &std.ascii.whitespace);
   const lines_total = std.mem.count(c.GLchar, trimmed, "\n") + 1;
-  const digits = @floatToInt(usize, @log10(@intToFloat(f64, lines_total))) + 1;
+  const digits = @as(usize, @intFromFloat(@log10(@as(f64, @floatFromInt(lines_total))))) + 1;
   var line_n: usize = 1;
   var lines = std.mem.split(c.GLchar, trimmed, "\n");
   while (lines.next()) |line| : (line_n += 1)
@@ -57,7 +57,7 @@ fn logError(self: *const Self, str: *gl.String) !void {
   var len: c.GLint = undefined;
   c.glGetShaderiv(self.id, c.GL_INFO_LOG_LENGTH, &len);
 
-  try str.resize(@intCast(usize, len - 1));
+  try str.resize(@intCast(len - 1));
   c.glGetShaderInfoLog(self.id, len, null, str.items.ptr);
 
   const trimmed = std.mem.trimRight(c.GLchar, str.items, &std.ascii.whitespace);

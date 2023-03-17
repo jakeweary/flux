@@ -8,7 +8,7 @@ pub const TextureLevel = std.meta.Tuple(&.{ c.GLuint, c.GLint });
 const enums = init: {
   var buf = [_]c.GLenum{ c.GL_COLOR_ATTACHMENT0 } ** 0x20;
   for (&buf, 0..) |*ptr, i|
-    ptr.* += @intCast(c.GLenum, i);
+    ptr.* += @intCast(i);
   break :init buf;
 };
 
@@ -19,7 +19,7 @@ pub fn attach(id: c.GLuint, attachments: []const TextureLevel) Self {
   @call(.auto, updateViewport, attachments[0]);
   for (attachments, 0..) |tuple, i|
     c.glNamedFramebufferTexture(id, enums[i], tuple[0], tuple[1]);
-  c.glNamedFramebufferDrawBuffers(id, @intCast(c.GLsizei, attachments.len), &enums);
+  c.glNamedFramebufferDrawBuffers(id, @intCast(attachments.len), &enums);
   c.glBindFramebuffer(c.GL_FRAMEBUFFER, id);
   return .{ .id = id, .len = attachments.len };
 }

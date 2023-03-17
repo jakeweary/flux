@@ -56,7 +56,7 @@ pub fn hint(str: []const u8) void {
 pub fn plot(fmt: [*:0]const u8, height: f32, value: f32, storage: []f32) void {
   storage[0] = value;
   std.mem.rotate(f32, storage, 1);
-  c.igPlotLines_FloatPtr("", storage.ptr, @intCast(c_int, storage.len),
+  c.igPlotLines_FloatPtr("", storage.ptr, @intCast(storage.len),
     0, null, 0, c.igGET_FLT_MAX(), .{ .x = 0, .y = height }, @sizeOf(f32));
   c.igSameLine(0, -1);
   c.igText(fmt, @as(f64, value));
@@ -100,13 +100,13 @@ pub fn loadCustomPixelFont() void {
     const rect: *c.ImFontAtlasCustomRect = c
       .ImFontAtlas_GetCustomRectByIndex(font_atlas, ids[i]);
 
-    const next_row = @intCast(usize, pixels.width);
-    const first_row = @intCast(usize, pixels.width * rect.Y + rect.X);
+    const next_row: usize = @intCast(pixels.width);
+    const first_row: usize = @intCast(pixels.width * rect.Y + rect.X);
     var row = pixels.ptr + first_row;
 
     for (0..rect.Height) |y| {
       for (0..rect.Width) |x| {
-        const shift = @truncate(u6, pixelfont.WIDTH * y + x);
+        const shift: u6 = @truncate(pixelfont.WIDTH * y + x);
         row[x] = if (char.mask >> shift & 1 != 0) 0xff else 0;
       }
       row += next_row;
