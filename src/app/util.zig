@@ -19,26 +19,17 @@ fn randomQuat(comptime T: type, r: *std.rand.Random) [4]T {
   const y = r.floatNorm(T);
   const z = r.floatNorm(T);
   const w = r.floatNorm(T);
-  return .{ x, y, z, w };
+  const s = 1 / @sqrt(x * x + y * y + z * z + w * w);
+  return .{ s * x, s * y, s * z, s * w };
 }
 
 // https://github.com/recp/cglm/blob/bc8dc727/include/cglm/quat.h#L555
 fn quatToMatrix(comptime T: type, q: [4]T) [3][3]T {
   @setFloatMode(.optimized);
-  const x = q[0];
-  const y = q[1];
-  const z = q[2];
-  const w = q[3];
-  const s = 2 / (x * x + y * y + z * z + w * w);
-  const xx = s * x * x;
-  const xy = s * x * y;
-  const wx = s * w * x;
-  const yy = s * y * y;
-  const yz = s * y * z;
-  const wy = s * w * y;
-  const zz = s * z * z;
-  const xz = s * x * z;
-  const wz = s * w * z;
+  const x, const y, const z, const w = q;
+  const xx, const xy, const wx = .{ 2 * x * x, 2 * x * y, 2 * w * x };
+  const yy, const yz, const wy = .{ 2 * y * y, 2 * y * z, 2 * w * y };
+  const zz, const xz, const wz = .{ 2 * z * z, 2 * x * z, 2 * w * z };
   return .{
     .{ 1 - yy - zz, xy + wz, xz - wy },
     .{ xy - wz, 1 - xx - zz, yz + wx },
