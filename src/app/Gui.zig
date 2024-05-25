@@ -93,14 +93,27 @@ fn settings(self: *Self, app: *App) void {
   _ = self;
   if (c.igTreeNodeEx_Str("Simulation", node_open)) {
     const defs = &app.programs.update.defs;
-    const respawn_modes = [_][*:0]const u8{ "Same location", "Random location", "Screen edges" };
+    const lifespan_modes = [_][*:0]const u8{ "Infinite", "Exponential distribution", "Normal distribution" };
+    const respawn_modes = [_][*:0]const u8{ "Same location", "Random location", "Screen edges", "Screen center" };
     _ = c.igSliderFloat("Time scale", &app.cfg.time_scale, 0.001, 1.0, null, 0);
     _ = c.igSliderFloat("Space scale", &app.cfg.space_scale, 0.001, 1.0, null, 0);
     _ = c.igSliderFloat("Air resistance", &app.cfg.air_resistance, 0.0, 1.0, null, 0);
     _ = c.igSliderFloat("Flux power", &app.cfg.flux_power, 0.0, 1.0, null, 0);
     _ = c.igSliderFloat("Flux turbulence", &app.cfg.flux_turbulence, 0.0, 1.0, null, 0);
+    _ = c.igSliderFloat("Respawn velocity", &app.cfg.respawn_velocity, 0.0, 1.0, null, 0);
     _ = c.igCombo_Str_arr("Respawn mode", &defs.RESPAWN_MODE, &respawn_modes, respawn_modes.len, 0);
-    _ = c.igCheckbox("Walls collision", &defs.WALLS_COLLISION);
+    _ = c.igCombo_Str_arr("Particle lifespan", &defs.LIFESPAN_MODE, &lifespan_modes, lifespan_modes.len, 0);
+    switch (defs.LIFESPAN_MODE) {
+      1 => {
+        _ = c.igSliderFloat("Lifespan: 1/λ", &app.cfg.lifespan[0], 0.0, 10.0, "%.2fs", 0);
+      },
+      2 => {
+        _ = c.igSliderFloat("Lifespan: μ", &app.cfg.lifespan[1], 0.0, 60.0, "%.2fs", 0);
+        _ = c.igSliderFloat("Lifespan: σ", &app.cfg.lifespan[2], 0.0, 1.0, "%.2fs", 0);
+      },
+      else => {},
+    }
+    _ = c.igCheckbox("Screen edges collision", &defs.SCREEN_EDGES_COLLISION);
     c.igTreePop();
   }
   if (c.igTreeNodeEx_Str("Rendering", node_open)) {
@@ -127,7 +140,7 @@ fn settings(self: *Self, app: *App) void {
     c.igTreePop();
   }
   if (c.igTreeNodeEx_Str("Performance", node_open)) {
-    _ = c.igSliderInt2("Simulation size", &app.cfg.simulation_size, 1, 2048, null, 0);
+    _ = c.igSliderInt2("Simulation size", &app.cfg.simulation_size, 1, 0x1000, null, 0);
     _ = c.igSliderInt("Steps per frame", &app.cfg.steps_per_frame, 1, 10, null, 0);
     _ = c.igSliderInt("Bloom levels", &app.cfg.bloom_levels, 1, 10, null, 0);
     _ = c.igSliderFloat("Bloom scale", &app.programs.bloom_blur.defs.SIGMA, 1.0, 5.0, null, 0);

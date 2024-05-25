@@ -4,6 +4,8 @@ space_scale: f32 = 0.5,
 air_resistance: f32 = 0.65,
 flux_power: f32 = 0.25,
 flux_turbulence: f32 = 0.05,
+respawn_velocity: f32 = 0.05,
+lifespan: [3]f32 = .{ 1.0, 1.0, 0.1 }, // 1/λ, μ, σ
 
 // rendering
 point_scale: f32 = 1.0,

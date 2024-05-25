@@ -1,3 +1,4 @@
+out vec2 f_age;
 out vec2 f_position;
 out vec2 f_velocity;
 
@@ -9,6 +10,7 @@ vec2 normal(vec2 random) {
 }
 
 void main() {
+  f_age = vec2(0);
   f_position = vec2(0);
   f_velocity = vec2(0);
   for (int i = 0; length(f_velocity) < 1e-3; i++)

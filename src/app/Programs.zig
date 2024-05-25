@@ -9,8 +9,9 @@ const pass = @import("glsl/glsl.zig").pass;
 
 seed: gl.Program,
 update: gl.ProgramWithDefs(struct {
+  LIFESPAN_MODE: c_int = 0,
   RESPAWN_MODE: c_int = 0,
-  WALLS_COLLISION: bool = false,
+  SCREEN_EDGES_COLLISION: bool = false,
 }),
 render: gl.ProgramWithDefs(struct {
   COLORSPACE: c_int = 7,

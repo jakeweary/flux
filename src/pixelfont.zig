@@ -113,14 +113,14 @@ const CHARMAP =
   \\| oooo    ooo  oooo   o    oooo o   o  oooo ooooo  o      o      o        |
   \\|                                         o        o      o      o        |
   \\|                                      ooo          oo    o    oo         |
-  \\| u0085 u00b7 u2022                                                       |
-  \\|                                                                         |
-  \\|                                                                         |
-  \\|                                                                         |
-  \\|              ooo                                                        |
-  \\|         o    ooo                                                        |
-  \\| o o o        ooo                                                        |
-  \\| o o o                                                                   |
-  \\|                                                                         |
-  \\|                                                                         |
+  \\| u0085 u00b7 u03bb u03bc u03c3 u2022                                     |
+  \\|             o                                                           |
+  \\|              o                                                          |
+  \\|               o   o   o  oooo                                           |
+  \\|              o o  o   o o   o  ooo                                      |
+  \\|         o   o   o o   o o   o  ooo                                      |
+  \\| o o o       o   o o   o o   o  ooo                                      |
+  \\| o o o       o   o oooo   ooo                                            |
+  \\|                   o                                                     |
+  \\|                   o                                                     |
 ;

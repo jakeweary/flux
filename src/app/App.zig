@@ -12,6 +12,7 @@ const Self = @This();
 const log = std.log.scoped(.App);
 
 cfg: Config = .{},
+prng: std.rand.DefaultPrng,
 window: *glfw.Window,
 gui: Gui,
 programs: Programs,
@@ -20,7 +21,11 @@ fbo: c.GLuint = undefined,
 vao: c.GLuint = undefined,
 
 pub fn init(window: *glfw.Window) !Self {
+  const time: u128 = @bitCast(std.time.nanoTimestamp());
+  const prng = std.rand.DefaultPrng.init(@truncate(time));
+
   var self = Self{
+    .prng = prng,
     .window = window,
     .gui = Gui.init(window.ptr),
     .programs = try Programs.init(),
@@ -53,9 +58,7 @@ pub fn resetToDefaults(self: *Self) void {
 }
 
 pub fn randomizeNoiseRotation(self: *Self) void {
-  const time: u128 = @bitCast(std.time.nanoTimestamp());
-  var prng = std.rand.DefaultPrng.init(@truncate(time));
-  var rand = prng.random();
+  var rand = self.prng.random();
   self.cfg.noise_rotation = util.randomRotationMatrix(f32, &rand);
 }
 
@@ -141,6 +144,7 @@ fn seed(self: *Self) void {
   _ = self.programs.seed.use();
 
   const fbo = gl.Framebuffer.attach(self.fbo, &.{
+    .{ self.textures.age()[0], 0 },
     .{ self.textures.position()[0], 0 },
     .{ self.textures.velocity()[0], 0 },
   });
@@ -152,16 +156,21 @@ fn seed(self: *Self) void {
 fn update(self: *Self, t: f32, dt: f32, w: c_int, h: c_int) void {
   log.debug("step: update", .{});
 
+  var r = self.prng.random();
+
   const program = self.programs.update.use();
   program.uniforms(.{
+    .u_lifespan = &[_][3]c.GLfloat{ self.cfg.lifespan },
     .u_t = t,
     .u_dt = dt,
     .u_space_scale = self.cfg.space_scale * 2,
     .u_air_resistance = util.logarithmic(5, 1 - self.cfg.air_resistance),
     .u_flux_power = self.cfg.flux_power * 100,
     .u_flux_turbulence = self.cfg.flux_turbulence,
+    .u_respawn_velocity = self.cfg.respawn_velocity,
     .u_viewport = &[_][2]c.GLint{.{ w, h }},
     .u_noise_rotation = &[_][3][3]c.GLfloat{ self.cfg.noise_rotation },
+    .u_random = &[_][3]c.GLuint{.{ r.int(u32), r.int(u32), r.int(u32) }},
   });
   program.textures(.{
     .t_age = self.textures.age()[0],

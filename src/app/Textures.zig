@@ -90,7 +90,7 @@ pub fn resizeSimulation(self: *Self, w: c.GLsizei, h: c.GLsizei) bool {
   if (changed) {
     c.glDeleteTextures(self.simulation.len, &self.simulation);
     c.glCreateTextures(c.GL_TEXTURE_2D, self.simulation.len, &self.simulation);
-    for (self.age())      |id| c.glTextureStorage2D(id, 1, c.GL_R32F,  w, h);
+    for (self.age())      |id| c.glTextureStorage2D(id, 1, c.GL_RG32F, w, h);
     for (self.position()) |id| c.glTextureStorage2D(id, 1, c.GL_RG32F, w, h);
     for (self.velocity()) |id| c.glTextureStorage2D(id, 1, c.GL_RG32F, w, h);
   }
