@@ -20,6 +20,9 @@ pub fn build(b: *std.Build) !void {
     .target = target,
     .optimize = optimize,
   });
+  if (optimize != .Debug) {
+    exe.subsystem = .Windows;
+  }
   exe.root_module.addImport("deps", deps);
   exe.linkLibC();
   exe.linkLibCpp();

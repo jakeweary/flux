@@ -1,3 +1,4 @@
+const builtin = @import("builtin");
 const std = @import("std");
 const c = @import("c.zig");
 const gl = @import("gl/gl.zig");
@@ -6,7 +7,10 @@ const App = @import("app/App.zig");
 
 pub const allocator = std.heap.c_allocator;
 pub const std_options = std.Options{
-  .log_level = std.log.Level.info,
+  .log_level = switch (builtin.mode) {
+    .Debug => .info,
+    else => .err,
+  },
 };
 
 pub fn main() !void {
